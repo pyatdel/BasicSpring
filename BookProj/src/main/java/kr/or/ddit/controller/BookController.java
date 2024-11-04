@@ -1,10 +1,14 @@
 package kr.or.ddit.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
+
+import kr.or.ddit.service.BookService;
+import kr.or.ddit.vo.BookVO;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -21,6 +25,11 @@ log.info : 썰
 @Controller
 public class BookController {
 
+	// DI(Dependency Injection)  : 의존성 중집
+	// IoC(Inversion of Control) : 제어의 역전
+	@Autowired
+	BookService bookService;  // Injection(주입)
+	
 	//책 입력 화면
 	   /*
 	    요청URI : /create
@@ -73,9 +82,51 @@ public class BookController {
 		log.info("category : "+category);
 		log.info("price : "+price);
 		
+		// BookVo에 값을 넣어보자
+		BookVO bookVO = new BookVO();
+		bookVO.setTitle(title);
+		bookVO.setCategory(category);
+		bookVO.setPrice(price);
+		// BOOK 테이블에 도서를 등록
+		
+		int result = this.bookService.createPost(bookVO);
+		log.info("createPost->result " + result);
+		
 		ModelAndView mav = new ModelAndView();
         //redirect : URI를 재요청
 		mav.setViewName("redirect:/create");
+		
+		return mav;
+	} // end createPost
+	
+	   // 책 상세보기								 요청 파라미터
+	   // 요청된 URI 주소 : http://localhost/detail?bookId=3
+	   // 요청 파라미터, 쿼리 스트링(Query String) : bookId=3 
+	   // 요청 방식 : get
+	   // 매개 변수 : bookVO => {"bookId":"3","title":"","category":"","price":0,"insertDate":""}
+	@RequestMapping(value="/detail",method=RequestMethod.GET)
+	public ModelAndView detail(int bookId,
+			BookVO bookVO, ModelAndView mav) {
+		// detail->bookId : 1
+		log.info("detail->bookId : " + bookId);
+		/*
+		detail->bookVO : BookVO(bookId=1, title=null, category=null, price=0, insertDate=null)
+		 */
+		log.info("detail->bookVO : " + bookVO);
+		
+		// 1. 도서 상세보기
+		// BookVO(bookId=1, title=개똥이의 여행, category=소설, price=12000, insertDate=24/11/04)
+		bookVO = this.bookService.detail(bookVO);
+		log.info("detail->bookVO : " + bookVO);
+	      
+	      // 2. model : 데이터를 jsp로 넘겨줌
+	      // session.setAttribute(속성명, 데이터)
+	      
+	      // 3.forwarding => 데이터를 jsp로 넘겨줌 / 
+		  // but, redirect => URL재요청. 데이터를 jsp로 못넘겨줌
+	      // view : jsp의 경로
+	      // /WEB-INF/views/ + ... + .jsp
+		mav.setViewName("book/detail");
 		
 		return mav;
 	}

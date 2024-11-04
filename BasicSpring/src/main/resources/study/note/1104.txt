@@ -1,0 +1,87 @@
+웹 애플리케이션 MVC 구조 상세 설명
+1. 기본 요청 흐름
+Copy클라이언트 요청 (localhost:8050/create) [GET 방식]
+    ↓
+View(JSP) ↔ Controller ↔ Service ↔ ServiceImpl ↔ DAO ↔ Oracle DB
+    ↑
+응답 반환
+2. 계층 구조
+프레젠테이션 계층 (Presentation Layer)
+
+JSP (View)
+Controller (요청 처리)
+
+클라이언트의 요청을 받아서 적절한 서비스로 전달
+서비스의 결과를 View에 전달
+
+
+
+서비스 계층 (Service Layer)
+
+Service (인터페이스)
+
+비즈니스 로직의 추상화
+
+
+ServiceImpl (구현 클래스)
+
+@Service 어노테이션 사용
+실제 비즈니스 로직 구현
+예: public class BookServiceImpl implements BookService
+
+
+
+퍼시스턴스 계층 (Persistence Layer)
+
+DAO (Data Access Object)
+
+데이터베이스 접근 로직
+
+
+Oracle DB
+
+실제 데이터 저장소
+
+
+
+3. 요청-응답 사이클
+
+클라이언트가 GET 요청 전송 (localhost:8050/create)
+Controller가 요청 수신 및 처리
+Service 계층에서 비즈니스 로직 처리
+DAO를 통해 데이터베이스 작업 수행
+결과를 역순으로 전달
+View(JSP)를 통해 클라이언트에게 최종 응답
+
+4. 숫자 규칙
+
+최대 38자리까지 지원
+특수 조합:
+
+38선
+38광땡
+
+
+
+5. 레스토랑 비유
+JSP        → 손님응대 (프론트)
+Controller → 주문 접수
+Service    → 주방장 (총괄)
+ServiceImpl → 요리사 (실제 조리)
+DAO        → 창고관리자
+DB         → 식자재 창고
+
+
+
+
+!! Insert문 연습하기
+
+INSERT INTO 테이블명(컬럼명(INT), 컬럼명(VARCHAR2), 컬럼명(NUMBER), 컬럼명(DATE))
+	VALUE(1, 'a', 2, SYSDATE);
+
+
+
+
+
+
+
