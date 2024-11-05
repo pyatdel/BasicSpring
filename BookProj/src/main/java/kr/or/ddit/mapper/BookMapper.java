@@ -12,5 +12,11 @@ public interface BookMapper {
 
 	// 도서 상세
 	public BookVO detail(BookVO bookVO);
+	
+	// 도서 수정
+	public int updatePost(BookVO bookVO);
+
+	// 도서 삭제
+	public int deletePost(BookVO bookVO);
 
 }

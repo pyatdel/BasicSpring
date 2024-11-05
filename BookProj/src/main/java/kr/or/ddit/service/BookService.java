@@ -1,5 +1,7 @@
 package kr.or.ddit.service;
 
+import java.util.List;
+
 import kr.or.ddit.vo.BookVO;
 
 public interface BookService {
@@ -10,4 +12,13 @@ public interface BookService {
 	// 도서 상세
 	public BookVO detail(BookVO bookVO);
 
+	// 도서 수정
+	public int updatePost(BookVO bookVO);
+
+	// 도서 삭제
+	public int deletePost(BookVO bookVO);
+
+	// 도서 목록
+	public List<BookVO> list();
+	
 }

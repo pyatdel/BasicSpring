@@ -44,7 +44,7 @@
    <select id="detail" parameterType="kr.or.ddit.vo.BookVO"
    		resultType="kr.or.ddit.vo.BookVO">
    		
-   		SELECT BOOK_ID
+   	SELECT BOOK_ID
      , TITLE
      , CATEGORY
      , PRICE
@@ -53,4 +53,36 @@
 	WHERE BOOK_ID = #{bookId}
    </select>
    
+   <!--책 수정하기. 
+   public int updatePost(BookVO bookVO);
+    
+   update태그는 update 쿼리를 실행하기 위한 마이바티스 태그 
+   bookVO{bookId=3,title=김민수과 양미강의 콜라보, category=음악, price=1200000}
+   insert, update, delete의 경우 resultType 또는 resultMap은 생략
+    -->
+    
+    <update id="updatePost" parameterType="kr.or.ddit.vo.BookVO">
+    	UPDATE BOOK
+		SET TITLE=#{title}, CATEGORY = #{category}, PRICE = #{price}
+		WHERE BOOK_ID = #{bookId}
+    </update>
+   
+   <!-- 
+	   delete태그는 delete 쿼리를 실행하기 위한 마이바티스 태그 
+	   bookVO{bookId=3,title=김정민과 박선혜의 콜라보, category=음악, price=1200000}
+	   insert, update, delete의 경우 resultType 또는 resultMap은 생략
+    -->
+    
+    
+    <delete id="deletePost" parameterType="kr.or.ddit.vo.BookVO">
+    	DELETE FROM BOOK
+		WHERE BOOK_ID = #{bookId}
+    </delete>
+    
+    <select id="list" resultType="kr.or.ddit.vo.BookVO">
+    	SELECT * FROM BOOK;SELECT BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE 
+		FROM   BOOK
+		ORDER BY BOOK_ID
+    </select>
+    
 </mapper>
