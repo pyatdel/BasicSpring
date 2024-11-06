@@ -1,8 +1,10 @@
 package kr.or.ddit.service;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.ModelAndView;
 
 import kr.or.ddit.mapper.BookMapper;
 import kr.or.ddit.vo.BookVO;
@@ -55,8 +57,9 @@ public class BookServiceImpl implements BookService {
 
 	// 도서 목록
 	@Override
-	public List<BookVO> list() {
-		return this.bookMapper.list();
+	public List<BookVO> list(Map<String, Object> map) {
+		return this.bookMapper.list(map);
 	}
+
 	
 }

@@ -54,7 +54,7 @@
    </select>
    
    <!--책 수정하기. 
-   public int updatePost(BookVO bookVO);
+   public int updatePost(BookVO bookVO)
     
    update태그는 update 쿼리를 실행하기 위한 마이바티스 태그 
    bookVO{bookId=3,title=김민수과 양미강의 콜라보, category=음악, price=1200000}
@@ -78,10 +78,22 @@
     	DELETE FROM BOOK
 		WHERE BOOK_ID = #{bookId}
     </delete>
-    
-    <select id="list" resultType="kr.or.ddit.vo.BookVO">
-    	SELECT * FROM BOOK;SELECT BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE 
+    <!-- 
+    	도서 목록
+    	public List<BookVO> list(Map<String, Object> map);
+    	
+    	파라미터 : map{keyword=설} or map{keyword=} map{}
+     -->
+    <select id="list" parameterType="hashMap" resultType="kr.or.ddit.vo.BookVO">
+    	SELECT BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE 
 		FROM   BOOK
+        WHERE 1 = 1  
+        <if test="keyword!=null and keyword!=''">
+        AND ( 
+            TITLE LIKE '%' || #{keyword} || '%'
+            OR CATEGORY LIKE '%' || #{keyword} || '%'
+            OR PRICE LIKE '%' || #{keyword} || '%')
+        </if>
 		ORDER BY BOOK_ID
     </select>
     

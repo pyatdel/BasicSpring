@@ -1,15 +1,18 @@
 package kr.or.ddit.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import kr.or.ddit.service.BookService;
+import kr.or.ddit.vo.BoardVO;
 import kr.or.ddit.vo.BookVO;
 import lombok.extern.slf4j.Slf4j;
 
@@ -195,15 +198,38 @@ public class BookController {
 	 required=false : 선택사항. 파라미터가 없어도 무관
 	 */
 	@RequestMapping(value="/list",method=RequestMethod.GET)
-	public ModelAndView list(ModelAndView mav) {
+	public ModelAndView list(ModelAndView mav,
+			@RequestParam(value="keyword", required=false,defaultValue="") String keyword) {
+		
+		log.info("list=>keyword : " + keyword);
+		
+		
+		// hashMap hashTable sortedMap
+		Map<String, Object> map = new HashMap<>();
+		map.put("keyword", keyword);
 		
 		// 1. list메서드를 통해 매퍼xml의 SELECT문을 실행
-		List<BookVO> bookVOList = this.bookService.list();
+		List<BookVO> bookVOList = this.bookService.list(map);
 		log.info("list->bookVOList : " + bookVOList);
 		
+		/*
+		  List<BookVO> bookVOList
+		 [
+		 BookVO(bookId=1, title=제목1, category=소설1, price=10001, insertDate=Tue Nov 05 12:16:00 KST 2024), 
+		 BookVO(bookId=2, title=제목2, category=소설2, price=10002, insertDate=Tue Nov 05 12:16:00 KST 2024), 
+		 BookVO(bookId=3, title=제목3, category=소설3, price=10003, insertDate=Tue Nov 05 12:16:00 KST 2024), 
+		 BookVO(bookId=4, title=제목4, category=소설4, price=10004, insertDate=Tue Nov 05 12:16:00 KST 2024), 
+		 BookVO(bookId=5, title=제목5, category=소설5, price=10005, insertDate=Tue Nov 05 12:16:00 KST 2024), 
+		 ...
+		 ]
+		
+		 <c:forEach var="bookVO" items="${bookVOList}" varStatus="stat">
+		
+		< /c:forEach>
+		 */
 		// 2. mav의 속성명으로 bookVOList, 
 		//	값으로 List<BookVO>타입의 bookVOList객체		
-		
+		mav.addObject("bookVOList",bookVOList);
 		// 3. list.jsp에 JSTL의 c:forEach 태그로 목록 출력을 완성해보자
 		
 		// forwarding : jsp응답

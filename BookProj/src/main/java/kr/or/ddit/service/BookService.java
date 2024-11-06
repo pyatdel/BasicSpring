@@ -1,6 +1,7 @@
 package kr.or.ddit.service;
 
 import java.util.List;
+import java.util.Map;
 
 import kr.or.ddit.vo.BookVO;
 
@@ -19,6 +20,7 @@ public interface BookService {
 	public int deletePost(BookVO bookVO);
 
 	// 도서 목록
-	public List<BookVO> list();
+	public List<BookVO> list(Map<String, Object> map);
+
 	
 }
