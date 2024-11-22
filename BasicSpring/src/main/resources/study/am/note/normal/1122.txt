@@ -1,0 +1,148 @@
+@Slf4j
+@Controller
+public class LpordController {
+
+	/*
+	 * 요청 URI : /lprod/create
+	 * 요청 파라미터 : 
+	 * 요청 방식 : get
+	 */
+
+	// lpord/create.jsp를 forwarding해보자
+}
+
+	/*
+	요청URI : /lprod/createPost
+	요청파라미터 : {lprodGu=P701, lprodNm=도서류}
+	요청방식 : post
+	
+	LPRODD 테이블에 insert
+	LPROD_ID 컬럼을 1 자동증가 처리
+	return "redirect:/lprod/detail?lprodGu="+lprodVO.getLprodId();
+	*/
+}
+
+	 /*1)
+	   요청URI : /lprod/detail?lprodId=10
+	   요청파라미터 : lprodId=10
+	   요청방식 : get
+	    */
+
+	 /* 2)
+	   요청URI : /lprod/detail/10
+	   경로변수 : lprodId
+	   요청방식 : get
+	    */
+
+}
+	/*
+	 요청URI : /lprod/updatePost
+	 요청파라미터 : request{lprodId=3,lprodGu=P201,lprodNm=여성캐주얼}
+	 요청방식 : post 
+	 */
+}
+	/*
+	 요청 URI : /lprod/deletePost
+	 요청 파라미터 : request{lprodId=3,lprodGu=P201,lprodNm=여성캐주얼}
+	 요청 방식 : post
+	 */
+}
+	/*
+	 요청 URI : /lprod/list
+	 요청 파라미터 : 
+	 요청 방식 : get
+	 
+	 model.addAttribute("lprodVOList", lprodVOList);
+	 return "lprod/list";
+	 */
+}
+	
+
+
+<script type="text/javascript">
+//$ is not defined -> jquery가 import 안 됨
+//document 내의 모든 요소들이 로딩된 후에 실행.
+$(function(){
+	//수정버튼 클릭 -> 수정모드로 전환
+	$("#edit").on("click",function(){
+		///수정영역 가려짐
+		$("#spn1").css("display","none");
+		//일반영역 보임
+		$("#spn2").css("display","block");
+
+		// 1) 입력란 활성화(class="class=form-control") readonly속성을 제거
+
+		
+		// 2) <form id="frm" select하여 오브젝트를 가져옴. action 속성의 값을
+		// 		/lprod/updatePost로 변경
+
+		
+	
+		// 3) 확인 버튼 클릭 시 submit 값 update 처리 후
+		// /lprod/detail?lprodId=10로 redirect
+		$("#frm").on("submit", function() {
+			location.href = "/lprod/detail?lprodId=${param.lprodId}";
+		});
+
+		//삭제버튼 클릭 -> 삭제처리
+		$("#delete").on("click", function() {
+			//1) <form id="frm" select하여 오브젝트를 가져옴. action속성의 값을
+			//      /lprod/deletePost로 변경
+			$("#frm").attr("action","/lprod/deletePost");
+			let result = confirm("삭제하시겠습니까?");
+			
+
+			//result 확인
+			console.log("result : ", result);
+			if (result > 0) {
+				//submit 처리
+				$("#frm").submit(); 
+				// LprodController의 deletePost  메소드에서
+				// 삭제처리 완료 후 /lprod/list로 redirect 함
+			} else {
+				alert("삭제가 취소되었습니다");
+			}
+		});
+	});
+
+-- 면접 질문
+forwarding과 redirect의 차이?
+redirect : 새로운url을 재요청
+forwarding : 요청을 전달
+
+______________________________
+
+오라클은 숫자보다 문자가 우선순위
+
+임계영역이란?
+
+
+무결성
+중복(X), 불일치
+
+ㄴ 도메인 무결성, 참조 무결성
+ㄴ 기본키와 참조키를 잘 설정하면..
+
+
+Create (생성):
+
+SQL에서는 INSERT 문을 사용
+HTTP에서는 POST 메소드 사용
+
+
+Read (읽기):
+
+SQL에서는 SELECT 문을 사용
+HTTP에서는 GET 메소드 사용
+
+
+Update (수정):
+
+SQL에서는 UPDATE 문을 사용
+HTTP에서는 PUT 메소드 사용
+
+
+Delete (삭제):
+
+SQL에서는 DELETE 문을 사용
+HTTP에서는 DELETE 메소드 사용

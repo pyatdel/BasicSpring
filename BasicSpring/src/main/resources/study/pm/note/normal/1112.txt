@@ -1,0 +1,50 @@
+index.html
+IdolController.java
+IdolVO.java
+
+table -> vo -> mapper -> test
+-> service(다형성, 추상화가 필요하면 inerface) -> controller
+
+서버가 클라이언트에 요청하면 -> request 객체
+
+request객체를 오래 보관하고 싶어서 만든 것 => session
+
+form 태그를 ajax에서 사용할 때?
+
+jackson라이브러리가 뭘 보내주는 지 파악하기
+
+사진을 업로드할 때,
+db에 파일을 직접 저장하지 않고,
+파일의 경로를 저장한다
+
+db에 파일을 직접 저장하지 않는 이유
+>> db는 생각보다 비싼 자원이라..
+
+drm
+
+input타입 파일은 오직 사용자만 할 수 있도록
+
+파일이 포함되었는가? 안되었는가?
+
+form 태그와 form 데이터의 전송방식
+
+파일이 포함되있으면, 무조건 form 데이터로 전송
+
+!!
+보낼 데이터에 파일이 포함되었다면 무조건 FormData생성
+multi-part/formData 형식(정확히는 binary)
+
+multipart
+multipartparser
+>> 여기서 파일이 들어오면 multipartfile
+
+multiple을 사용하면 여러개 선택 가능
+
+getOriginalFilename
+
+
+!일반 사용자는 파일의 저장 경로를 알지 못한다.
+그래서, web url을 이용해서 매칭시켜서 물리적 경로를 매핑시킨다.
+>> 해커를 막기 위함
+
+... 파일 첨부 기능은 이메일에서 훔쳐왔다

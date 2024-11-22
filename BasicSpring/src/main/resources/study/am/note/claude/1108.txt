@@ -1,0 +1,86 @@
+1. Controller 매핑 관련
+
+@PostMapping(value="board/insertPost")
+value 속성은 생략 가능하나, HTTP 메서드 구분을 위해 명시 권장
+반복되는 URL 주소는 클래스 레벨 Controller로 분리
+
+@Controller
+@RequestMapping("/board")
+public class BoardController {
+    @GetMapping("/list")  // -> /board/list
+    public String list() { ... }
+}
+
+2. URL 파라미터 처리
+
+경로 변수 (Path Variable)
+
+예: board/bono/1 에서 1이 경로 변수
+
+
+모든 파라미터는 문자열로 처리
+
+bono=1 → bono="1"
+
+3. 주요 어노테이션
+
+@GetMapping
+// 기본적으로 GET 방식 (method 미지정 시)
+
+@RequestAttribute
+// request 스코프의 속성 접근
+// 주로 인터셉터/필터에서 설정한 값 사용
+// request.setAttribute()로 설정된 값 접근
+
+@RequestParam
+// URL 쿼리 스트링 파라미터 처리
+// GET 요청 및 form 데이터 처리
+
+@PathVariable
+// URL 경로 변수 처리
+// RESTful API에서 주로 사용
+// 예: /users/{id}/posts/{postId}
+
+4. jQuery를 이용한 폼 처리
+
+$(function(){
+    // 문서 로딩 완료 후 실행
+    // 클래스가 form-control인 요소들 읽기전용 처리
+});
+
+// 수정 버튼 클릭 이벤트 처리
+$("#editBtn").on("click", function(){
+    // 일반 모드 숨기기
+    $("#div1").css("display", "none");
+    
+    // 수정 모드 표시
+    $("#div2").css("display", "block");
+    
+    // 입력 필드 활성화
+    $(".form-control").removeAttr("readonly");
+    
+    // 폼 action 속성 변경
+    $("#frm").attr("action", "/board/updatePost");
+});
+
+// 삭제 버튼 클릭 이벤트 처리
+$("#deleteBtn").on("click", function(){
+    // 삭제 처리 로직
+});
+
+5. 향후 학습 예정 내용
+
+Talend (API 테스트 도구)
+JUnit (단위 테스트)
+페이징 처리
+
+게시판 등의 데이터를 나누어 표시
+성능 최적화 및 사용자 경험 개선
+
+6. 주요 포인트
+
+Controller 레벨에서의 URL 매핑 구조화
+HTTP 메서드 명시적 사용
+파라미터 처리 방식의 차이점 이해
+jQuery를 이용한 동적 폼 처리
+모든 파라미터의 문자열 처리 특성

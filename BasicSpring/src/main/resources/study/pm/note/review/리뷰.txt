@@ -1,0 +1,54 @@
+//_____________________________________________________________________(11/11)
+Lombok, getter/setter, 멤버변수를 public으로 두면 잘못된 값을 제어할 수 없다.
+웬만하면 전부 private로 두고 제어를 하자
+
+assertEqual(기대치, 실제값), assertThat  : / 단정
+
+Jackson 자바객체 <==> json 문자열
+
+JUnit(자바side 대표적 테스트 프레임워크) -> Test Framework
+
+Mapper I/F (5가지, ((Insert, Delete, Update), 뮤테이션), (Select, Select, 읽기 2개)) <->SQL => class  
+		ㄴ  이렇게 sql과 java를 나누는 걸 ORM이라고 한다, jpa도 있다
+
+sort((a,b) => { +1, -1, 0}) => 제발 한 번 꼭 이해할 시간을 갖자
+ ㄴ sort만 매개변수 2개를 사용한다
+
+insert만, @Test(mapper 만들 즈음에 테스트 한 번하면 좋다)
+
+??
+@Autowired // 되도록이면 여기에 쓰자
+	private IdolMapper idolMapper;
+
+// ajax를 사용할 때는 request 잊기. 
+
+//__________________________________(11/12)
+
+fetch/axios
+외래키, 참조무결성 체크(잘못된 데이터가 들어가거나, 삭제되어 엉터리로 되는 걸 막는다.) - 답변 
+primary key => 검색 효율 => 중복 없으면 
+데이터 중복의 최소화 => 정규화 => 실제 검증 시 잘 안맞으면 반 정규화
+get - 조회, post - 생성, put - 수정, delete - 삭제 		restful rest api
+@ResponseBody return 결과에 jackson 라이브러리 동작
+@RequestBody 브라우저 => 서버로 전달된 json문자열을 자바객체로 바꿔 
+@RestController => @Controller + @ResponseBody
+
+//________________________________________(11/13)
+
+Request << Session 생명 주기가 더 길다
+event.preventDefault();
+ajax사용 시 실제로 form태그는 필요없지만, required등 유효성 체크 속성을 사용하기 위함
+파일 업로드 => List<multipartfile>
+		 => ajax로 데이터 전송 시 파일이 있다면 무조건 FormData(중요)
+		 => FormData는 문자열화 하지 않는다. 그대로
+		 	@RequestBody 쓰지 않는다
+		 => 물리적 경로 / 웹 경로(가상경로) 맵핑 => 보안을 위해 물리적 경로를 감춘다(보안/DB저장용)
+		 => FormData 보낼 때 Content-Type:application/json 쓰지 않는다.(중요)
+		 
+//_________________________________________________(11/14)
+사용자 속성(application.properties). 소문자로만 써야 한다. 카멜표기법 표기, 하이픈 사용
+파일 경로(물리적 경로, 웹 경로(가상경로)
+** 와 * 차이, Exception 막 던지면 스프링이 알아서
+files(FileList) length 가지고 파일 선택 여부
+rest get/post/put/delete crud
+

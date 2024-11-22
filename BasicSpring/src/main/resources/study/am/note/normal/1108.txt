@@ -1,0 +1,62 @@
+@PostMapping(value="board/insertPost")
+에서, 속성은 생략할 수 있지만 get/post인지 구분이 확실치 않아서 권장하진 않는다
+
+반복되는 url주소는 따로 controller로 빼도록 하자
+
+url상의 변하는 값 = 경로 변수 
+ex) board/bono/1 에서, 경로변수는 1
+
+method가 없으면 기본적으로 get방식 - jsp에서 확인가능
+value="register(GET)"> GET 생략 - controller에서 확인 가능
+
+/board/list
+
+board -> class 레벨로..
+list -> method 레벨로..
+
+
+모든 파라미터는 숫자 + 문자
+bono=1 >> bono="1"
+
+@GetMapping
+
+@RequestAttribute
+request 스코프에 설정된 속성을 받음
+주로 인터셉터/필터에서 설정한 값을 컨트롤러에서 사용할 때
+request.setAttribute()로 설정된 값을 가져올 때
+
+@RequestParam
+URL의 쿼리 스트링 파라미터를 받음
+전통적인 GET 요청에서 주로 사용
+form 데이터도 받을 수 있음
+
+@PathVariable
+URL 경로의 일부를 변수로 받음
+RESTful API에서 주로 사용
+/users/{id}/posts/{postId} 같은 형태에서 사용
+
+_________________________________________________________________________________________________
+<script type="text/javascript">
+// document 내의 모든 요소들이 로딩된 후에 실행
+// 동일한 jsp파일 내에서 1회 작성
+$(function(){
+	// class="form-control" 요소들을 읽기전용 처리
+	
+});
+
+//1. 수정버튼 클릭 시 수정모드로 전환
+   $("??").on("??",function(){
+      //일반모드영역 가려짐
+      $("#div1").??("display","??");
+      //수정모드영역 보임
+      $("#div2").??("display","??");
+      //입력란(제목,작성자,내용)을 활성화
+      $(".form-control").삭제속성("??");
+      //id="frm"인 폼페이지에 접근.
+      //   action속성의 값을 /board/updatePost
+      $("??").??("action","/board/updatePost");
+   });
+   
+   //2. 삭제버튼 클릭 시 글 삭제 처리
+
+텔런드, junit, 페이징 처리 할 예정..

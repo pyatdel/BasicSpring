@@ -1,0 +1,100 @@
+프로젝트 구조 (MVC 아키텍처)
+
+
+프리젠테이션 계층: 컨트롤러 (화면 로직)
+비즈니스 계층: 서비스 (업무 로직)
+퍼시스턴스 계층: DAO/Mapper (데이터 처리)
+
+
+Controller 작성 예시
+@Controller
+@RequestMapping("/board")  // 클래스 레벨 경로
+@Slf4j
+public class BoardController {
+    
+    @Autowired
+    BoardService boardService;
+    
+    // 상세보기 
+    @RequestMapping("/detail")  // 최종경로: /board/detail
+    public String detail(int boardNo, Model model) {
+        // 1. 파라미터 확인
+        log.info("detail->boardNo : " + boardNo);
+        
+        // 2. 서비스 호출
+        BoardVO boardVO = this.boardService.detail(boardNo);
+        log.info("detail->boardVO : " + boardVO);
+        
+        // 3. Model에 데이터 바인딩
+        model.addAttribute("boardVO", boardVO);
+        
+        // 4. View 이름 리턴
+        return "board/detail";
+    }
+}
+
+주요 개념 정리
+
+
+@RequestMapping 특징:
+
+속성이 하나면 속성명(value=) 생략 가능
+클래스 레벨 경로 + 메서드 레벨 경로 = 최종 경로
+method 속성으로 HTTP 메서드 지정 가능 (GET, POST 등)
+
+
+
+
+유용한 단축키
+
+
+Ctrl + F6: 작업 뒤로가기
+Ctrl + Shift + Y: 카멜케이스 변환
+
+
+일반적인 CRUD 구조
+
+// 목록
+@GetMapping("/list")
+public String list(Model model) { ... }
+
+// 상세
+@GetMapping("/detail")
+public String detail(int boardNo, Model model) { ... }
+
+// 등록 폼
+@GetMapping("/create")
+public String createForm() { ... }
+
+// 등록 처리
+@PostMapping("/create")
+public String create(@ModelAttribute BoardVO boardVO) { ... }
+
+// 수정 폼
+@GetMapping("/update")
+public String updateForm(int boardNo, Model model) { ... }
+
+// 수정 처리
+@PostMapping("/update")
+public String update(@ModelAttribute BoardVO boardVO) { ... }
+
+// 삭제
+@PostMapping("/delete")
+public String delete(int boardNo) { ... }
+
+중요 포인트
+
+
+Controller에서는 비즈니스 로직을 직접 처리하지 않고 Service로 위임
+로그를 적극 활용하여 데이터 흐름 추적
+Model 객체를 통해 View로 데이터 전달
+적절한 HTTP 메서드 사용 (GET: 조회, POST: 등록/수정/삭제)
+
+
+실무 팁
+
+
+초기 설계가 매우 중요함
+로그를 잘 활용하여 디버깅
+일관된 명명 규칙 사용
+계층 간 책임 분리 철저히 하기

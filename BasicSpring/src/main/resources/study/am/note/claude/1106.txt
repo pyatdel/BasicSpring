@@ -1,0 +1,53 @@
+DI(Dependency Injection)와 IoC(Inversion of Control)
+
+DI: 객체 의존관계를 외부에서 설정하는 것
+// DI 적용 전
+class A {
+    private B b = new B();  // 직접 생성, 강한 결합
+}
+
+// DI 적용 후
+class A {
+    private B b;  // 외부에서 주입받음
+    public A(B b) {
+        this.b = b;  // 생성자 주입
+    }
+}
+
+IoC: 객체 생명주기 관리를 프레임워크(스프링 컨테이너)가 대신함
+개발자는 설정(Configuration)만 하고, 제어 흐름은 프레임워크가 담당
+
+
+DI/IoC의 장점
+
+결합도 감소: 객체 간 의존성이 줄어듦
+유연성 증가: 변경에 유연하게 대응 가능
+테스트 용이성: Mock 객체 주입이 쉬워짐
+
+
+Spring MVC의 주요 데이터 처리 구조
+
+Client → DispatcherServlet → HandlerMapping → Controller → Service → Repository → DB
+
+DispatcherServlet: 모든 요청을 받아서 적절한 컨트롤러로 분배
+HandlerMapping: URL과 컨트롤러를 매핑
+Controller: 비즈니스 로직 처리 요청
+Service: 실제 비즈니스 로직 수행
+Repository: DB 접근 처리
+
+연산자 우선순위
+높음 → 낮음
+
+() : 괄호
+NOT : 논리 부정
+AND : 논리곱
+OR  : 논리합
+
+휴	낮      엔 더워
+()	NOT AND OR
+
+WHERE (age > 20 AND name = 'John') OR (city = 'Seoul' AND NOT isDeleted)
+1. 괄호 안을 먼저 계산
+2. NOT 연산 수행
+3. AND 연산 수행
+4. OR 연산 수행

@@ -1,0 +1,27 @@
+6004 콘솔창 확인
+모달창 화면 확인
+index.html
+
+json -----------------------------> java
+      <----------------------------
+         @ResponseBody 
+
+
+@charset "UTF-8";
+.sh {
+	color: pink;
+}
+
+여기에 접근하려면.. http://localhost:6004/css/sh/sh.css
+
+
+
+물리적 경로를 조정
+registry.addResourceHandler("/sh/**", "/yj/**")             // 두 개를 만들 수 있다.
+        .addResourceLocations("classpath:static/css/sh/","classpath:static/css/yj/");  // 두 개를 만들 수 있다.
+
+
+"/sh/**"와"/sh/*" 의 차이?
+
+공부는 리팩토링할 때 가장 많이 된다.
+

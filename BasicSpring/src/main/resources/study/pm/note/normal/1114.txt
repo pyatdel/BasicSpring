@@ -1,0 +1,51 @@
+mapper.xml
+index
+controller
+
+
+formData.append("idolAge",document.querySelector("#idolAge").value - 0);
+
+
+// 골뱅이ResponseBody
+	@PutMapping("/idols2")
+	public int updIdol2(IdolVO idol) throws Exception { // 파일 업로드 처리 시에는 @RequestBody를 사용하지 말아야 함
+		log.debug("put idol {}",idol);  // 이렇게 찍어보는 습관이 엄청 중요하다
+			
+			MultipartFile jyFile=null;
+			String savePath="";
+			String webPath="";
+			
+			if(idol.getIdolFiles() != null) {
+				jyFile = idol.getIdolFiles().get(0);
+				savePath = saveDir + jyFile.getOriginalFilename();
+				jyFile.transferTo(new File(savePath));
+				webPath = webBase + jyFile.getOriginalFilename(); 
+				idol.setIdolSajin(webPath);
+			} else {
+				// 원래 파일 유지하도록... 숙제
+				// 힌트 sql if문 
+				// mybatis if문..? 동적 sql
+				idol.setIdolSajin("/jcmc/logo_ori.png"); // 여긴 일단 디폴트값
+			}
+			
+			
+			// return 1;
+			return idolService.updIdol(idol);
+		}
+
+JS		JAVA
+[]	->	List
+{}	->	Map
+:[]	->	Map<:
+
+
+// 프로그램 상, 새로 생성된 id를 다시 받고 싶을 때는..?
+primary값이 필요한 경우.. selectKey
+
+테이블 명이 없을 때는 dual
+
+
+뭘 봐도, '왜' 라는 질문을 스스로 해보자
+
+비동기의 문제점?
+순서가 뒤죽박죽

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="UTF-8">
+   <title>수족관</title>
+   <style>
+      #inIdol {
+         display: none;
+      }
+      #kjModal {
+         position: fixed;
+         width: 100%;
+         height: 100%;
+         left: 0;
+         top: 0;
+         background-color: rgba(255,0,255,0.7); /* div는 기본적으로 투명 */
+         display: none;
+      }
+      #kjCont {
+         width: 60%;
+         height: 500px;
+         margin: 50px auto;
+         background-color: blueviolet;
+         color: white;
+      }
+      #suminImg {
+         display: block;
+         width: 100%;
+         min-height: 300px;
+         max-height: 300px;
+         border: 1px solid black;
+      }
+   </style>
+</head>
+<body>
+   <!-- 모달 -->
+   <div id="kjModal">
+      <div id="kjCont">
+         <form id="suminForm2">
+            <fieldset>
+               <legend>배럭스</legend>
+               <img src="" id="suminImg" alt="수민6"><br>
+               <input type="hidden" name="idolId" id="idolId" value="">
+               이름 <input type="text" name="idolName" id="idolName" value="" readonly><br>
+               나이 <input type="text" name="idolAge" id="idolAge" value=""><br>
+               사진 <input type="file" name="idolSajin" id="idolSajin" value="" accept=".jpg,.png,.gif"><br>
+               <button id="upBtn" type="submit">수정</button>
+               <button type="button" onclick="remIdol(this)">삭제</button>
+               <button type="button" onclick="suminClose()">X</button>
+            </fieldset>
+         </form>
+      </div>
+   </div>
+
+   <!-- 내용 -->
+   <h1>&copy; 가오리는 눈이 몇개</h1>
+   <button onclick="sTog()">아이돌 추가</button><br>
+   <div id="inIdol">
+      <form id="suminForm">
+         <fieldset>
+            <legend>팩토리</legend>
+            이름 <input type="text" name="idolName2" id="idolName2" value="" required><br>
+            나이 <input type="text" name="idolAge2" id="idolAge2" value="" required><br>
+            사진 <input type="file" multiple name="idolSajin2" id="idolSajin2" value="" accept=".jpg,.png,.gif"><br>
+            <button id="regBtn" type="submit">등록</button>
+         </fieldset>
+      </form>
+   </div>
+   <div id="idolList"></div>
+
+   <script>
+      // 전역 변수
+      let isShow = false; // 안보이는 상태 default
+      let suminIdolId;
+      let delCnt = 0;
+      const inIdol = document.querySelector("#inIdol");
+      const suminForm = document.querySelector("#suminForm");
+      const suminForm2 = document.querySelector("#suminForm2");
+      const suminFile = document.querySelector("#idolSajin2");
+      const kjModal = document.querySelector("#kjModal");
+
+      // 파일 다운로드 함수, 이게 좀 더 좋다
+      function suminDownLoad(imgURL) {
+         let suminFilename = imgURL.split("/")[2];
+         let suminA = document.createElement("a");
+         suminA.href = imgURL;
+         suminA.download = suminFilename;
+         suminA.click(); //  jquery에서는.. => $("선택자").trigger("click")
+      }
+
+      // 선택 삭제 함수, then/catch/finally도 중첩되면 눈이 어지러워서 async / await 가 나왔다
+      async function mgdel(idolId, totalCnt) {
+         try {
+            let resp = await fetch(`/api/idols/${idolId}`, { method: "delete" });
+            let rslt = await resp.text();
+            if(rslt == 1) {
+               console.log(`${idolId}를 삭제했습니다.`);
+               delCnt++; // 1(성공일 때, 지울 수 있다)
+               if(delCnt == totalCnt) {
+                  getList();
+               }
+            }
+         } catch(error) {
+            console.error("삭제 중 오류 발생:", error);
+         }
+      }
+
+      // 다중 삭제 함수, // 다른 방법
+      const suminDel = async () => {
+         try {
+            let suminCks = document.querySelectorAll("[ymg]:checked");
+            let valArr = []; // 빈 배열
+            for(let i=0; i<suminCks.length; i++) {
+               valArr.push(suminCks[i].value); // 배열에 idolId 담기
+            }
+
+            if(valArr.length === 0) {
+               alert("삭제할 항목을 선택해주세요.");
+               return;
+            }
+
+            let resp = await fetch("/api/idols/multi", {
+               method: "delete",
+               headers: {
+                  "Content-Type": "application/json;charset=UTF-8"
+               },
+               body: JSON.stringify(valArr) // valArr로 쓰면 안되고, 문자열로 작성해야 하므로, JSON.stringify(valArr) 로 작성해야 한다
+            });
+
+            let rslt = await resp.json();
+            if(rslt.msg == "success") {
+               alert("선택한 항목이 삭제되었습니다.");
+               getList(); // 리스트 다시 뿌리기
+            }
+         } catch(error) {
+            console.error("다중 삭제 중 오류 발생:", error);
+            alert("삭제 중 오류가 발생했습니다.");
+         }
+      }
+
+      // 선택 항목 삭제
+      function selRev() {
+    		// 선택박스 체크하면 삭제되도록..
+    		// 체크된 체크박스만 가져오기
+         let suminCks = document.querySelectorAll("[ymg]:checked"); // form문을 돌려도 되지만..
+         // 비동기 사용시 고급 테크닉, 모르면 비효율적 소스를 짜게 된다.
+         delCnt = 0;
+         for(let i=0; i<suminCks.length; i++) { // 눈으로 보여줌
+            mgdel(suminCks[i].value, suminCks.length);
+         }
+      }
+
+      // 단일 항목 삭제
+      function remIdol(pBtn) {
+         let idolId = pBtn.closest("form").idolId.value; 
+         if(confirm("정말 삭제하시겠습니까?")) {
+            fetch(`/api/idols/${idolId}`, {
+               method: "delete"
+            }).then(resp => {
+               resp.text().then(rslt => {
+                  if(rslt == 1) {
+                     alert("삭제되었습니다.");
+                     suminClose();
+                     getList();
+                  }
+               });
+            }).catch(error => {
+               console.error("삭제 중 오류 발생:", error);
+               alert("삭제 중 오류가 발생했습니다.");
+            });
+         }
+      }
+
+      // 모달 닫기
+      function suminClose() {
+         kjModal.style.display = "none";
+         // 폼 초기화
+         suminForm2.reset();
+         suminForm2.querySelector("#suminImg").src = "";
+      }
+
+      // 항목 상세 정보 보기
+      function getIdol(pTr) {
+         let elem = event.target;
+         if(elem.type == "checkbox" || elem.id == "mg") {
+            return;
+         }
+
+         let idolId = pTr.children[0].innerHTML;
+         let idolName = pTr.children[1].innerHTML;
+         let idolAge = pTr.children[2].innerHTML;
+         let idolImgPath = pTr.children[3].children[0].src;
+
+         suminForm2.idolId.value = idolId;
+         suminForm2.idolName.value = idolName;
+         suminForm2.idolAge.value = idolAge;
+         suminForm2.querySelector("#suminImg").src = idolImgPath;
+
+         kjModal.style.display = "block";
+      }
+
+      // 추가 폼 토글
+      function sTog() {
+         if(!isShow) {
+            inIdol.style.display = "block";
+         } else {
+            inIdol.style.display = "none";
+         }
+         isShow = !isShow;
+      }
+
+      // 수정 폼 제출
+      suminForm2.onsubmit = function() {
+         event.preventDefault();
+         // 파일을 선택한다는 건, 전송 시 파일을 보낸다는 뜻
+         let formData = new FormData(); // ajax로 파일을 보내려면 무조건!
+         formData.append("idolId", suminForm2.idolId.value);
+         formData.append("idolName", suminForm2.idolName.value);
+         formData.append("idolAge", suminForm2.idolAge.value);
+         // 사용자가 파일을 선택했을 수도, 안했을 수도, 이런 경우의 업무 규칙을 정해야 한다
+
+         if(suminForm2.idolSajin.files.length) { // 파일 선택을 했다면
+            formData.append("idolFiles", suminForm2.idolSajin.files[0]);
+         }
+
+         fetch("/api/idols2", {
+            method: "put",
+            body: formData
+         }).then(resp => {
+            resp.text().then(rslt => {
+               if(rslt == 1) { 
+                  alert("수정되었습니다.");
+                  suminClose(); // 모달 닫기
+                  getList(); // 리스트 다시 뿌리기
+               } else {
+                  alert("수정 중 오류가 발생했습니다.");
+               }
+            });
+         }).catch(error => {
+            console.error("수정 중 오류 발생:", error);
+            alert("수정 중 오류가 발생했습니다.");
+         });
+      }
+
+      // 등록 폼 제출
+      suminForm.onsubmit = function() {
+         event.preventDefault(); // 기본 이벤트 기능을 막을 때 사용, 여러 곳에서 사용 가능(form 태그에서만 사용하는 게 아님)
+         // built - in 기능막기
+      
+         let formData = new FormData();
+         formData.append("idolName", document.querySelector("#idolName2").value);
+         formData.append("idolAge", document.querySelector("#idolAge2").value - 0);
+      // formData.append("idolSajin",document.querySelector("#idolSajin").value); // 이렇게 하면 파일명만 넘어간다
+      
+      // 파일 리스트를 그대로 담으면 안되고, 1개씩
+         for(let i=0; i<suminFile.files.length; i++) {
+            formData.append("idolFiles", suminFile.files[i]);
+         }
+
+         fetch("/api/idols2", {
+            method: "post",
+            body: formData // FormData는 절대 JSON.stringify를 하지 않는다
+         }).then(resp => {
+            resp.text().then(rslt => {
+               suminIdolId = rslt;
+               getList();
+               suminForm.reset();
+               sTog(); // 폼 닫기
+            });
+         }).catch(error => {
+            console.error("등록 중 오류 발생:", error);
+            alert("등록 중 오류가 발생했습니다.");
+         });
+      }
+
+      // 리스트 가져오기, 재활용을 위해 함수화시킴, 이름만 가지고 호출할 수 있게
+      function getList() {
+         fetch("/api/idols").then(res => {
+            res.json().then(rslt => {
+               let tblStr = `
+                  <table border=1 width=700>
+                     <thead>
+                        <tr>
+                           <th>ID</th>
+                           <th>이름</th>
+                           <th>나이</th>
+                           <th>사진</th>
+                           <th><button onclick="suminDel()">선택삭제</button></th>
+                        </tr>
+                     </thead>
+                     <tbody>
+               `;
+
+               for(let i=0; i<rslt.length; i++) {
+                  let idol = rslt[i];
+                  let suminFileName = idol.idolSajin.split("/")[2];
+
+                  tblStr += `
+                     <tr onclick="getIdol(this)" ${idol.idolId == suminIdolId ? 'style="background-color:black;color:pink;font-weight:bold;"' : ''}>
+                        <td>${idol.idolId}</td>
+                        <td>${idol.idolName}</td>
+                        <td>${idol.idolAge}</td>
+                        <td><img src="${idol.idolSajin}" width=150 height=50></td>
+                        <td id="mg">
+                           <input type=checkbox ymg value=${idol.idolId}>
+                           <a href="${idol.idolSajin}" download="${suminFileName}">다운로드</a>
+                           <button onclick="suminDownLoad('${idol.idolSajin}')">클릭 다운로드</button>
+                        </td>
+                     </tr>
+                  `;
+               }
+
+               tblStr += `</tbody></table>`;
+               idolList.innerHTML = tblStr;
+            });
+         }).catch(error => {
+            console.error("데이터 로딩 중 오류 발생:", error);
+            alert("데이터를 불러오는 중 오류가 발생했습니다.");
+         });
+      }
+
+      // 초기 리스트 로딩
+      getList();
+   </script>
+</body>
+</html>

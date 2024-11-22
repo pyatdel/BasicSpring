@@ -1,0 +1,68 @@
+list.jsp
+board.xml
+boardcontroller.java
+
+오늘 내용은 최종 프로젝트에 많이 사용되는 부분
+
+요청 파라미터 = 쿼리스트링 = http 파라미터
+
+필수 조건일 경우.. => not null 
+
+
+-- 서브쿼리 : 메인 SQL에 사용된 또다른 쿼리
+--1) SELECT 절 : SCALAR
+--2) FROM 절  : INLINE VIEW
+--3) WHERE 절 : NESTED
+
+ex) SELECT T.RNUM, T.BO_NO, T.BO_TITLE, T.BO_WRITER
+     , T.BO_CONTENT, T.BO_DATE, T.BO_HIT
+FROM
+(
+    SELECT ROW_NUMBER() OVER(ORDER BY BO_NO) RNUM
+         , BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT
+    FROM   BOARD
+) T
+WHERE  T.RNUM BETWEEN 11 AND 20;
+
+페이지 수 
+1페이지 1	10
+2페이지 11	20
+3페이지 21	30
+>> (현재페이지번호*10)-9, (현재페이지번호*10)
+
+
+자주 쓰는 jstl
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+foreach v i v
+	var, items, varStatus
+
+// 1. 전체 페이지 수
+	      // 1-1) 전체 페이지 수 = 전체글 수 / 한 화면에 보여질 목록의 행 수
+		  this.totalPages = this.total / size; // 31 / 10 = > 3.1 => 3
+	      // 1-2) 나머지가 있다면(31 / 10 => 3.1), 페이지를 1 증가
+		  if(this.total % size > 0) {
+			  this.totalPages++; // 4
+		  }
+
+// 2. 블록 시작번호
+	      // 2-1) 페이지 블록 시작번호를 구하는 공식
+	      //      블록시작번호 = 현재페이지 / 블록크기 * 블록크기 + 1
+		  this.startPage = this.currentPage / 5 * 5 + 1;
+				  
+	      // 2-2) 현재페이지 % 블록의 크기 => 0일 때 보정
+	      if(this.currentPage % 5 == 0) {
+	    	  this.startPage -= 5;
+	      }
+	      
+	      // 3. 블록 종료번호
+	      // 3-1) 블록종료번호 = 시작페이지번호 + (페이지크기 - 1)
+	      //     [1][2][3][4][5][다음]
+	      // 3-2) 종료페이지번호 > 전체페이지수
+
+!! 5의 배수는 적용이 안된다.
+ex) 15 => 15 / 5 * 5 + 1 ... 16?
+
+그래서 보정이 필요하다

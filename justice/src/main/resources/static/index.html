@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>웹 소켓 클라이언트</title>
+<style>
+	#jcChat {
+		width: 400px;
+		height: 400px;
+		overflow: scroll;
+		border: 10px groove gold;
+	}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js"></script>
+</head>
+<body>
+	<h1>돌고래도 하나</h1>
+	가짜아이디 <input type="text" id="jc2Id" value="merong">
+	<button onclick="fLogin()">가짜로그인</button>
+
+	<div id="jcChat"></div>
+	<input type="text" id="jcTxt" value="" onkeydown="jcEnter()">
+	<button onclick="jcSend()">전송</button>
+	아이디<input type="text" id="jcId" value=""><button onclick="conn()">연결</button>
+<script>
+	function fLogin(){
+		let data = {
+			loginId : document.querySelector("#jc2Id").value,
+			smartIdol:"윤정"
+		}
+		axios.post("/flogin",data).then(res =>{
+			console.log("스캔",res)
+			if(res.data == "윤정"){
+				alert("httpsession에 담기");
+			}
+
+		})
+	}
+
+
+	const jcChat = document.querySelector("#jcChat");
+	const jcTxt = document.querySelector("#jcTxt");
+
+	function jcEnter(){
+		if(event.keyCode == 13){ // 엔터키는 13번
+			jcSend();			 // 이걸로 끝
+		}	
+	}
+
+	function jcSend(){
+		if(!jcmcSoc){
+			alert("버튼을 먼저 누르세요");
+			return;
+		}
+
+		let sDiv = document.createElement("div");
+		sDiv.innerHTML = jcTxt.value;
+		// sDiv.style.border = "1px solid gold";
+		sDiv.style.textAlign = "right";
+		jcChat.appendChild(sDiv);
+
+		// 데이터 구조 설계가 중요(확장성 있게 설계하기, 핵심)
+		let suminVO = {
+			sender: "수민6",
+			receiver: "all",
+			kind: "chat",
+			msg: jcTxt.value
+		}
+
+		// 				직렬화
+		jcmcSoc.send(JSON.stringify(suminVO)); 
+		// jcmcSoc.send(jcTxt.value);
+		jcTxt.value=""; // 다시 입력 가능하도록 만들기
+		jcTxt.focus(); // 커서 두기
+
+	}
+
+	let jcmcSoc = null;
+	function conn(){
+		// 클라이언트 사이드 웹소켓, http => ws, https => wss, 자동으로 접속 시도
+		// 개발 시, localhost 쓰거나, ip를 테스트 해야 하는데, 그때마다 바꾸기가 귀찮다면?
+
+		// http://localhost:포트번호/.....
+		let jcName = location.href.split("/")[2] // 주소표시줄을 읽는 객체
+		jcmcSoc = new WebSocket(`ws://${jcName}/jcmc`);
+		// jcmcSoc = new WebSocket("ws://192.168.141.3:8080/jcmc");
+	
+
+
+	// 접속에 성공하면 자동으로 onopen 이벤트 발생 (중요)
+	jcmcSoc.onopen = () => { // 여기서, let jcmcsoc로 두면 오류가 난다
+		console.log("웹 소켓 연결 되었습니다")
+		// jcmcSoc.send("안녕"); // send 메소드로 중개소(endpoint)에 메세지를 보낼 수 있음
+	}
+
+	// 서버에서 메세지가 도착하면 자동으로 onmessage 이벤트 발생 (중요)
+	jcmcSoc.onmessage = () => {
+		console.log("서버로부터 온 메시지", JSON.parse(event.data));
+		let rJson = JSON.parse(event.data);
+
+		if(rJson.sender == "유저"){
+			alert(`${rJson.sender}님이 접속했습니다`)
+		}
+
+		let rDiv = document.createElement("div");
+		// rDiv.style.border = "1px solid orange";
+		rDiv.style.textAlign = "left";
+		rDiv.innerHTML = rJson.msg;
+		jcChat.appendChild(rDiv);
+		jcChat.scrollTo(0,jcChat.scrollHeight); // 스크롤바를 항상 바닥에
+
+	}
+
+	// 별로 안중요
+	 jcmcSoc.onclose = () => {
+		console.log("웹 소켓이 닫히면 자동으로 실행된다")
+	 }
+
+	// 별로 안중요
+	 jcmcSoc.onerror = () => {
+		console.log("에러 발생")
+	 }
+	}
+</script>
+</body>
+</html>

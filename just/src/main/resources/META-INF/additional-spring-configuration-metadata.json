@@ -1,0 +1,22 @@
+{"properties": [
+  {
+    "name": "jinwo.age",
+    "type": "java.lang.String",
+    "description": "A description for 'jinwo.age'"
+  },
+  {
+    "name": "jinwo.memo",
+    "type": "java.lang.String",
+    "description": "A description for 'jinwo.memo'"
+  },
+  {
+    "name": "upload.savedir",
+    "type": "java.lang.String",
+    "description": "A description for 'upload.savedir'"
+  },
+  {
+    "name": "upload.webpath",
+    "type": "java.lang.String",
+    "description": "A description for 'upload.webpath'"
+  }
+]}

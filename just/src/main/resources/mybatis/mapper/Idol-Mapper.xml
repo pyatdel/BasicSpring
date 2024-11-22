@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sumin.just.mapper.IdolMapper">
+
+<select id="getIdols" resultType="IdolVO">
+ select * from tb_idol
+</select>
+
+<select id="getIdol" parameterType="IdolVO" resultType="IdolVO">
+ select * from tb_idol
+   where idol_id = #{idolId}
+</select>
+
+<insert id="insIdol" parameterType="IdolVO">
+<selectKey keyProperty="idolId" resultType="int" order="BEFORE">
+  select sumin_seq.nextval from dual
+</selectKey>
+INSERT INTO tb_idol (
+    idol_id,
+    idol_name,
+    idol_age,
+    idol_sajin
+) VALUES ( 
+    #{idolId},
+    #{idolName},
+    #{idolAge},
+    #{idolSajin} 
+)
+</insert>
+
+<update id="updIdol" parameterType="IdolVO">
+UPDATE tb_idol
+SET
+    idol_name = #{idolName},
+    idol_age = #{idolAge},
+<if test="idolSajin == null ">
+    idol_sajin = idol_sajin
+</if>    
+<if test="idolSajin != null ">
+    idol_sajin = #{idolSajin}
+</if>    
+WHERE
+    idol_id = #{idolId}
+</update>
+
+
+<delete id="delIdol" parameterType="IdolVO">
+DELETE FROM tb_idol
+	WHERE
+    idol_id = #{idolId}
+</delete>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

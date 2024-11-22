@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>수족관</title>
+<style>
+	#inIdol{
+		display:none; 
+	}
+	#kjModal{
+		position: fixed;
+		width:100%;
+		height:100%;
+		left:0; top:0;
+		background-color: rgba(255,0,255,0.7); /* div는 기본적으로 투명 */
+		display: none;
+	}
+	#kjCont{
+		width: 60%;
+		height:500px;
+		margin:50px auto;
+		background-color: blueviolet;
+	}
+	#suminImg{
+		display: block;
+		width:100%;
+		min-height: 300px;
+		max-height: 300px;
+		border:1px solid black;
+	}
+</style>
+</head>
+<body>
+	<!-- 모달 -->
+	<div id="kjModal">
+		<div id="kjCont">
+			<form id="suminForm2" >
+			<fieldset>
+				<legend>배럭스</legend>
+				<img src="" id="suminImg" alt="수민6"><br>
+				<input type="hidden" name="idolId" id="idolId" value="">
+				이름 <input type="text" name="idolName" id="idolName" value="" readonly><br> 
+				나이 <input type="text" name="idolAge"id="idolAge" value="" ><br> 
+				사진 <input type="file" name="idolSajin" id="idolSajin" value="" accept=".jpg,.png,.gif"><br>
+				<button id="upBtn" type="submit">수정</button>
+               <button type="button" onclick="remIdol(this)">삭제</button>
+               <button type="button" onclick="suminClose()">X</button>
+			</fieldset>
+		</form>
+		</div>
+	</div>
+	<!-- 내용 -->
+	<h1>&copy; 가오리는 눈이 몇개</h1>
+	<button onclick="sTog()">add</button><br>
+	<div id="inIdol">
+		<form id="suminForm" enctype="">
+			<fieldset>
+				<legend>수민 컴퍼니</legend>
+				이름 <input type="text" name="idolName2" id="idolName2" value="" required><br> 
+				나이 <input type="text" name="idolAge2"id="idolAge2" value="" required><br> 
+				사진 <input type="file" multiple name="idolSajin2" id="idolSajin2" value="" accept=".jpg,.png,.gif"><br>
+				<button id="regBtn" type="submit">등록</button>
+			</fieldset>
+		</form>
+	</div>
+	<div id="idolList"></div>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script>
+
+	// 전역 변수
+let isShow = false; // 안보이는 상태 default
+const inIdol = document.querySelector("#inIdol");	
+const suminForm = document.querySelector("#suminForm");
+const suminForm2 = document.querySelector("#suminForm2");
+const suminFile = document.querySelector("#idolSajin2");
+const kjModal = document.querySelector("#kjModal");
+
+// then/catch/finally도 중첩되면 눈이 어지러워서 async / await 가 나왔다
+async function mgdel(idolId, totalCnt){
+	alert(`스캔 ${idolId}`)
+	let resp = await fetch(`/api/idols/${idolId}`,{ method:"delete"});
+	let rslt = await resp.text();
+	if(rslt == 1){
+		alert(`${idolId} 플레이그`)
+		delCnt++; // 1(성공일 때, 지울 수 있다)
+		if(delCnt == totalCnt){
+			alert("원코인" + delCnt);
+			getList();
+		}
+	}
+} 
+
+// 다른 방법
+const suminDel = async () => {
+  let suminCks = document.querySelectorAll("[ymg]:checked");
+  let valArr = []; // 빈 배열
+  for(let i=0; i<suminCks.length; i++){
+    valArr.push(suminCks[i].value); // 배열에 idolId 담기
+  }
+
+  let resp = await fetch("/api/idols/multi", {
+    method: "delete",
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8"
+    },
+    body: JSON.stringify(valArr) // valArr로 쓰면 안되고, 문자열로 작성해야 하므로, JSON.stringify(valArr) 로 작성해야 한다
+  });
+
+  let rslt = await resp.json();
+  console.log("체킁:", rslt);
+  if(rslt.msg == "success"){
+    getList(); // 리스트 다시 뿌리기
+  }
+};
+
+// 버튼 클릭 시 실행되는 함수, 이게 좀 더 좋다
+function suminDownLoad(imgURL){ // 
+	alert("스캔")
+	let suminFilename = imgURL.split("/")[2];
+	let suminA = document.createElement("a");
+	suminA.href = imgURL;
+	suminA.download = suminFilename;
+	suminA.click(); //  jquery에서는.. => $("선택자").trigger("click")
+}
+
+let delCnt=0;
+
+// 전역 함수
+function selRev(psBtn){
+	// 선택박스 체크하면 삭제되도록..
+	// 체크된 체크박스만 가져오기
+	let suminCks = document.querySelectorAll("[ymg]:checked") // form문을 돌려도 되지만..
+	// 비동기 사용시 고급 테크닉, 모르면 비효율적 소스를 짜게 된다.
+	let delCnt = 0;
+	for(let i=0; i<suminCks.length; i++){ // 눈으로 보여줌
+		let ckbox = suminCks[i];
+		mgdel(ckbox.value.length);
+
+		/* 비동기 개념상 엉터리, 지금은 데이터 양이 적어서 성공하지만 데이터가 많으면 일부 실패
+		delCnt++;
+		if(delCnt == suminCks.length){
+			getList();
+		}
+		*/
+
+
+		/*
+		fetch(`/api/idols/${ckbox.value}`,{
+			method:"delete"
+		}).then(resp => {
+			resp.text().then(rslt => {
+				console.log(`${ckbox.value}스톰`);
+
+				delCnt++;
+				if(delCnt == suminCks.length){
+					getList();
+					}
+				})
+			})*/
+		}
+	}
+	/*
+	for(let i=0; i<suminCks.length; i++){ // 눈으로 보여줌
+		concsole.log("체크", suminCks)
+		}	
+		*/
+
+	// 일단 사기 방법 : 대략 시간 예측
+	/*
+	setTimeout(()=>{
+		getList();
+		
+	},200)
+	*/
+		
+
+	
+
+
+
+
+function remIdol(pBtn){
+   let idolId = pBtn.closest("form").idolId.value;
+   alert(`/api/idols/${idolId}`);  // 눈으로 url확인
+
+   fetch(`/api/idols/${idolId}`,{
+      method:"delete"
+   }).then(resp => {
+      resp.text().then(ymg=>{
+         if(ymg == 1){
+            alert("이레딧");
+            suminClose();
+            getList();
+         }
+      })
+   })
+}
+
+
+function suminClose(){
+	kjModal.style.display="none";
+}
+
+function getIdol(pTr){
+	
+	console.log("체크",event.target);
+	// 억지로..
+	let elem = event.target;
+	if(elem.type == "checkbox" || elem.id == "mg"){
+		return; // 아무것도 안하고 그냥 나가기
+	}
+	
+
+	// console.log(pTr.children[0].innerHTML);
+	let idolId = pTr.children[0].innerHTML;
+	// console.log(pTr.children[1].innerHTML);
+	let idolName = pTr.children[1].innerHTML;
+	// console.log(pTr.children[2].innerHTML);
+	let idolAge = pTr.children[2].innerHTML;
+	// console.log(pTr.children[3].children[0].src); // ??
+	let idolImgPath = pTr.children[3].children[0].src; 
+	
+	suminForm2.idolId.value = idolId;
+	suminForm2.idolName.value=idolName;
+	suminForm2.idolAge.value=idolAge;
+	suminForm2.querySelector("#suminImg").src = idolImgPath;
+	
+	
+	kjModal.style.display="block";
+	
+}
+
+
+function sTog(){
+	if(!isShow){
+		inIdol.style.display="block"
+		isShow = !isShow
+		return; // 종료
+	}
+	inIdol.style.display="none"
+	isShow = !isShow
+}
+
+suminForm2.onsubmit = function(){
+	event.preventDefault();
+	// 파일을 선택한다는 건, 전송 시 파일을 보낸다는 뜻
+	let formData = new FormData(); // ajax로 파일을 보내려면 무조건!
+	formData.append("idolId",suminForm2.idolId.value);
+	formData.append("idolName",suminForm2.idolName.value);
+	formData.append("idolAge",suminForm2.idolAge.value);
+	// 사용자가 파일을 선택했을 수도, 안했을 수도, 이런 경우의 업무 규칙을 정해야 한다
+	
+	if(suminForm2.idolSajin.files.length){ // 파일 선택을 했다면
+		formData.append("idolFiles",suminForm2.idolSajin.files[0]);
+	}
+	
+	fetch("/api/idols2",{
+        method:"put",
+        body:formData
+     }).then(resp => {
+        resp.text().then(rslt => {
+            console.log("체크:",rslt);  // 아마 1 
+            if(rslt == 1){
+               alert("메딕");
+               suminClose();  // 모달 닫기
+               getList();     // 리스트 다시 뿌리기
+            }
+        })
+     })
+	
+	// formData.append("idolFiles","");
+}
+
+
+suminForm.onsubmit = function(event){
+   event.preventDefault(); // 기본 이벤트 기능을 막을 때 사용, 여러 곳에서 사용 가능(form 태그에서만 사용하는 게 아님)
+   // built - in 기능막기
+   
+   
+
+   /*
+   let idolVO = {
+       idolName: document.querySelector("#idolName").value,
+       idolAge: document.querySelector("#idolAge").value,
+       idolSajin: document.querySelector("#idolSajin").value
+   }
+   console.log("idolVO", idolVO); // 습관적으로 꼭 눈으로 체크
+   */
+   
+   // 보낼 데이터에 파일이 포함되었다면 무조건 FormData생성
+   // multi-part/formData 형식(정확히는 binary)
+   
+   let formData = new FormData();
+   formData.append("idolName", document.querySelector("#idolName2").value);
+   formData.append("idolAge", document.querySelector("#idolAge2").value - 0);
+   // formData.append("idolSajin",document.querySelector("#idolSajin").value); // 이렇게 하면 파일명만 넘어간다
+   // formData.append("idolFile",suminFile.files[0])
+   
+   console.log("체크", suminFile.files); // 디버깅용
+   // console.log("눈으로 확인",suminFile.files)
+   // 파일 리스트를 그대로 담으면 안되고, 1개씩
+   // formData.append("idolFiles",suminFile.files)
+   for(let i=0; i<suminFile.files.length; i++){
+	   alert("디버깅용");
+	   formData.append("idolFiles",suminFile.files[i])
+   }
+   
+   fetch("/api/idols2", {
+       method: "post",
+       body: formData // FormData는 절대 JSON.stringify를 하지 않는다
+   }).then(resp => {
+       resp.text().then(rslt => {
+           if(rslt == 1) 
+  
+        	   getList()
+           else alert("fail")
+
+		   let suminTrs = document.querySelectorAll("tbody > tr ");
+		   for(let i=0; i<suminTrs.length; i++){
+			let firstTD = suminTrs[i].children[0];
+			if(firstTD.innerHTML == rslt){ // rslt는 새로 추가된 idolId
+				suminTrs[i].style.backgroundColor="black";
+				suminTrs[i].style.color="pink";
+				suminTrs[i].style.fontWeight="bold";
+				break; // 더 찾을 게 없음
+
+			}
+		   }
+
+       })
+   })
+}
+   
+   
+   /*
+   // 직접 ajax로 서버와 통신..어리 spa닉
+   fetch("/api/idols", {
+       method: "post",
+       headers: {
+           "Content-Type": "application/json"
+       },
+       body: JSON.stringify(idolVO)
+   }).then(resp => {
+       resp.text().then(rslt => {
+           if(rslt == 1) getList()
+           else alert("fail")
+       })
+   })
+}
+*/
+
+const idolList = document.querySelector("#idolList");
+getList(); // 리스트 출력
+
+// idol 리스트 가져오기, 재활용을 위해 함수화시킴, 이름만 가지고 호출할 수 있게
+function getList(){
+	fetch("/api/idols").then(res => {
+		   res.json().then(rslt => {
+		       console.log("체크:", rslt);
+		       // rslt = rslt.sort((a,b) => a.idolAge - b.idolAge)
+
+		       let tblStr = `
+		           <table border=1 width=700>
+		           <thead>
+		               <tr>
+		                   <th>ID</th>
+		                   <th>이름</th>
+		                   <th>나이</th>
+		                   <th>사진</th>
+						   <th><button onClick="suminDel()">선택삭제</button></th>
+		               </tr>
+		           </thead>
+		           <tbody>
+		       `;
+
+		       for(let i=0; i < rslt.length; i++){
+		           let idol = rslt[i];
+
+				   let suminFileName = idol.idolSajin.split("/")[2] /*  /jcmc/파일명 */ // split은 무조건 배열이 되니까...
+				   let tblStr = `
+					   <td id="mg">
+					     <input type=checkbox ymg value=${idol.idolId}>
+					     <a href="https://ojsfile.ohmynews.com/STD_IMG_FILE/2023/0508/IE003147553_STD.jpg" 
+					        download="${suminFileName}">네네</a>
+					     <a href="${idol.idolSajin}" 
+					        download="${suminFileName}">다운로드</a>
+					     <button onclick=suminDownLoad('${idol.idolSajin}')>클릭 다운로드</button>
+					   </td>
+					 `;
+		       }
+
+		       tblStr += `</tbody></table>`;
+		       idolList.innerHTML = tblStr;
+		   })
+		})
+}
+
+
+/*
+axios.get("/api/idols")
+.then(response => {
+   let rslt = response.data;
+   console.log("체크:",rslt); // 결과 콘솔 출력ㅗ
+   rslt = rslt.sort((a,b)=> a.idolAge - b.idolAge) // 나이순 정렬
+
+   let tblStr = ` // 테이블 HTML 시작
+   <table border=1 width=700 >
+   <thead>
+       <tr>
+           <th>ID</th>
+           <th>이름</th>
+           <th>나이</th>
+           <th>사진</th>
+       </tr>
+   </thead>
+   <tbody>
+   `;
+
+   for(let i=0; i< rslt.length; i++){ // 데이터로 테이블 행 생성
+       let idol = rslt[i];
+
+       tblStr += `
+       <tr>
+           <td>${idol.idolId}</td>
+           <td>${idol.idolName}</td>
+           <td>${idol.idolAge}</td>
+           <td>${idol.idolSajin}</td>
+       </tr>
+       `;
+   }
+
+   tblStr += `</tbody></table>`; // 테이블 HTML 종료
+   idolList.innerHTML = tblStr; // DOM에 테이블 삽입
+})
+*/
+</script>
+</body>
+</html>

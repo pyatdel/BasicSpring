@@ -1,0 +1,93 @@
+파일 업로드 시스템의 구조와 흐름
+
+1. 기본 구조 (MVC 패턴)
+
+ -클라이언트 (index.html) -> Controller -> Service -> Mapper -> DB
+ -IdolController.java: 클라이언트 요청 처리
+ -IdolVO.java: 데이터 객체
+ -Service: 비즈니스 로직 처리 (필요시 인터페이스 활용
+
+
+2. 파일 업로드 처리 과정
+
+// Controller 예시
+@PostMapping("/upload")
+public String handleFileUpload(@RequestParam("file") MultipartFile file) {
+    // 파일 처리 로직
+}
+
+
+3. 클라이언트 측 구현
+
+<!-- 파일 업로드 폼 -->
+<form enctype="multipart/form-data">
+    <input type="file" name="file" multiple>
+    <!-- multiple 속성: 다중 파일 선택 가능 -->
+</form>
+
+
+4. Ajax를 통한 파일 전송
+
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+
+$.ajax({
+    url: '/upload',
+    type: 'POST',
+    data: formData,
+    processData: false,  // 중요!
+    contentType: false   // 중요!
+});
+
+주요 개념 설명
+
+1. 파일 저장 방식
+
+ -DB에 직접 파일을 저장하지 않고 경로만 저장
+ -이유: DB 자원의 효율적 사용 (비용 절감)
+ -실제 파일은 서버의 물리적 저장소에 저장
+
+
+2. 보안 관련
+
+ -사용자는 실제 물리적 저장 경로를 알 수 없음
+ -Web URL을 통한 접근 방식 사용
+ -DRM(Digital Rights Management) 고려
+
+
+3. MultipartFile 처리
+
+String getOriginalFilename()  // 원본 파일명
+void transferTo(File dest)    // 파일 저장
+boolean isEmpty()             // 파일 존재 여부
+
+
+실제 구현 시 고려사항
+
+1. 예외처리
+
+try {
+    // 파일 저장 로직
+} catch (IOException e) {
+    // 에러 처리
+}
+
+
+2. 파일 검증
+
+if (file.isEmpty()) {
+    throw new IllegalArgumentException("파일이 비어있습니다.");
+}
+
+
+3. 보안 설정
+
+// 웹 리소스 접근 설정
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+               .addResourceLocations("file:///C:/uploads/");
+    }
+}

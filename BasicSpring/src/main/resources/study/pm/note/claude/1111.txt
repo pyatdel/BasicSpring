@@ -1,0 +1,137 @@
+1.테스트 관련 어노테이션
+
+@Disabled    // 해당 테스트 비활성화
+@DisplayName("수정테스트")    // 테스트 이름 지정
+
+
+2. 데이터베이스 개념
+
+# 외래키(Foreign Key)
+- 참조 무결성을 보장하기 위한 제약조건
+- 다른 테이블의 데이터를 참조할 때 사용
+- 잘못된 데이터 입력 방지
+
+# 정규화
+- 데이터베이스의 중복을 제거
+- N:N 관계는 1:N 관계로 분리하는 것이 좋음
+
+
+3. 인터페이스 개념
+
+# 인터페이스의 장점
+- Top-Down 방식의 개발 규제 가능
+- 다형성 구현
+- 추상화를 통한 객체 관리
+* 필요에 따라 인터페이스 없이 구현체만으로도 개발 가능
+
+
+4. HTTP 메서드
+
+GET     - 조회(Select)
+POST    - 생성(Insert)
+PUT     - 수정(Update)
+DELETE  - 삭제(Delete)
+
+# REST API URL 예시
+전체목록: /idols
+특정항목: /idol/{idolId}
+
+
+5. Promise와 Fetch API를 Axios로 변경
+
+// Fetch 버전
+fetch("/api/idols")
+    .then(res => res.json())
+    .then(rslt => {
+        console.log("체크", rslt);
+        // 나이순 정렬
+        rslt = rslt.sort((a,b)=> a.idolAge - b.idolAge);
+        
+        // 테이블 생성
+        let tblStr = `
+            <table border=1>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>이름</th>
+                        <th>나이</th>
+                        <th>사진</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        // 데이터 행 추가
+        rslt.forEach(idol => {
+            tblStr += `
+                <tr>
+                    <td>${idol.idolId}</td>
+                    <td>${idol.idolName}</td>
+                    <td>${idol.idolAge}</td>
+                    <td>${idol.idolSajin}</td>
+                </tr>
+            `;
+        });
+        
+        tblStr += `</tbody></table>`;
+        idolList.innerHTML = tblStr;
+    });
+
+// Axios 버전
+axios.get("/api/idols")
+    .then(response => {
+        let rslt = response.data;
+        console.log("체크", rslt);
+        // 나이순 정렬
+        rslt = rslt.sort((a,b)=> a.idolAge - b.idolAge);
+        
+        // 테이블 생성
+        let tblStr = `
+            <table border=1>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>이름</th>
+                        <th>나이</th>
+                        <th>사진</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        // 데이터 행 추가
+        rslt.forEach(idol => {
+            tblStr += `
+                <tr>
+                    <td>${idol.idolId}</td>
+                    <td>${idol.idolName}</td>
+                    <td>${idol.idolAge}</td>
+                    <td>${idol.idolSajin}</td>
+                </tr>
+            `;
+        });
+        
+        tblStr += `</tbody></table>`;
+        idolList.innerHTML = tblStr;
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+    
+    
+    Axios vs Fetch 차이점:
+
+Axios
+
+응답 데이터를 자동으로 JSON 변환
+더 간단한 에러 핸들링
+브라우저 호환성이 더 좋음
+설정이 더 직관적
+
+
+Fetch
+
+브라우저 내장 API
+별도 설치 불필요
+응답을 수동으로 JSON 변환 필요
+더 상세한 제어 가능

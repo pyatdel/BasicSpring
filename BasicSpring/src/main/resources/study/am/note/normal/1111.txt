@@ -1,0 +1,86 @@
+insert 확인요청URI : /board/updatePost
+   요청파라미터 : request{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+   요청방식 : post
+    */
+   @??Mapping(value="??",method=RequestMethod.??)
+   public String updatePost(?? boardVO) {
+      //1. boardVO 로그 찍어보자
+      
+      //2. 서비스레이어 호출->퍼시스턴스 레이어 호출->DB update 처리(매퍼xml)
+      int result = 
+      //3. 결과를 로그 찍어보자
+      log.info("updatePost->result : " + result);
+      
+      //4. 상세화면으로 redirect. URI를 재요청)
+      return "??:/detail?boNo="+boardVO.??;
+   }
+
+프리젠테이션	서비스		퍼시스턴스	XML
+jsp		service(I)		dao		XML
+controller	(C)	serviceimpl(C)	Mapper(I)
+
+
+forwarding -> "board/detail"  ... jsp응답
+redirect	-> "redirect"/board/detail?boNo=" + BoardVO.getBoNo(?)
+
+PostMapping ("/detail")
+RequestMapping (method=Request.Post)
+
+
+
+
+//2. 삭제버튼 클릭 시 글 삭제 처리
+   //<button type="button" id="delete" class="btn btn-primary">삭제</button>
+   $("??").on("click",function(){
+      /*2-1.
+      전 : <form id="frm" action="/board/insertPost" method="post">
+      후 : <form id="frm" action="/board/deletePost" method="post">
+      */
+      $("??").??("action","/board/deletePost");
+      
+      //2-2. 안내 경고창 띄우기
+      // result : true(1) / false(0)
+      let result = ??("삭제하시겠습니까?");
+      
+      if(result>0){//1(삭제함)
+         $("??").submit();
+      }else{//0(삭제안함)
+         alert("삭제가 취소되었습니다.");
+      }
+   });
+
+
+
+/*
+   요청URI : /list?keyword=알탄&currentPage=1 or /list or /list?keyword=&currentPage=
+   요청파라미터 : keyword=알탄&currentPage=1 or /list or /list?keyword=&currentPage=
+    요청방식 : get
+   */
+   public String list(@??(value="keyword",required=??,defaultValue=??) String keyword,
+         @??(value="currentPage",required=??,defaultValue=??) int currentPage,
+         Model model) {
+      
+      log.info("list->keyword : " + keyword);
+      log.info("list->currentPage : " + currentPage);
+      
+      Map<String,Object> map = new ??;
+      map.put("keyword",keyword);
+      map.put("currentPage",currentPage);
+      log.info("list->map : " + map);
+      
+      List<??> boardVOList = this.boardService.list(map);
+      log.info("list->boardVOList : " + boardVOList);
+      
+      //select 결과 목록을 데이터로 넣어줌. jsp로 리턴될것임
+      model.addAttribute("boardVOList", boardVOList);
+      //forwarding
+      return "??";
+   }
+
+
+
+사진에서 키워드 하나씩 가리면서 맞춰보기
+게시물 삭제 부분(board_mapper 주석 보기)
+
+1112 수업 예정
+페이지네이션

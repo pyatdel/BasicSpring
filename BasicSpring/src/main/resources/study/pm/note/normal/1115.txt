@@ -1,0 +1,160 @@
+index 다운로드
+elem 숙제 확인
+Singer
+
+
+내 서버에 있는 것만 다운로드가 되고 다른 서버에 있는 거라면, 새 창이 열린다
+-> 쉽게 이미지를 가져갈 수 있다(영상도 가능)
+-> 안전장치가 필요하다
+
+a tag download는 내 서버에 있는 파일에만 적용된다., 다른 서버(도메인)에 있는 파일에 걸면
+그냥 브라우져 새 탭이 열려버린다
+
+event		unevent
+
+atag 안에 쓸 때만, 함수명() // 이렇게 하면 매개변수 값도 줄 수 있다
+ㄴ 이걸 스크립트 안에서 쓰면 또 다르다
+
+>> 많이 헷갈리는 부분이니까, 정리를 해두자
+
+비동기 / threael
+ >> worker
+
+I/O 작업은 비동기
+ㄴ 무지 크다
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+<style>
+
+
+	#mgJS{
+		border: 10px groove gold;
+		width: 400px;
+		height: 400px;
+	}
+</style>
+</head>
+<body>
+	<h1>투혼</h1>
+	<div id="mgJS" ondragover="jcOver()" ondrop="jcDrop()"></div>
+<script>
+	const mgJS = document.querySelector("#mgJS");
+
+	/*
+	function jcOver(){
+		event.preventDefault();
+	}
+
+	function jcDrop(){
+		event.preventDefault();
+	}
+	*/
+
+	function jcDrop(){
+		event.preventDefault();
+		mgJS.innerHTML = ""; // 기존 꺼 지우기
+
+		// console.log("끌고 온 파일들:",event.dataTransfer.files);
+		// 여러 개 넣어보기
+		let jcFile = event.dataTransfer.files[0];
+
+		// 인간은 binary 파일을 못읽는다. 눈이 어지러움 ex) 10101110010100010 ...
+		let fileReader = new FileReader(); // 파일을 읽어준다
+		fileReader.readAsDataURL(jcFile); // 이건 빨리 될 수도, 늦게 될 수도 있다. 그래서 비동기로 작동된다
+		fileReader.onload = function(){ // 다 읽었을 때, 작동
+		// console.log(fileReader.result); // 읽은 결과가 result 속성에 담겨있다
+
+		let imgTag = document.createElement("img");
+		imgTag.src = fileReader.result;
+		imgTag.width=150;
+		imgTag.height=150;
+		mgJS.appendChild(imgTag); // 나온다
+
+		}
+
+	}
+
+		function jcOver(){
+			event.preventDefault();
+		}
+
+	
+	// div 외부도 막아야 한다
+
+	window.addEventListener("WOW", jcOver);
+	window.addEventListener("wow", jcOver);
+
+</script>
+</body>
+</html>
+
+
+var와 let의 차이..
+때문이 미리 분리를 하는 게 일종의 규칙
+
+비동기는 반복문이 있으면 계속해서 돈다.
+그래서 스크립트에서는 함수가 중요하다
+
+이 문구는 안 보고 쓸 정도로 익숙해져야 한다
+fetch("/api/shcomplex",{
+			method:"post",
+			body:formData
+		}).then(resp => {
+			resp.text().then(rslt => {
+				console.log("스캔",rslt)
+			})
+		})
+
+
+
+function handleImg(e){
+	console.log("스캔");
+	
+	// 이미지 오브젝트들
+	let files =  e.target.??;
+	
+	// 이미지 오브젝트 배열(a.jpgb.jpgc.jpg)
+	let fileArr = Array.??.slics.??(files);
+	
+	// 미리보기 영역 초기화
+	$("#divImage").??("uploadFile");
+	
+	fileArr.??(functon(f){
+		if(!.type.match("image.*")){
+			alert("이미지 확장자만 가능합니다");
+			return; // 함수 종료
+		}
+		// 이미지 읽기
+		let reader = new ??;
+		// e : 읽는 이벤트
+		reader.?? = function(e){
+			let img = "<img src=" + e.target.result + "style='width:200%' />";
+			// 누적 : append(), 덮어쓰기 : html()
+			$("#??").??(img);
+		}
+		reader.readAsDataURL(f);
+	});
+}
+
+$(function(){
+	$("#uploadFile").on("change",handelImg);
+});
+
+다른 클래스의 메소드를 참조하려면..
+(다른 클래스명).(다른메소드) 
+형태로
+
+@RequestPart 실력을 나타내는 지표( ajax의 끝)
+
+// 이거만 사용하면 된다.
+formData.append("yjPlus",new Blob([JSON.stringify(jcArr)] // 비에로비
+		,{type:"application/json;charset=utf-8"})); // jackson라이브러리를 사용하려고 추가한 곳
+
+
+broadcast - 서버중개소
+p2p - 사람끼리
