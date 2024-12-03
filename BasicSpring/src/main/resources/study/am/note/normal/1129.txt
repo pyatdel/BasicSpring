@@ -1,0 +1,61 @@
+계층형 게시판
+다중 파일 업로드
+ㄴ 비동기
+ㄴ formdata
+
+페이지네이션
+ㄴ 비동기
+ㄴ ArticlePage
+
+동기 - 주고받고주고받고 
+비동기  - 일방적
+
+차이 : 동기는 오류가 생기면 시스템이 멈추지만, 비동기는 오류가 생겨도 시스템이 멈추지 않는다.
+
+내부조인 inner join equi join
+오른쪽을 부각 right outer join 
+왼쪽을 부각 left outer join
+
+자료형과 크기가 같으면 서로 참조가 가능하다(이름까지 같으면 금상첨화!)
+
+1 : 1 관계는 association
+1: N 관계는 collection
+________________________________________________________________(잊지 말기)
+
+<label for="memBir">회원사진</label>
+              <input type="file" class="form-control" id="uploadFiles" 
+              		name="uploadFiles" value="" 
+              		placeholder="회원사진" multiple/>
+>> 중요 요소 : for, type, id, name
+
+ - input type에 file을 썼다면, enctype="multipart/form-data" 를 써주자 
+
+ - 동기, 비동기를 사용할 땐, uri, 파라미터, 방식이 꼭 붙는다
+
+
+file을 작성할 땐, MultipartFile[] uploadFiles;
+
+
+____________________________________________ (연습)
+
+// 2. 다중 파일 업로드 처리 (파일 + DB)
+		
+		MultipartFile[] uploadFiles = memberVO.getUploadFiles();
+		long uploadFiles1 = this.uploadController.multiImageUpload(uploadFiles);
+		
+		return result;
+		
+	}
+
+responsebody를 안쓰면,
+
+result를 쓰면 안된다 
+
+
+
+netstat -a -o
+
+taskkill -f -pid 포트번호
+
+
+

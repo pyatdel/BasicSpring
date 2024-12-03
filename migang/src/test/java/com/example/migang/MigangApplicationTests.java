@@ -1,10 +1,10 @@
-package kr.or.ddit;
+package com.example.migang;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BasicSpringApplicationTests {
+class MigangApplicationTests {
 
 	@Test
 	void contextLoads() {

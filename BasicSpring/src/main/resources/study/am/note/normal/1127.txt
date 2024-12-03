@@ -1,0 +1,21 @@
+
+부모키는 자식에게 전이
+자식은 부모키를 참조
+
+식별관계(위)는 실선으로 표기
+비식별관계(아래)는 점선으로 표기
+
+자바빈(프로퍼티,기본생성자,getter/setter메서드) 클래스
+스프링삼각형(PSA, PoJo,IoC,DI,AOP)
+
+
+리스트를 출력할 때는 
+<c:forEach v i v>
+잊지 말기
+
+update를 할 때는 
+<form action="" method="">
+잊지 말기
+
+
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>

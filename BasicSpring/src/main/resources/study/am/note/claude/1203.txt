@@ -1,0 +1,76 @@
+1. 데이터베이스 기본 개념
+
+TCL(Transaction Control Language)
+
+COMMIT: 트랜잭션 완료 및 변경사항 저장
+ROLLBACK: 트랜잭션 취소 및 이전 상태로 복구
+SAVEPOINT: 트랜잭션 내 중간 저장점 설정
+
+
+트랜잭션(Transaction): 데이터베이스 변경을 위한 논리적 작업 단위로, 여러 SQL문으로 구성됨
+
+
+2. 테이블 설계 규칙
+
+Primary Key(PK)와 Foreign Key(FK) 관계
+
+동일한 자료형과 크기를 가져야 함
+데이터도 일치해야 함
+
+
+조인 조건 규칙: 필요한 조인 조건의 수 = 테이블 수 - 1
+
+
+3. 실제 구현 예시 (MEMBER_REPLY 테이블)
+
+주요 필드:
+
+IDX: 기본키(Primary Key)
+MEM_ID, USER_ID: 외래키(Foreign Key)
+PARENT_IDX: 댓글 구조 표현
+
+NULL: 일반 댓글
+IDX값 참조: 대댓글
+
+
+REPLY_STATUS: 상태값 ('1'이 기본값)
+
+
+
+
+4. 서브쿼리 활용
+
+SCALAR 서브쿼리: SELECT절에 사용되는 서브쿼리
+주요 활용 사례:
+
+회원 정보 조회(이름, 프로필 사진 등)
+계층형 댓글 구조 구현
+
+
+5. 계층형 쿼리 구조
+
+START WITH PARENT_IDX IS NULL
+CONNECT BY PRIOR IDX = PARENT_IDX
+ORDER SIBLINGS BY IDX
+
+댓글과 대댓글의 계층 구조를 표현
+PARENT_IDX로 관계 설정
+
+
+6. 웹 구현 관련
+
+컨트롤러 파라미터 처리 방식:
+
+@RequestParam
+@ModelAttribute
+일반 객체(MemberReplyVO)
+Map<String,Object>
+
+
+댓글 시스템 UI 구현:
+
+댓글 입력 폼
+대댓글 입력 기능
+계층형 구조 표시
+
+

@@ -124,25 +124,7 @@ ______________________________
 ㄴ 기본키와 참조키를 잘 설정하면..
 
 
-Create (생성):
-
-SQL에서는 INSERT 문을 사용
-HTTP에서는 POST 메소드 사용
-
-
-Read (읽기):
-
-SQL에서는 SELECT 문을 사용
-HTTP에서는 GET 메소드 사용
-
-
-Update (수정):
-
-SQL에서는 UPDATE 문을 사용
-HTTP에서는 PUT 메소드 사용
-
-
-Delete (삭제):
-
-SQL에서는 DELETE 문을 사용
-HTTP에서는 DELETE 메소드 사용
+C: Create-INSERT-POST
+R: Read-SELECT-GET
+U: Update-UPDATE-PUT
+D: Delete-DELETE-DELETE

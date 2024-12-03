@@ -1,0 +1,120 @@
+1. DTO vs VO
+
+
+DTO (Data Transfer Object)
+
+레이어 간 데이터 전송을 위한 객체
+getter/setter를 가지며 데이터 수정 가능
+상태를 변경할 수 있는 가변 객체
+예: 회원가입 시 입력된 데이터를 전송하는 UserDTO
+
+
+VO (Value Object)
+
+값 자체를 표현하는 객체
+불변 객체로 구현됨 (읽기 전용)
+equals()와 hashCode() 메서드를 오버라이딩하여 값 비교
+예: Money, Point와 같이 값 자체를 표현하는 객체
+
+
+
+
+2. 테이블 관계 (1:N)
+
+
+상품분류테이블(부모)
+
+Primary Key를 가짐
+하나의 분류가 여러 상품을 가질 수 있음
+
+
+상품테이블(자식)
+
+Foreign Key로 상품분류테이블의 PK를 참조
+각 상품은 하나의 분류에만 속함
+
+
+
+
+3. 컬렉션 프레임워크
+
+
+List (순서 있고, 중복 허용)
+
+ArrayList: 배열 기반, 검색 빠름
+LinkedList: 노드 기반, 삽입/삭제 빠름
+Vector: 스레드 safe (동기화)
+Stack: LIFO 구조
+
+
+Set (순서 없고, 중복 불허)
+
+HashSet: 해시 알고리즘 사용
+SortedSet: 정렬된 Set
+
+
+Map (키-값 쌍)
+
+HashMap: 해시 알고리즘 사용, 동기화 X
+Hashtable: 동기화 지원 (스레드 safe)
+SortedMap: 키를 기준으로 정렬
+
+
+
+
+4. 메소드 시그니처
+
+
+메소드를 구분하는 고유한 식별자
+포함요소:
+
+메소드 이름
+매개변수의 타입과 개수
+매개변수의 순서
+
+
+포함하지 않는 요소:
+
+반환 타입
+접근 제어자
+예외 선언
+
+
+
+
+5. HTTP Status Codes
+
+
+1xx: 정보 응답
+
+100: Continue
+
+
+2xx: 성공
+
+200: OK (요청 성공)
+201: Created (생성 성공)
+204: No Content (성공했지만 응답 본문 없음)
+
+
+3xx: 리다이렉션
+
+301: Moved Permanently (영구 이동)
+302: Found (임시 이동)
+304: Not Modified (캐시 활용)
+
+
+4xx: 클라이언트 오류
+
+400: Bad Request (잘못된 요청)
+401: Unauthorized (인증 필요)
+403: Forbidden (권한 없음)
+404: Not Found (리소스 없음)
+409: Conflict (충돌)
+
+
+5xx: 서버 오류
+
+500: Internal Server Error (서버 내부 오류)
+502: Bad Gateway (게이트웨이 오류)
+503: Service Unavailable (서비스 이용 불가)

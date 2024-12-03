@@ -1,0 +1,83 @@
+1. MyBatis INSERT문 자동 생성 쿼리:
+
+SELECT LISTAGG('#{' || FN_GETCAMEL(COLUMN_NAME) || '}', ',') 
+    WITHIN GROUP(ORDER BY COLUMN_NAME)
+FROM ALL_TAB_COLUMNS
+WHERE TABLE_NAME = 'MEMBER'
+AND OWNER = 'JSPEXAM';
+
+FN_GETCAMEL: 컬럼명을 카멜케이스로 변환하는 함수
+LISTAGG: 여러 행을 하나의 행으로 연결
+결과는 MyBatis INSERT문의 values 부분에 사용될 파라미터 목록
+
+
+
+2. create.jsp 주요 규칙:
+
+// 비동기 통신(AJAX)시
+@RequestBody    // 요청 데이터를 자바 객체로 변환
+@ResponseBody   // 자바 객체를 응답 데이터로 변환
+
+// 새로운 경로로 이동시
+return "redirect:/새로운경로";
+
+
+3. 회원 목록 컨트롤러 메서드 분석:
+
+@GetMapping("/list")
+public String list(
+    @RequestParam(value="currentPage", required=false, defaultValue="1") int currentPage,
+    @RequestParam(required=false) String keyword,
+    Model model) {
+    
+    // 파라미터를 Map으로 구성
+    Map<String,Object> map = new HashMap<String,Object>();
+    map.put("currentPage", currentPage);
+    map.put("keyword", keyword);
+    
+    // 서비스 계층 호출하여 데이터 조회
+    List<MemberVO> memberVOList = this.memberService.list(map);
+    
+    // 전체 레코드 수 조회
+    int total = this.memberService.getTotal(map);
+    
+    // 페이징 처리
+    ArticlePage<MemberVO> articlePage = 
+        new ArticlePage<MemberVO>(total, currentPage, 10, memberVOList, keyword);
+    
+    // 모델에 데이터 추가
+    model.addAttribute("memberVOList", memberVOList);
+    model.addAttribute("articlePage", articlePage);
+    
+    // JSP로 포워딩
+    return "member/list";
+}
+
+
+주요 포인트:
+
+1. @RequestParam 애너테이션
+
+required=false: 필수 파라미터 아님
+defaultValue: 기본값 설정
+
+
+2. 페이징 처리
+
+total: 전체 레코드 수
+currentPage: 현재 페이지
+size: 페이지당 게시물 수(10)
+content: 데이터 목록
+keyword: 검색어
+
+
+3. 요청 처리 흐름
+
+파라미터 받기 → Map 구성 → 서비스 호출 →
+데이터 조회 → 페이징 처리 → 모델에 데이터 추가 → JSP 포워딩
+
+
+4. URL 패턴
+
+기본: /member/list
+페이징/검색: /member/list?currentPage=2&keyword=검색어

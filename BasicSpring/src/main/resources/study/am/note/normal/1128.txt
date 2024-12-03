@@ -1,0 +1,50 @@
+--MYBATIS INSERT문 만들기
+SELECT LISTAGG('#{'||FN_GETCAMEL(COLUMN_NAME)||'}',',') WITHIN GROUP(ORDER BY COLUMN_NAME)
+FROM ALL_TAB_COLUMNS
+WHERE TABLE_NAME = 'MEMBER'
+AND    OWNER = 'JSPEXAM';
+
+create.jsp
+
+비동기일 때, requestbody를 꼭 작성
+데이터를 리턴 받을 때, @ResponseBody를 추가
+새로운 경로는 redirect
+
+
+/*
+    요청URI : /member/list 또는 /member/list?currentPage=2&keyword=개똥이
+    요청파라미터 : 
+    요청방식 : get
+    
+    forwarding : jsp리턴
+    return "member/list";
+    */
+   //RequestMapping(value="/list",method=RequestMethod.GET)
+   @GetMapping("/list")
+   public String list(
+         ? int currentPage,
+         ? String keyword,
+         Model model) {
+      
+      
+      Map<String,Object> map = new HashMap<String,Object>();
+      map.put("currentPage", currentPage);
+      map.put("keyword", keyword);
+      log.info("list->map : " + map);
+      
+      List<MemberVO> memberVOList = this.memberService.list(map);
+      log.info("list->memberVOList : " + memberVOList);
+      
+      //total, currentPage, size, content, keyword
+      int total = ?;//map
+      
+      //페이지 객체 생성
+      ArticlePage<MemberVO> articlePage = 
+            new ArticlePage<MemberVO>(0, 0, 10, memberVOList, keyword);
+      
+      model.addAttribute("memberVOList", memberVOList);
+      model.addAttribute("articlePage", articlePage);
+      
+      //forwarding : jsp리턴
+      return "member/list";
+   }

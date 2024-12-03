@@ -1,13 +1,13 @@
-package kr.or.ddit;
+package com.example.habin;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BasicSpringApplication {
+public class HabinApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BasicSpringApplication.class, args);
+		SpringApplication.run(HabinApplication.class, args);
 	}
 
 }

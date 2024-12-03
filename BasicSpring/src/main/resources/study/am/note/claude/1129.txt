@@ -1,0 +1,109 @@
+1. 계층형 게시판과 다중 파일 업로드:
+
+계층형 게시판과 다중 파일 업로드:
+
+let formData = new FormData();
+formData.append("uploadFiles", files);
+
+$.ajax({
+    url: "/upload",
+    type: "post",
+    data: formData,
+    contentType: false,
+    processData: false,
+    success: function(result) {
+        // 처리 로직
+    }
+});
+
+
+2. 페이지네이션:
+
+// ArticlePage 클래스 활용
+ArticlePage<BoardVO> articlePage = 
+    new ArticlePage<>(total, currentPage, size, content, keyword);
+
+
+3. 동기와 비동기의 차이:
+
+동기(Synchronous): 요청과 응답이 순차적으로 진행
+비동기(Asynchronous): 요청 후 다른 작업 수행 가능
+오류 처리: 동기는 시스템 중단, 비동기는 계속 실행
+
+
+4. 조인의 종류:
+
+-- 내부 조인
+SELECT * FROM A INNER JOIN B ON A.key = B.key
+SELECT * FROM A, B WHERE A.key = B.key  -- EQUI JOIN
+
+-- 외부 조인
+SELECT * FROM A RIGHT OUTER JOIN B ON A.key = B.key
+SELECT * FROM A LEFT OUTER JOIN B ON A.key = B.key
+
+
+5. MyBatis 관계 매핑:
+
+<!-- 1:1 관계 -->
+<association property="member" javaType="MemberVO">
+</association>
+
+<!-- 1:N 관계 -->
+<collection property="attachList" ofType="AttachVO">
+</collection>
+
+
+6. 파일 업로드 폼 작성:
+
+<form enctype="multipart/form-data" method="post">
+    <label for="memBir">회원사진</label>
+    <input type="file" 
+           class="form-control" 
+           id="uploadFiles" 
+           name="uploadFiles" 
+           multiple/>
+</form>
+
+
+7. 파일 업로드 처리:
+
+@PostMapping("/upload")
+@ResponseBody
+public String upload(@RequestParam("uploadFiles") MultipartFile[] uploadFiles) {
+    // 파일 처리 로직
+    return result;
+}
+
+
+8. 포트 관련 명령어:
+
+# 포트 확인
+netstat -a -o
+
+# 프로세스 강제 종료
+taskkill -f -pid [포트번호]
+
+
+주요 포인트:
+
+1. 파일 업로드시 필수 속성:
+
+enctype="multipart/form-data"
+type="file"
+name 속성
+id 속성
+
+
+2. 컨트롤러 작성시:
+
+URI 지정
+요청 파라미터 정의
+요청 방식 지정
+@ResponseBody 사용 여부 결정
+
+
+3. 비동기 처리시 주의사항:
+
+contentType: false
+processData: false
+FormData 객체 활용
