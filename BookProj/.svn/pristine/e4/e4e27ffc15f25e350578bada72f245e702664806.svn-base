@@ -1,0 +1,16 @@
+package kr.or.ddit.service;
+
+import kr.or.ddit.vo.LprodVO;
+
+public interface LprodService {
+
+	//LPROD 테이블에 insert
+	public int createPost(LprodVO lprodVO);
+
+	//상품분류 상세
+	public LprodVO detail(int lprodId);
+
+	//상품분류 수정
+	public int updatePost(LprodVO lprodVO);
+
+}

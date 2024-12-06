@@ -1,0 +1,84 @@
+package kr.or.ddit.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import kr.or.ddit.service.StudService;
+import kr.or.ddit.vo.StudVO;
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/stud")
+@Slf4j
+@Controller
+public class StudController {
+	
+	@Autowired
+	StudService service;
+	
+	/*
+	요청URI : /stud/create
+	요청파라미터 : 
+	요청방식 : get
+	
+	forwarding : "stud/create"
+	 */
+	@RequestMapping(value="/create")
+	public String create() {
+		//forwarding : jsp
+		return "stud/create";
+	}
+	
+	/*
+	  요청URI : /stud/createPost
+      요청파라미터 : request{email=test@test.com,password=java,
+      						uploadFiles=파일객체들,rememberMe=}
+      요청방식 : post
+	 */
+	@RequestMapping(value="/createPost")
+	public String createPost(StudVO studVO) {
+		//StudVO(email=test@test.com, password=java, rememberMe=null,
+		// uploadFiles=[org.springframework.web.multipart.support.StandardMu...)
+		log.info("createPost->StudVO : " + studVO);
+		
+		//회원 등록(StudService 인터페이스 타입의 DI(의존성 주입)/IoC 된 service객체를 사용)
+		int result = this.service.createPost(studVO);
+		//createPost->result : 1
+		log.info("createPost->result : " + result);
+		
+		//회원 등록 후 상세로 URI 재요청
+		return "redirect:/stud/detail?email="+studVO.getEmail();
+	}
+	
+	//학생 상세
+	/*
+	요청URI : /stud/detail
+	요청파라미터 : email=test333@test.com
+	요청방식 : get
+	 */
+	@RequestMapping(value="/detail",method=RequestMethod.GET)
+	public String detail(StudVO studVO,
+			Model model) {
+		log.info("detail->studVO(전) : " + studVO);
+		
+		studVO = this.service.detail(studVO);
+		log.info("detail->studVO(후) : " + studVO);
+		
+		model.addAttribute("studVO", studVO);
+		
+		//forwarding : jsp
+		return "stud/detail";
+	}
+	
+}
+
+
+
+
+
+
+
+
+

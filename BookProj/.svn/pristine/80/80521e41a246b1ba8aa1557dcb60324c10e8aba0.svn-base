@@ -1,0 +1,23 @@
+package kr.or.ddit.mapper;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import kr.or.ddit.vo.FileGroupVO;
+
+@Mapper
+public interface FileGroupMapper {
+
+	//FILE_GROUP 테이블에 insert
+	//<insert id="insertFileGroup" parameterType="fileGroupVO">
+	public int insertFileGroup(FileGroupVO fileGroupVO);
+	
+}
+
+
+
+
+
+
+
+
+

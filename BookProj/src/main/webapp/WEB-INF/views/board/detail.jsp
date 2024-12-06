@@ -1,0 +1,170 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/adminlte/dist/css/adminlte.min.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/resources/ckeditor/ckeditor.js"></script>
+<script type="text/javascript" src="/resources/adminlte/dist/js/adminlte.js"></script>
+<script type="text/javascript" src="/resources/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- 
+../ : views폴더(부모)
+ -->
+<!-- ///// header 시작 ///// -->
+<jsp:include page="../include/header.jsp"></jsp:include>
+<!-- ///// header 끝 ///// -->
+
+<script type="text/javascript">
+//document 내의 모든 요소들이 로딩된 후에 실행
+//동일한 jsp파일 내에서 1회 작성
+$(function(){
+	//class="form-control" 요소들을 읽기전용 처리
+	$(".form-control").attr("readonly",true);
+	
+	//1. 수정버튼(id="edit") 클릭 시 수정모드로 전환
+	$("#edit").on("click",function(){
+		/*
+			/폼의 action을 /article/updatePost
+			//태그 style <.... style="display:none;" -> 객체.css("display","none")
+			//태그 속성 <... action=''	   -> 객체.attr("","") / 객체.prop("","")
+		*/
+		//일반모드영역 가려짐
+		$("#div1").css("display","none");
+		//수정모드영역 보임
+		$("#div2").css("display","block");
+		//입력란(제목,작성자,내용)을 활성화
+		$(".form-control").removeAttr("readonly");
+		//<textarea name="boContent"
+		CKEDITOR.instances['boContent'].setReadOnly(false);
+		
+		//id="frm"인 폼페이지에 접근.
+		//	action속성의 값을 /board/updatePost
+		$("#frm").attr("action","/board/updatePost");
+	});
+	
+	//2. 삭제버튼 클릭 시 글 삭제 처리
+	//<button type="button" id="delete" class="btn btn-primary">삭제</button>
+	$("#delete").on("click",function(){
+		/*2-1.
+		전 : <form id="frm" action="/board/insertPost" method="post">
+		후 : <form id="frm" action="/board/deletePost" method="post">
+		*/
+		$("#frm").attr("action","/board/deletePost");
+		
+		//2-2. 안내 경고창 띄우기
+		// result : true(1) / false(0)
+		let result = confirm("삭제하시겠습니까?");
+		
+		if(result>0){//1(삭제함)
+			/*
+			요청URI : /board/deletePost
+			요청파라미터 : request{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+		    요청방식 : post
+			*/
+			$("#frm").submit();
+		}else{//0(삭제안함)
+			alert("삭제가 취소되었습니다.");
+		}
+	});
+});
+</script>
+
+
+	<div class="card card-primary">
+       <div class="card-header">
+         <h3 class="card-title">일반게시판</h3>
+       </div>
+       <!-- /.card-header -->
+       <!-- form start -->
+       <!-- 
+       요청URI : /board/updatePost
+       요청파라미터 : request{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+       요청방식 : post
+       
+       model.addAttribute("boardVO", boardVO)
+       
+       BoardVO(boNo=1, boTitle=개똥이게임, boWriter=이정재, boContent=
+       asdf, boDate=24/11/07, boHit=0)
+        -->
+       <p>${boardVO}</p>
+       <form id="frm" action="/board/insertPost" method="post">
+       	 <input type="text" name="boNo" value="${boardVO.boNo}" />
+         <div class="card-body">
+           <div class="form-group">
+             <label for="boTitle">제목</label>
+             <input type="text" class="form-control" 
+             	id="boTitle" name="boTitle" value="${boardVO.boTitle}" placeholder="제목" />
+           </div>
+           <div class="form-group">
+             <label for="boWriter">작성자</label>
+             <input type="text" class="form-control" 
+             	id="boWriter" name="boWriter" value="${boardVO.boWriter}" placeholder="작성자" />
+           </div>
+           <div class="form-group">
+             <label for="boContent">내용</label>
+             <textarea rows="3" cols="30" class="form-control" 
+             	id="boContent" name="boContent" placeholder="내용">${boardVO.boContent}</textarea>
+           </div>
+           <div class="form-group">
+             <label for="saveLocate">첨부이미지</label>
+             <!-- 반복 시작 
+             	boardVO.fileGroupVO.fileDetailVOList : List<FileDetailVO>
+             	-->
+             	<c:forEach var="fileDetailVO" items="${boardVO.fileGroupVO.fileDetailVOList}" varStatus="stat">
+	                <div class="col-sm-3">
+	                  <img class="img-fluid mb-3" src="${fileDetailVO.fileSaveLocate}" alt="Photo">
+	                </div>
+             	</c:forEach>
+               <!-- 반복 끝 -->
+           </div>
+         </div>
+         <!-- /.card-body -->
+         <!-- 일반모드 시작 -->
+         <div id="div1" class="card-footer justify-content-between">
+           <div class="float-left">
+	           <button type="button" id="edit"  
+		           	class="btn btn-primary">수정</button>
+	           <button type="button" id="delete"  
+		           	class="btn btn-primary">삭제</button>
+	       </div>
+           <div class="float-right">
+	           <a href="/board/list" 
+	           	class="btn btn-primary">목록</a>
+	       </div>
+         </div>
+         <!-- 일반모드 끝 -->
+         <!-- 수정모드 시작 -->
+         <div id="div2" class="card-footer" style="display:none;">
+           <button type="submit" class="btn btn-primary">
+               	확인
+           </button>
+           <a href="/board/detail?boNo=${boardVO.boNo}" class="btn btn-success">
+               	취소
+           </a>
+         </div>
+         <!-- 수정모드 끝 -->
+       </form>
+     </div>
+     
+<script type="text/javascript">
+	CKEDITOR.replace("boContent");
+</script>
+
+<!-- ///// footer 시작 ///// -->
+<jsp:include page="../include/footer.jsp"></jsp:include>
+<!-- ///// footer 끝 ///// -->  
+
+
+
+
+
+
+
+
+
+
+
+
+

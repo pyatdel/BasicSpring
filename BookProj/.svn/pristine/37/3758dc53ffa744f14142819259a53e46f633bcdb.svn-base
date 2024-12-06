@@ -1,0 +1,33 @@
+package kr.or.ddit.service;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.or.ddit.vo.LprodVO;
+
+public interface LprodService {
+
+	//LPROD 테이블에 insert
+	public int createPost(LprodVO lprodVO);
+
+	//상품분류 상세
+	public LprodVO detail(int lprodId);
+
+	//상품분류 수정
+	public int updatePost(LprodVO lprodVO);
+
+	//상품분류 삭제
+	public int deletePost(LprodVO lprodVO);
+
+	//상품 목록
+	public List<LprodVO> list(Map<String, Object> map);
+
+	//전체 행의 수 *******
+	public int getTotal(Map<String, Object> map);
+
+}
+
+
+
+
+

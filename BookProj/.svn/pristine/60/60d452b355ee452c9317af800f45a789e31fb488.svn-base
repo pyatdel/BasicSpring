@@ -1,0 +1,60 @@
+package kr.or.ddit.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import kr.or.ddit.service.MemberService;
+import kr.or.ddit.vo.MemberVO;
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/member")
+@Slf4j 
+@Controller
+public class MemberController {
+	
+	@Autowired
+	MemberService memberService; 
+	
+	/*
+	 요청URI : /member/list
+	 요청파라미터 : 
+	 요청방식 : get
+	 
+	 forwarding : jsp리턴
+	 return "member/list";
+	 */
+	//RequestMapping(value="/list",method=RequestMethod.GET)
+	@GetMapping("/list")
+	public String list(Model model) {
+		
+		List<MemberVO> memberVOList = this.memberService.list();
+		log.info("list->memberVOList : " + memberVOList);
+		
+		model.addAttribute("memberVOList", memberVOList);
+		
+		//forwarding : jsp리턴
+		return "member/list";
+	}
+	
+	/*
+	 요청URI : /member/detail
+	 요청파라미터 : request{memId=a001}
+	 요청방식 : get
+	 
+	 forwarding : jsp리턴
+	 return "member/detail";
+	 */
+}
+
+
+
+
+
+
+
+

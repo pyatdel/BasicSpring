@@ -1,0 +1,335 @@
+package kr.or.ddit.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.service.LprodService;
+import kr.or.ddit.util.ArticlePage;
+import kr.or.ddit.vo.LprodVO;
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/lprod")
+@Slf4j
+@Controller
+public class LprodController {
+
+	@Autowired
+	LprodService lprodService;
+	
+	/*
+	동일한 클래스 내 모든 forwarding 시 기본적으로 추가됨
+	 */
+	@ModelAttribute
+	public void title(Model model) {
+		model.addAttribute("title", "상품분류");
+	}
+	
+	/*
+	요청URI : /lprod/create
+	요청파라미터 : 
+	요청방식 : get
+	
+	lprod/create.jsp를 forwarding해보자
+	 */
+	@RequestMapping("/create")
+	public String create() {
+		//forwarding : jsp
+		return "lprod/create";
+	}
+	
+	/*
+	요청URI : /lprod/createPost
+	요청파라미터 : {lprodGu=P701, lprodNm=도서류}
+	요청방식 : post
+	
+	- LPROD 테이블에 insert
+	- LPROD_ID 컬럼을 1 자동증가 처리
+	- return "redirect:/lprod/detail?lprodId="+lprodVO.getLprodId();
+	*/
+	@RequestMapping(value="/createPost",method=RequestMethod.POST)
+	public String createPost(LprodVO lprodVO) {
+		//lprodVO{lprodId=0,lprodGu=P701, lprodNm=도서류}
+		log.info("createPost->lprodVO : " + lprodVO);
+		
+		//insert / update / delete의 경우 return type은 당연이 int
+		int result = this.lprodService.createPost(lprodVO);
+		log.info("createPost->result : " + result);
+		
+		//redirect : 새로운URL요청
+		return "redirect:/lprod/detail?lprodId="+lprodVO.getLprodId();
+	}
+	
+	/*
+	요청URI : /lprod/createPostAjax
+	요청파라미터 : JSONString{lprodGu=P701, lprodNm=도서류}
+	요청방식 : post
+	
+	RequestBody를 통해서  (Client)JSONString -> Deserialize -> LprodVO 타입(Server)
+	ResponseBody를 통해서 (Server)LprodVO 타입 -> serialize -> JSONString(Client)
+	- LPROD 테이블에 insert
+	- LPROD_ID 컬럼을 1 자동증가 처리
+	- return lprodVO
+	 */
+	@ResponseBody
+	@RequestMapping(value="/createPostAjax",method=RequestMethod.POST)
+	public LprodVO createPostAjax(@RequestBody LprodVO lprodVO) {
+		//lprodVO{lprodId=0,lprodGu=P701, lprodNm=도서류}
+		log.info("createPost->lprodVO : " + lprodVO);
+		
+		//insert / update / delete의 경우 return type은 당연이 int
+		int result = this.lprodService.createPost(lprodVO);
+		log.info("createPost->result : " + result);
+		
+		//redirect : 새로운URL요청
+		return lprodVO;
+	}
+	
+	/* 1)
+	요청URI : /lprod/detail?lprodId=10
+	요청파라미터 : lprodId=10
+	요청방식 : get
+	 */
+	@RequestMapping(value="/detail",method=RequestMethod.GET)
+	public String detail(@RequestParam(value="lprodId") int lprodId,
+			@ModelAttribute LprodVO lprodVO,
+			Model model) {
+		log.info("detail->lprodId : " + lprodId);
+		//lprodVO{lprodId=10,lprodId=null,lprodNm=null}
+		log.info("detail->lprodVO(전) : " + lprodVO);
+		
+		//select
+		lprodVO = this.lprodService.detail(lprodId);
+		//lprodVO{lprodId=10,lprodId=P501,lprodNm=도서류}
+		log.info("detail->lprodVO(후) : " + lprodVO);
+		
+		
+		//등록할 대상 상품 미리 준비해보기
+		//1. 상품 코드 : 상품분류에 해당하는 마지막 상품 코드 + 1 가져옴
+		String maxProdId = this.lprodService.getMaxProdId(lprodVO);
+		//detail->maxProdId : P109000001
+		log.info("detail->maxProdId : " + maxProdId);
+		
+		//2. 거래처 코드 : select 태그 구성을 위해 상품분류에 해당하는 거래처 목록을 준비
+		List<Map<String,Object>> buyerList = this.lprodService.getBuyerList(lprodVO);
+		log.info("detail->buyerList : " + buyerList);
+		
+		//1.과 2.을 묶어보자
+		Map<String,Object> guMap = new HashMap<String,Object>();
+		guMap.put("maxProdId", maxProdId);
+		guMap.put("buyerList", buyerList);
+		log.info("detail->guMap : " + guMap);
+		
+		model.addAttribute("lprodVO", lprodVO);
+		model.addAttribute("guMap", guMap);
+		
+		//forwarding : jsp
+		return "lprod/detail";
+	}
+	
+	/*
+	 요청URI : /lprod/getGuMapAjax
+	 요청파라미터 : JSONString{lprodGu=P201} => deserialize => LprodVO
+	 요청방식 : post
+	 */
+	@ResponseBody
+	@RequestMapping(value="/getGuMapAjax",method=RequestMethod.POST)
+	public Map<String,Object> getGuMapAjax(
+			@RequestBody LprodVO lprodVO){
+		//lprodVO{lprodId=0,lprodGu=P201,lprodNm=null}
+		log.info("getGuMapAjax->lprodVO : " + lprodVO);
+		
+		//등록할 대상 상품 미리 준비해보기
+		//1. 상품 코드 : 상품분류에 해당하는 마지막 상품 코드 + 1 가져옴
+		String maxProdId = this.lprodService.getMaxProdId(lprodVO);
+		//detail->maxProdId : P109000001
+		log.info("detail->maxProdId : " + maxProdId);
+		
+		//2. 거래처 코드 : select 태그 구성을 위해 상품분류에 해당하는 거래처 목록을 준비
+		List<Map<String,Object>> buyerList = this.lprodService.getBuyerList(lprodVO);
+		log.info("detail->buyerList : " + buyerList);
+		
+		//1.과 2.을 묶어보자
+		Map<String,Object> guMap = new HashMap<String,Object>();
+		guMap.put("maxProdId", maxProdId);
+		guMap.put("buyerList", buyerList);
+		log.info("detail->guMap : " + guMap);
+		
+		return guMap;
+	}
+	
+	/* 2)
+	요청URI : /lprod/detail/10
+	경로변수 : lprodId
+	요청방식 : get
+	 */
+	
+	/*
+	 요청URI : /lprod/updatePost
+	 요청파라미터 : request{lprodId=3,lprodGu=P201,lprodNm=여성캐주얼}
+	 요청방식 : post
+	 */
+	@RequestMapping(value="/updatePost",method=RequestMethod.POST)
+	public String updatePost(LprodVO lprodVO) {
+		log.info("updatePost->lprodVO : " + lprodVO);
+		
+		//상품분류 수정
+		int result = this.lprodService.updatePost(lprodVO);
+		log.info("updatePost->result : " + result);
+		
+		//3) 확인 버튼 클릭 시 submit 되어 update 처리 후 
+		//		/lprod/detail?lprodId=10 로 redirect
+		return "redirect:/lprod/detail?lprodId="+lprodVO.getLprodId();
+	}
+	
+	/*
+	요청URI : /lprod/deletePost
+	요청파라미터 : request{lprodId=3,lprodGu=P201,lprodNm=여성캐주얼}
+	요청방식 : post
+	 */
+	@RequestMapping(value="/deletePost",method=RequestMethod.POST)
+	public String deletePost(LprodVO lprodVO) {
+		log.info("deletePost->lprodVO : " + lprodVO);
+		
+		int result = this.lprodService.deletePost(lprodVO);
+		log.info("deletePost->result : " + result);
+		
+		//LprodController의 deletePost 메소드에서
+		// 삭제처리 완료 후 /lprod/list로 redirect 함
+		return "redirect:/lprod/list";
+	}
+	
+	/*
+	 요청URI : /lprod/list
+	 		  /lprod/list?currentPage=1
+	 		  /lprod/list?currentPage=1&keyword=개똥이
+	 요청파라미터 : 
+	 요청방식 : get
+	 
+	 [페이징처리-파라미터]
+	 1. currentPage
+	 2. keyword
+	 
+	 model.addAttribute("lprodVOList",lprodVOList);
+	 return "lprod/list";
+	 */
+	@RequestMapping(value="/list",method=RequestMethod.GET)
+	public String list(Model model,
+			@RequestParam(value="currentPage",required=false,defaultValue="1") int currentPage,
+			@RequestParam(value="keyword",required=false,defaultValue="") String keyword) {
+		//currentPage 파라미터는 없을 수도 있고 만약 없다면 currentPage 매개변수에 1이라도 할당
+		//keyword     파라미터는 없을 수도 있고 만약 없다면 keyword 매개변수에 ""(whitespace)이라도 할당
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("currentPage", currentPage);
+		map.put("keyword", keyword);
+		log.info("list->map : " + map);
+		
+		//전체 행의 수 *******
+		int total = this.lprodService.getTotal(map);
+		log.info("list->total : " + total);
+		
+		//map{currentPage=1,keyword=}
+		List<LprodVO> lprodVOList = this.lprodService.list(map);
+		log.info("list->lprodVOList : " + lprodVOList);
+		
+		//페이지네이션
+		ArticlePage<LprodVO> articlePage 
+			= new ArticlePage<LprodVO>(total, currentPage, 10, lprodVOList, keyword);
+		
+		model.addAttribute("lprodVOList", lprodVOList);
+		model.addAttribute("articlePage", articlePage);
+		
+		//forwarding : jsp
+		return "lprod/list";
+	}
+	
+	/*
+	 요청URI : /lprod/listAjax
+	 요청파라미터 : JSONString{"currentPage":"1","keyword"=""}
+	 			 JSONString{"currentPage":"1","keyword"="도서"}
+	 요청방식 : get
+	 
+	 return lprodVOList;
+	              serialize								deserialize
+	 (List<LprodVO>)서버(JSONString) -> 인터넷 -> (JSONString)클라이언트(Object)
+	 
+	 오버로딩 : 동일한 클래스 내에 같은 이름의 메소드를 여러번 사용 가능(파라미터 개수, 파라미터 타입이 다르게 처리)
+	 */
+	@ResponseBody
+	@RequestMapping(value="/listAjax",method=RequestMethod.POST)
+	public ArticlePage<LprodVO> listAjax(@RequestBody Map<String,Object> map) {
+		//map{"currentPage":"1","keyword"="도서"}
+		log.info("listAjax->map : " + map);
+		
+		//전체 행의 수 *******
+		int total = this.lprodService.getTotal(map);
+		log.info("list->total : " + total);
+		
+		//map{currentPage=1,keyword=}
+		List<LprodVO> lprodVOList = this.lprodService.list(map);
+		log.info("list->lprodVOList : " + lprodVOList);
+		
+		//map.get("currentPage") : Object 타입
+		int currentPage = Integer.parseInt(map.get("currentPage").toString());//Object->"1"->1
+		String keyword = "";
+		//검색어가 없을 수 있으므로 처리
+		if(map.get("keyword")!=null) {
+			keyword = map.get("keyword").toString();//"도서"
+		}
+		
+		//페이지네이션
+		ArticlePage<LprodVO> articlePage 
+			= new ArticlePage<LprodVO>(total, currentPage, 
+					10, lprodVOList, keyword);
+		
+		return articlePage;
+	}
+	
+	/*
+	요청URI : /lprod/createProdsPost
+	요청파라미터 : request{prodVOList[0].prodId=P109000001,prodVOList[0].prodName=개똥이제과,
+		prodVOList[0].prodLgu=P109,prodVOList[0].prodBuyer=P10901...}
+	요청방식 : post
+	 */
+	@RequestMapping(value="/createProdsPost",method=RequestMethod.POST)
+	public String createProdsPost(LprodVO lprodVO) {
+		/*
+		lprodVO(lprodId=0, lprodGu=null, lprodNm=null, fileGroupNo=0, uploadFile=null, fileGroupVO=null, 
+			prodVOList=[
+				ProdVO(prodId=P201000022, prodName=개똥이제과1, prodLgu=P202, prodBuyer=P10901, prodCost=0, prodPrice=0, prodSale=120000, prodOutline=제과제빵, prodDetail=null, prodImg=null, prodTotalstock=0, prodInsdate=null, prodProperstock=0, prodSize=null, prodColor=null, prodDelivery=null, prodUnit=null, prodQtyin=0, prodQtysale=0, prodMileage=0)
+				ProdVO(prodId=P201000022, prodName=개똥이제과2, prodLgu=P201, prodBuyer=P20102, prodCost=0, prodPrice=0, prodSale=22, prodOutline=ㅁㄴㅇㄹㄴㅁ, )
+				ProdVO(prodId=P201000022, prodName=개똥이제과3, prodLgu=P201, prodBuyer=P20102, prodCost=0, prodPrice=0, prodSale=11, prodOutline=ㅁㄴㄹㅇㄹㄴㅇ, 
+			]
+		)
+		 */
+		log.info("createProdsPost->lprodVO : " + lprodVO);
+		
+		//redirect : 새로운 URI 재요청
+		return "redirect:/lprod/detail?lprodId="+lprodVO.getLprodId();
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

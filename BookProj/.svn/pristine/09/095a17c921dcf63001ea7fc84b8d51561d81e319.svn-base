@@ -1,0 +1,105 @@
+package kr.or.ddit.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.service.MemberService;
+import kr.or.ddit.vo.MemberVO;
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/member")
+@Slf4j 
+@Controller
+public class MemberController {
+	
+	@Autowired
+	MemberService memberService; 
+	
+	/*
+	 요청URI : /member/list
+	 요청파라미터 : 
+	 요청방식 : get
+	 
+	 forwarding : jsp리턴
+	 return "member/list";
+	 */
+	//RequestMapping(value="/list",method=RequestMethod.GET)
+	@GetMapping("/list")
+	public String list(Model model) {
+		
+		List<MemberVO> memberVOList = this.memberService.list();
+		log.info("list->memberVOList : " + memberVOList);
+		
+		model.addAttribute("memberVOList", memberVOList);
+		
+		//forwarding : jsp리턴
+		return "member/list";
+	}
+	
+	/* 회원 상세
+	 요청URI : /member/detail?memId=a001
+	 요청파라미터 : request{memId=a001}
+	 요청방식 : get
+	 	
+	 forwarding : jsp리턴
+	 return "member/detail";
+	 */
+//	public String detail(String memId) {
+//	public String detail(MemberVO memberVO) {
+//	public String detail(@ModelAttribute MemberVO memberVO) {
+	@GetMapping("/detail")
+	public String detail(@RequestParam(value="memId") String memId,
+			Model model) {
+		log.info("detail->memId : " + memId);
+		
+		MemberVO memberVO = this.memberService.detail(memId);
+		log.info("detail->memberVO : " + memberVO);
+		
+		model.addAttribute("memberVO", memberVO);
+		
+		//forwarding : jsp리턴
+		return "member/detail";
+	}
+	
+	/** 회원 수정
+	 요청URI : /member/updatePost
+	 요청파라미터 : request{memId=t001, memPass=0506, memName=성원태2,
+	 			memZip=306-702, 
+				memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호}
+	 요청방식 : post
+	*/
+	@PostMapping("/updatePost")
+	public String updatePost(@ModelAttribute MemberVO memberVO) {
+		/*
+		MemberVO(memId=t001, memPass=0506, memName=성원태2, 
+		memRegno1=null, memRegno2=null, memBir=null, memZip=306-702, 
+		memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호, 
+		memHometel=null, memComtel=null, memHp=null, memMail=null, 
+		memJob=null, memLike=null, memMemorial=null, memMemorialday=null, 
+		memMileage=0, memDelete=null, rnum=0)
+		 */
+		log.info("updatePost->memberVO : " + memberVO);
+		
+		int result = this.memberService.updatePost(memberVO);
+		log.info("updatePost->result : " + result);
+		
+		//redirect : 새로운 URI를 재요청
+		return "redirect:/member/detail?memId="+memberVO.getMemId();
+	}
+}
+
+
+
+
+
+
+
+

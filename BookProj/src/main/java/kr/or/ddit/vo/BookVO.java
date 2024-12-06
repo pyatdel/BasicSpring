@@ -1,0 +1,38 @@
+package kr.or.ddit.vo;
+
+import java.util.Date;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.Data;
+
+//자바빈 클래스
+//1) 멤버변수(프로퍼티) 2) 기본생성자 3) getter/setter메소드
+//골뱅이Data=> PoJo(Plain순수한 old Java object)에 위배
+/*
+ request{title=총알탄 개똥이, category=소설
+		, price="10000", uploadFile=파일객체들}
+ */
+@Data
+public class BookVO {
+	private int bookId;
+	private String title;
+	private String category;
+	private int price;
+	private Date insertDate;
+	
+	//파일 그룹 번호
+	private long fileGroupNo;
+	
+	//스프링 파일 객체
+	private MultipartFile[] uploadFile;
+	
+	//중첩된 자바빈
+	//책 : 파일그룹 = 1 : 1
+	private FileGroupVO fileGroupVO;
+}
+
+
+
+
+

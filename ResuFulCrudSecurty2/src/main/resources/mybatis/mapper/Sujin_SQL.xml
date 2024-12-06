@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.SujinMapper">
+	<!-- MyBatis에서 제공해주는 데이터 입력을 나타내는 태그
+   1) 드루와 : mapper가 던진 데이터타입.parameterType만 씀
+   2) 가즈아 : mapper의 메소드 쪽으로 리턴할 타입.
+     - resultType : vo, hashMap, String, int
+     - resultMap  : MyBatis의 resultMap 태그를 사용
+   -->
+
+<select id="listSujin" resultType="SujinVO">
+      SELECT SUJIN_NUM, SUJIN_CONTENT, SUJIN_NAME, SUJIN_FILE
+      FROM   SUJIN
+      ORDER BY SUJIN_NUM DESC
+   </select >
+   
+   <select id="getSujin" parameterType="SujinVO" resultType="SujinVO">
+      SELECT SUJIN_NUM, SUJIN_CONTENT, SUJIN_NAME, SUJIN_FILE
+      FROM   SUJIN
+      WHERE  SUJIN_NUM = #{sujinNum}
+   </select >
+   
+   <insert id="insertSujin" parameterType="SujinVO">
+      <selectKey resultType="int" order="BEFORE" keyProperty="sujinNum">
+         SELECT NVL(MAX(SUJIN_NUM),0)+1 FROM SUJIN
+      </selectKey>
+   
+      INSERT INTO SUJIN(SUJIN_NUM, SUJIN_CONTENT, SUJIN_NAME, SUJIN_FILE)
+      VALUES(#{sujinNum},#{sujinContent},#{sujinName},#{sujinFile})
+   </insert>
+   
+   <update id="updateSujin" parameterType="SujinVO">
+      UPDATE SUJIN
+       SET    SUJIN_CONTENT = #{sujinContent}
+           , SUJIN_NAME    = #{sujinName}
+           , SUJIN_FILE    = #{sujinFile}
+      WHERE  SUJIN_NUM     = #{sujinNum}
+   </update>
+   
+   <delete id="deleteSujin" parameterType="SujinVO">
+      DELETE FROM SUJIN 
+      WHERE  SUJIN_NUM = #{sujinNum}
+   </delete>
+</mapper>

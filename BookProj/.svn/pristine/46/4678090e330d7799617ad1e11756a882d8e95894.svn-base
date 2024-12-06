@@ -1,0 +1,33 @@
+package kr.or.ddit.vo;
+
+import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.Data;
+
+@Data
+public class LprodVO {
+	// 1. 프로퍼티
+	private int    lprodId;
+	private String lprodGu;
+	private String lprodNm;
+	
+	// 파일 그룹 번호
+	private long fileGroupNo;
+		
+	//스프링 파일 객체
+	private MultipartFile[] uploadFile;
+		
+	// 중첩된 자바빈
+	// 책 : 파일그룹 = 1 : 1
+	private FileGroupVO fileGroupVO;
+	
+	//상품분류테이블 : 상품테이블 = 1(부모.P.K) : N(자식.F.K)
+	private List<ProdVO> prodVOList;
+}
+
+
+
+
+

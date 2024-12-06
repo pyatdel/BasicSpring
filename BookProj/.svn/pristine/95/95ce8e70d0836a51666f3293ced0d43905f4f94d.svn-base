@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace : xml파일은 여러개일 수 있음. 
+이를 구별하기 위한 식별 용도로 사용 -->
+<mapper namespace="kr.or.ddit.mapper.BoardMapper">
+	
+	<!-- 
+	게시글 등록
+	public int insertPost(BoardVO boardVO);
+	
+	BoardVO(boNo=0, boTitle=개똥이게임, boWriter=이정재, boContent=<p>개똥이게임2탄</p>
+			  , boDate=null, boHit=0)
+	 -->
+	<insert id="insertPost" parameterType="kr.or.ddit.vo.BoardVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="boNo">
+			SELECT NVL(MAX(BO_NO),0)+1 FROM BOARD
+		</selectKey>
+	
+		INSERT INTO BOARD(BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT)
+		VALUES(#{boNo}, #{boTitle}, #{boWriter}, #{boContent}, SYSDATE, 0)
+	</insert>
+	
+	<!-- 
+	게시물 상세보기
+	public BoardVO detail(int boNo)
+	 -->
+	<select id="detail" parameterType="int" resultType="kr.or.ddit.vo.BoardVO">
+		SELECT BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT
+		FROM   BOARD
+		WHERE  BO_NO = #{boNo}
+	</select>
+	
+	<!-- 게시물 수정
+	BoardVO{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+	resultType="int"생략됨
+	 -->
+	<update id="updatePost" parameterType="kr.or.ddit.vo.BoardVO">
+		UPDATE BOARD
+		SET    BO_TITLE = #{boTitle}, BO_WRITER = #{boWriter}
+		     , BO_CONTENT = #{boContent}
+		WHERE  BO_NO = #{boNo}
+	</update>
+	
+	<!--게시물 삭제
+	public int deletePost(BoardVO boardVO);
+	
+	BoardVO{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄} 
+	 -->
+	<delete id="deletePost" parameterType="kr.or.ddit.vo.BoardVO">
+		DELETE FROM BOARD
+		WHERE  BO_NO = #{boNo}
+	</delete>
+	
+	<!-- 게시물 목록
+	public List<BoardVO> list(Map<String, Object> map)
+	
+	resultType : 조인이 없을 때
+	resultMap  : 조인이 있을 때
+	
+	map{keyword="",currentPage="4"}
+	 -->
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.vo.BoardVO">
+		SELECT T.RNUM, T.BO_NO, T.BO_TITLE, T.BO_WRITER
+		     , T.BO_CONTENT, T.BO_DATE, T.BO_HIT
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY BO_NO) RNUM
+		         , BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT
+		    FROM   BOARD
+		) T
+		WHERE  T.RNUM BETWEEN (#{currentPage}*10)-9 AND (#{currentPage}*10)
+	</select>
+	
+	<!-- 전체 행의 수
+	public int getTotal() -->
+	<select id="getTotal" resultType="int">
+		SELECT COUNT(*) FROM BOARD
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+

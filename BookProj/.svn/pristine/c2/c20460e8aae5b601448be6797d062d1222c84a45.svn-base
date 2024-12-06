@@ -1,0 +1,40 @@
+package kr.or.ddit.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.or.ddit.mapper.StudMapper;
+import kr.or.ddit.service.StudService;
+import kr.or.ddit.util.UploadController;
+import kr.or.ddit.vo.StudVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+public class StudServiceImpl implements StudService {
+	
+	@Autowired
+	StudMapper studMapper;
+	
+	//DI/IoC
+	@Autowired
+	UploadController uploadController;
+	
+	@Override
+	public int createPost(StudVO studVO) {
+		/*
+		StudVO(email=test@test.com, password=java, rememberMe=null,
+		 uploadFiles=[org.springframework.web.multipart.support.StandardMu...)
+		 */
+		MultipartFile[] uploadFiles = studVO.getUploadFiles();
+		
+		//					  multiImageUpload(MultipartFile[])
+		long fileGroupNo = this.uploadController.multiImageUpload(uploadFiles);
+		log.info("createPost->fileGroupNo : " + fileGroupNo);
+		
+		//STUD 테이블에 insert
+		return this.studMapper.createPost(studVO);
+	}
+	
+}

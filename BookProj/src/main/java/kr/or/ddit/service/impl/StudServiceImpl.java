@@ -1,0 +1,70 @@
+package kr.or.ddit.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.or.ddit.mapper.StudMapper;
+import kr.or.ddit.service.StudService;
+import kr.or.ddit.util.UploadController;
+import kr.or.ddit.vo.StudVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+public class StudServiceImpl implements StudService {
+	
+	@Autowired
+	StudMapper studMapper;
+	
+	//DI/IoC
+	@Autowired
+	UploadController uploadController;
+	
+	@Override
+	public int createPost(StudVO studVO) {
+		/*
+		StudVO(email=test@test.com, password=java, rememberMe=null,
+		 uploadFiles=[org.springframework.web.multipart.support.StandardMu...)
+		 */
+		MultipartFile[] uploadFiles = studVO.getUploadFiles();
+		
+		//!!조건!!!첨부파일이 있을 때만 실행
+		//uploadFiles[0] : 첫번째 파일 객체
+		//uploadFiles[0].getOriginalFilename().length() : 첫번재 파일 객체의 원본파일명의 길이
+		if(uploadFiles[0].getOriginalFilename().length()>0){
+			//					  multiImageUpload(MultipartFile[])
+			long fileGroupNo = this.uploadController.multiImageUpload(uploadFiles);
+			log.info("createPost->fileGroupNo : " + fileGroupNo);
+			
+			//STUD 테이블의 FILE_GROUP_NO 컬럼에 값을 넣어주자
+			studVO.setFileGroupNo(fileGroupNo);
+		}//end if => FILE_GROUP_NO가 없이 STUD 테이블에 insert
+			
+		log.info("createPost->studVO : " + studVO);
+		
+		//STUD 테이블에 insert
+		return this.studMapper.createPost(studVO);
+	}
+	
+	/*학생 상세보기
+	<select id="detail" parameterType="kr.or.ddit.vo.StudVO"
+			resultMap="studMap">
+	*/
+	@Override
+	public StudVO detail(StudVO studVO) {
+		return this.studMapper.detail(studVO);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,29 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<!-- 
+../ : views폴더(부모)
+ -->
+<!-- ///// header 시작 ///// -->
+<jsp:include page="./include/header.jsp"></jsp:include>
+<!-- ///// header 끝 ///// -->
+
+<!-- Main content -->
+<section class="content">
+  <div class="container-fluid">
+    <!-- ///// content 시작 ///// -->
+    
+    <h3>광제의 월드</h3>
+    
+    <!-- ///// content 끝 ///// -->
+  </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+    
+<!-- ///// footer 시작 ///// -->
+<jsp:include page="./include/footer.jsp"></jsp:include>
+<!-- ///// footer 끝 ///// -->  
+
+

@@ -1,0 +1,28 @@
+package kr.or.ddit.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.mapper.LprodMapper;
+import kr.or.ddit.service.LprodService;
+import kr.or.ddit.vo.LprodVO;
+
+@Service
+public class LprodServiceImpl implements LprodService {
+
+	@Autowired
+	LprodMapper lprodMapper;
+	
+	//LPROD 테이블에 insert
+	@Override
+	public int createPost(LprodVO lprodVO) {
+		return this.lprodMapper.createPost(lprodVO);
+	}
+
+	//상품분류 상세
+	@Override
+	public LprodVO detail(int lprodId) {
+		return this.lprodMapper.detail(lprodId);
+	}
+	
+}

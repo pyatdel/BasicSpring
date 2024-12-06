@@ -1,0 +1,23 @@
+package kr.or.ddit.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.mapper.StudMapper;
+import kr.or.ddit.service.StudService;
+import kr.or.ddit.vo.StudVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+public class StudServiceImpl implements StudService {
+	
+	@Autowired
+	StudMapper studMapper;
+	
+	@Override
+	public int createPost(StudVO studVO) {
+		return this.studMapper.createPost(studVO);
+	}
+	
+}

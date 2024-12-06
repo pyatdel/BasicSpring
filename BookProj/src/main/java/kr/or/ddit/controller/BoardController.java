@@ -1,0 +1,212 @@
+package kr.or.ddit.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.or.ddit.service.BoardService;
+import kr.or.ddit.util.ArticlePage;
+import kr.or.ddit.vo.BoardVO;
+import lombok.extern.slf4j.Slf4j;
+
+/*
+Controller 애너테이션
+스프링 프레임워크에게 "이 클래스는 웹 브라우저의 요청(request)를
+받아들이는 컨트롤러야" 라고 알려주는 것임.
+ */
+//클래스 레벨에서 요청URI를 매핑
+@Slf4j
+@RequestMapping("/board")
+@Controller
+public class BoardController {
+	
+	//DI/IoC
+	@Autowired
+	BoardService boardService;
+	
+	/* 게시글 등록 폼
+	 요청URI : /board/form
+	 요청파라미터 : 
+	 요청방식 : get
+	 */
+	//메서드 레벨에서 요청URI를 매핑
+	//클래스 레벨 + 메서드 레벨 => /board/form
+	@RequestMapping(value="/form",method=RequestMethod.GET)
+	public String form() {
+		//forwarding : jsp리턴
+		return "board/form";
+	}
+	
+	/*
+	요청URI : /board/insertPost
+       요청파라미터 : request{boTitle=개똥이게임,boWriter=이정재
+       				,boContent=개똥이게임2탄,uploadFile=파일객체들}
+       요청방식 : post
+       
+       속성이 하나일 때는 속성명을 생략할 수 있다.
+	 */
+	//골뱅이RequestMapping(value="/insertPost",method=RequestMethod.POST)
+	@PostMapping("/insertPost")
+	public String insertPost(BoardVO boardVO) {
+		/*
+		BoardVO(boNo=0, boTitle=개똥이게임, boWriter=이정재, boContent=<p>개똥이게임2탄</p>
+			  , boDate=null, boHit=0,uploadFile=파일객체들)
+		 */
+		log.info("insertPost->boardVO : " + boardVO);
+		log.info("insertPost->uploadFile : " + boardVO.getUploadFile());
+		
+		//1. 서비스레이어(Service, ServiceImpl)의 insertPost메서드 호출. 
+		//			-> 퍼시스턴스 레이어(Mapper) -> 매퍼XML의 쿼리를 호출
+		//   insert 후 리턴타입은 int result에 할당. log.info로 콘솔에 출력.
+		int result = this.boardService.insertPost(boardVO);
+		log.info("insertPost->result : " + result);
+		
+		//1-2. form.jsp를 복사해서 detail.jsp를 생성
+		
+		//2. redirect : 새로운 URI요청
+		return "redirect:/board/detail?boNo="+boardVO.getBoNo();		
+	}
+	
+	
+	/*
+	요청URI : /board/detail?boNo=1
+    요청파라미터 : boNo="1"
+    요청방식 : get
+	 */
+	@RequestMapping(value="/detail",method=RequestMethod.GET)
+	public String detail(int boNo,
+			Model model){
+		
+		//1. boNo 매개변수의 값을 확인
+		log.info("detail->boNo : " + boNo);
+		
+		BoardVO boardVO = this.boardService.detail(boNo);
+		log.info("detail->boardVO : " + boardVO);
+		
+		//2.model의 속성명은 boardVO, 값은 boardVO
+		model.addAttribute("boardVO", boardVO);
+		
+		//3. forwarding : jsp 리턴
+		return "board/detail";
+	}
+	
+	/*
+	요청URI : /board/detail/1
+    경로변수 : boNo
+    요청방식 : get
+	 */
+	@RequestMapping(value="/detail/{boNo}",method=RequestMethod.GET)
+	public String detailPath(
+			@PathVariable(value="boNo") int boNo,
+			Model model) {
+		//1. boNo 매개변수의 값을 확인
+		log.info("detail->boNo : " + boNo);
+		
+		BoardVO boardVO = this.boardService.detail(boNo);
+		log.info("detail->boardVO : " + boardVO);
+		
+		//2.model의 속성명은 boardVO, 값은 boardVO
+		model.addAttribute("boardVO", boardVO);
+		
+		//3. forwarding : jsp 리턴
+		return "board/detail";
+	}
+	
+	/*
+	요청URI : /board/updatePost
+   요청파라미터 : request{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+   요청방식 : post
+	 */
+	//PostMapping("/updatePost")
+	@RequestMapping(value="/updatePost",method=RequestMethod.POST)
+	public String updatePost(BoardVO boardVO) {
+		//1. boardVO 로그 찍어보자
+		log.info("updatePost->boardVO : " + boardVO);
+		
+		//2. 서비스레이어 호출->퍼시스턴스 레이어 호출->DB update 처리(매퍼xml)
+		int result = this.boardService.updatePost(boardVO);
+		
+		//3. 결과를 로그 찍어보자
+		log.info("updatePost->result : " + result);
+		
+		//4. 상세화면으로 redirect. URI를 재요청)
+		return "redirect:/board/detail?boNo="+boardVO.getBoNo();
+	}
+	
+	/*
+	요청URI : /board/deletePost
+	요청파라미터 : request{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+    요청방식 : post
+	*/
+	@RequestMapping(value="/deletePost",method=RequestMethod.POST)
+	public String deletePost(BoardVO boardVO) {
+		//1. boardVO 로그 찍어보자
+		log.info("deletePost->boardVO : " + boardVO);
+		
+		//2. 서비스레이어 호출->퍼시스턴스 레이어 호출->DB update 처리(매퍼xml)
+		//매퍼xml에서 update, delete 태그의 resultType은 당연히 int이므로 생략됨 
+		int result = this.boardService.deletePost(boardVO);
+		
+		//3. 결과를 로그 찍어보자
+		log.info("`Post->result : " + result);
+		
+		//4. 상세화면으로 redirect. URI를 재요청)
+		return "redirect:/board/list";
+	}
+	
+	/*
+	요청URI : /board/list?keyword=알탄&currentPage=1 or /list or /list?keyword=&currentPage=
+	요청파라미터 : keyword=알탄&currentPage=1 or /list or /list?keyword=&currentPage=
+    요청방식 : get
+	*/
+	@RequestMapping("/list")
+	public String list(@RequestParam(value="keyword",required=false,defaultValue="") String keyword,
+			@RequestParam(value="currentPage",required=false,defaultValue="1") int currentPage,
+			Model model) {
+		
+		log.info("list->keyword : " + keyword);
+		log.info("list->currentPage : " + currentPage);
+		//하.하.쏘맵
+		Map<String,Object> map = new HashMap<String,Object>();
+		map.put("keyword",keyword);
+		map.put("currentPage",currentPage);
+		//map{keyword="",currentPage="4"}
+		log.info("list->map : " + map);
+		
+		//전체 행의 수
+		int total = this.boardService.getTotal();
+		log.info("list->total : " + total);
+		
+		List<BoardVO> boardVOList = this.boardService.list(map);
+		log.info("list->boardVOList : " + boardVOList);
+		
+		//select 결과 목록을 데이터로 넣어줌. jsp로 리턴될것임
+		model.addAttribute("boardVOList", boardVOList);
+		model.addAttribute("articlePage", 
+				new ArticlePage<BoardVO>(total, currentPage, 10, boardVOList, keyword));
+		
+		//forwarding : jsp
+		return "board/list";
+	}
+}
+
+
+
+
+
+
+
+
+
+
+

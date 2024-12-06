@@ -1,0 +1,55 @@
+package kr.or.ddit.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.mapper.MemberMapper;
+import kr.or.ddit.service.MemberService;
+import kr.or.ddit.vo.MemberVO;
+
+@Service
+public class MemberServiceImpl implements MemberService {
+	
+	//DI / IoC
+	@Autowired
+	MemberMapper memberMapper;
+	
+	//회원 목록
+	@Override
+	public List<MemberVO> list() {
+		return this.memberMapper.list();
+	}
+
+	//회원 상세
+	@Override
+	public MemberVO detail(String memId) {
+		return this.memberMapper.detail(memId);
+	}
+
+	//회원 수정
+	@Override
+	public int updatePost(MemberVO memberVO) {
+		return this.memberMapper.updatePost(memberVO);
+	}
+
+	//회원 등록
+	@Override
+	public int createPost(MemberVO memberVO) {
+		return this.memberMapper.createPost(memberVO);
+	}
+
+	//회원 가입 시 중복체크
+	@Override
+	public int idDupChk(MemberVO memberVO) {
+		return this.memberMapper.idDupChk(memberVO);
+	}
+
+	//회원 삭제
+	@Override
+	public int deletePostAjax(MemberVO memberVO) {
+		return this.memberMapper.deletePostAjax(memberVO);
+	}
+
+}

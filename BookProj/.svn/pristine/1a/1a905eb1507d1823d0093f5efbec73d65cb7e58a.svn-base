@@ -1,0 +1,32 @@
+package kr.or.ddit.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/member")
+@Slf4j 
+@Controller
+public class MemberController {
+	
+	/*
+	 요청URI : /member/list
+	 요청파라미터 : 
+	 요청방식 : get
+	 
+	 forwarding : jsp리턴
+	 return "member/list";
+	 */
+	//RequestMapping(value="/list",method=RequestMethod.GET)
+	@GetMapping("/list")
+	public String list() {
+		//forwarding : jsp리턴
+		return "member/list";
+	}
+}
+
+
+
+

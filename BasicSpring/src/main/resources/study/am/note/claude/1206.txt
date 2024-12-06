@@ -1,0 +1,101 @@
+1. 스프링 프레임워크 기본 개념
+
+
+JSP 사용을 위해서는 webapp 폴더 구조가 필요함
+Inject vs Autowired 애너테이션의 차이:
+
+Inject: Java에서 지원
+Autowired: Spring에서 지원
+
+
+
+
+2. Controller 관련
+
+
+@Controller: forwarding, redirect, JSON data 리턴 가능
+@RestController: JSON data 리턴에 특화됨
+
+
+3. MyBatis 관련
+
+
+주요 태그 설명:
+
+parameterType: mapper로 전달되는 데이터 타입 지정
+resultType: 리턴 타입 지정 (vo, hashMap, String, int)
+resultMap: MyBatis의 resultMap 태그 사용 시 지정
+
+
+
+
+4. CRUD 작업의 기본 구조
+
+// 기본 CRUD 메서드 구조
+List<CrudVO> listCrud();         // 목록 조회
+CrudVO getCrud(CrudVO sujinVO);  // 단일 조회
+int insertCrud(CrudVO sujinVO);  // 등록
+int updateCrud(CrudVO sujinVO);  // 수정
+int deleteCrud(CrudVO sujinVO);  // 삭제
+
+
+5. XMLHttpRequest를 이용한 AJAX 통신
+
+
+readyState 값의 의미:
+
+0: Uninitialized (미초기화)
+1: Loading (open 메서드 호출)
+2: Loaded (send 메서드 호출)
+3: Interactive (데이터 일부 수신)
+4: Completed (데이터 전체 수신)
+
+
+
+
+6. 이벤트 처리
+
+// 마우스 이벤트 처리 예시
+trs[i].addEventListener("mouseover", () => {
+    trs[i].style.backgroundColor = "black";
+    trs[i].style.color = "orange";
+});
+
+trs[i].addEventListener("mouseout", function() {
+    this.style.backgroundColor = "white";
+    this.style.color = "black";
+    this.style.fontWeight = "normal";
+});
+
+
+7. 동적 테이블 생성
+
+const fMakeTable = (sujinVOList) => {
+    let tableStr = `<table class="table"><tbody>`;
+    // 헤더 추가
+    tableStr += `<tr><th>Num</th><th>Name</th><th>Content</th><th>File</th></tr>`;
+    // 데이터 행 추가
+    for (let i = 0; i < sujinVOList.length; i++) {
+        let sujinVO = sujinVOList[i];
+        tableStr += `<tr onclick="fGetOne(${sujinVO.sujinNum})">...`;
+    }
+    tableStr += `</tbody></table>`;
+    myList.innerHTML = tableStr;
+}
+
+
+8. REST API 구현
+
+POST 요청 예시:
+
+const fPostInput = () => {
+    let data = {
+        "sujinContent": myForm.sujinContent.value,
+        "sujinName": myForm.sujinName.value,
+        "sujinFile": ""
+    }
+    let xhr = new XMLHttpRequest();
+    xhr.open("post", "/sujin/insertSujin", true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=utf-8");
+    xhr.send(JSON.stringify(data));
+}

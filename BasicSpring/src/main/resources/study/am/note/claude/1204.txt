@@ -1,0 +1,84 @@
+통신 방식의 비교
+1. 동기식(Synchronous) 통신
+
+<form> 태그를 사용하는 전통적인 방식
+주요 속성:
+
+action="...": 폼 데이터를 전송할 URL 지정
+method="post": HTTP 메소드 지정
+enctype="multipart/form-data": 파일 업로드용 인코딩 타입
+
+
+특징: 페이지 전체가 새로고침됨
+
+2. 비동기식(Asynchronous) 통신
+
+jQuery의 $.ajax를 사용하는 방식
+데이터 처리 과정:
+
+JSON.stringify(data): JavaScript 객체를 JSON 문자열로 변환
+FormData 객체 사용: let formData = new FormData()로 생성하고 formData.append("키", "값")로 데이터 추가
+
+
+장점:
+
+페이지 일부분만 업데이트 가능
+향상된 사용자 경험
+서버 부하 감소
+
+
+
+스프링 시큐리티 프레임워크
+
+인증(Authentication): 로그인 처리(ID, Password)
+인가(Authorization): 권한 처리(예: role_executive)
+
+데이터 전송 방식
+클라이언트 → 서버 → 클라이언트 통신 패턴
+
+1. JSON 문자열 전송:
+
+JSON.stringify(data) → @RequestBody → @ResponseBody → success(result)
+
+2. 일반 데이터 전송:
+
+data → x → @ResponseBody → success(result)
+
+
+AJAX 구현 예시
+1. JSON.stringify 사용 방식
+
+$.ajax({
+    url: "/member/updateReplyPostAjax",
+    contentType: "application/json;charset=utf-8",
+    data: JSON.stringify(data),
+    type: "post",
+    success: function(result){
+        console.log("result : ", result);
+    }
+});
+
+2. 일반 데이터 전송 방식
+
+$.ajax({
+    url: "/member/updateReplyPostAjax",
+    data: data,
+    type: "post",
+    success: function(result){
+        console.log("result : ", result);
+    }
+});
+
+Fetch API 사용 예시
+
+fetch(`/member/updatePostAjax/${idx}`, {
+    method: "PUT",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data)
+})
+.then(() => {
+    alert("수정이 완료되었습니다");
+    // DOM 조작 코드
+});

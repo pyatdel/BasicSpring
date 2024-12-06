@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace : xml파일은 여러개일 수 있음. 
+이를 구별하기 위한 식별 용도로 사용 -->
+<mapper namespace="kr.or.ddit.mapper.ProdMapper">
+	
+	<insert id="createPost" parameterType="kr.or.ddit.vo.ProdVO">
+		
+		<selectKey resultType="String" order="BEFORE" keyProperty="prodId">
+		    SELECT 'P' || LPAD(
+		        NVL(MAX(TO_NUMBER(SUBSTR(PROD_ID, 2))), 0) + 1, 
+		        9, 
+		        '0'
+		    ) 
+		    FROM PROD
+		</selectKey>
+		
+		INSERT INTO PROD(PROD_ID, PROD_NAME, PROD_LGU, PROD_BUYER, PROD_SALE, PROD_OUTLINE)
+		VALUES(#{prodId},#{prodName}, #{prodLgu},#{prodBuyer},#{prodSale},#{prodOutline})
+		
+	</insert>
+	
+	<!--상품분류 상세
+	public LprodVO detail(int lprodId)
+	 -->
+	<resultMap id="prodDetailMap" type="kr.or.ddit.vo.ProdVO">
+    <!-- 상품 정보 매핑 -->
+    <id property="prodId" column="PROD_ID"/>
+    <result property="prodName" column="PROD_NAME"/>
+    <result property="prodLgu" column="PROD_LGU"/>
+    <result property="prodBuyer" column="PROD_BUYER"/>
+    <result property="prodSale" column="PROD_SALE"/>
+    <result property="prodOutline" column="PROD_OUTLINE"/>
+    
+    <!-- 상품분류 정보 매핑 -->
+    <association property="lprodVO" javaType="kr.or.ddit.vo.LprodVO">
+        <id property="lprodId" column="LPROD_ID"/>
+        <result property="lprodGu" column="LPROD_GU"/>
+        <result property="lprodNm" column="LPROD_NM"/>
+    </association>
+    
+    <!-- 거래처 정보 매핑 -->
+    <association property="buyerVO" javaType="kr.or.ddit.vo.BuyerVO">
+        <id property="buyerId" column="BUYER_ID"/>
+        <result property="buyerName" column="BUYER_NAME"/>
+        <result property="buyerLgu" column="BUYER_LGU"/>
+    </association>
+</resultMap>
+
+<select id="list" parameterType="map" resultMap="prodDetailMap">
+    SELECT 
+        P.PROD_ID, P.PROD_NAME, P.PROD_LGU, P.PROD_BUYER, P.PROD_SALE, P.PROD_OUTLINE,
+        L.LPROD_ID, L.LPROD_GU, L.LPROD_NM,
+        B.BUYER_ID, B.BUYER_NAME, B.BUYER_LGU
+    FROM PROD P
+    LEFT OUTER JOIN LPROD L ON (P.PROD_LGU = L.LPROD_GU)
+    LEFT OUTER JOIN BUYER B ON (P.PROD_BUYER = B.BUYER_ID)
+    ORDER BY P.PROD_ID DESC
+</select>
+
+<select id="getTotal" parameterType="map" resultType="int">
+    SELECT COUNT(*) 
+    FROM PROD P
+    LEFT OUTER JOIN LPROD L ON (P.PROD_LGU = L.LPROD_GU)
+    LEFT OUTER JOIN BUYER B ON (P.PROD_BUYER = B.BUYER_ID)
+    <where>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                P.PROD_NAME LIKE '%' || #{keyword} || '%' OR
+                P.PROD_ID LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+        <if test="prodLgu != null and prodLgu != ''">
+            AND P.PROD_LGU = #{prodLgu}
+        </if>
+    </where>
+</select>
+
+<select id="detail" parameterType="string" resultMap="prodDetailMap">
+    SELECT 
+        P.PROD_ID, P.PROD_NAME, P.PROD_LGU, P.PROD_BUYER, P.PROD_SALE, P.PROD_OUTLINE,
+        L.LPROD_ID, L.LPROD_GU, L.LPROD_NM,
+        B.BUYER_ID, B.BUYER_NAME, B.BUYER_LGU
+    FROM PROD P
+    LEFT OUTER JOIN LPROD L ON (P.PROD_LGU = L.LPROD_GU)
+    LEFT OUTER JOIN BUYER B ON (P.PROD_BUYER = B.BUYER_ID)
+    WHERE P.PROD_ID = #{prodId}
+</select>
+	
+	<select id="getMaxProdId" parameterType="kr.or.ddit.vo.ProdVO"
+		resultType="String">
+		SELECT NVL(SUBSTR(MAX(PROD_ID),1,4)
+		     || TRIM(TO_CHAR(SUBSTR(MAX(PROD_ID),5) + 1,'000000')),#{prodLgu}||'000001')
+		FROM   PROD
+		WHERE  PROD_LGU = #{prodLgu}
+	</select>
+	
+	<select id="getBuyerList" parameterType="kr.or.ddit.vo.ProdVO"
+		resultType="hashMap">
+		SELECT BUYER_ID
+		     , BUYER_NAME
+		FROM   BUYER
+		WHERE  BUYER_LGU = #{prodLgu}
+	</select>
+	
+	<!-- 상품 분류 수정 -->
+	<update id="updatePost" parameterType="kr.or.ddit.vo.ProdVO">
+    UPDATE PROD 
+    SET PROD_NAME = #{prodName},
+        PROD_LGU = #{prodLgu},
+        PROD_BUYER = #{prodBuyer},
+        PROD_SALE = #{prodSale},
+        PROD_OUTLINE = #{prodOutline}
+    WHERE PROD_ID = #{prodId}
+	</update>
+	
+	<!-- 상품 분류 삭제 -->
+	<delete id="deletePost" parameterType="string">
+	    DELETE FROM PROD
+	    WHERE PROD_ID = #{prodId}
+	</delete>
+	
+</mapper>
+
+
+
+
+
+
+
+
+

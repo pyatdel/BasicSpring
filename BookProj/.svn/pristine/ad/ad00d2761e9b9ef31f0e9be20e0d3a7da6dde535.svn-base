@@ -1,0 +1,19 @@
+package kr.or.ddit.mapper;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import kr.or.ddit.vo.LprodVO;
+
+@Mapper
+public interface LprodMapper {
+
+	//LPROD 테이블에 insert
+	public int createPost(LprodVO lprodVO);
+
+	//상품분류 상세
+	public LprodVO detail(int lprodId);
+
+	//상품분류 수정
+	public int updatePost(LprodVO lprodVO);
+	
+}

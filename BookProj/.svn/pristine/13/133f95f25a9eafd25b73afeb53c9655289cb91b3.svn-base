@@ -1,0 +1,161 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<!-- 
+page Scope -> pageContext
+request Scope -> request
+session Scope -> session
+application Scope -> application
+ -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/adminlte/dist/css/adminlte.min.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/resources/ckeditor/ckeditor.js"></script>
+<script type="text/javascript" src="/resources/adminlte/dist/js/adminlte.js"></script>
+<script type="text/javascript" src="/resources/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- ///// header 시작 ///// -->
+<jsp:include page="../include/header.jsp"></jsp:include>
+<!-- ///// header 끝 ///// -->
+
+<script type="text/javascript">
+//document 내의 모든 요소들이 로딩이 완료된 후에 실행
+$(function(){
+	console.log("개똥이");
+	
+	//1. 수정 버튼 클릭 -> 수정모드(p2)로 전환
+	$("#edit").on("click",function(){
+		$("#p1").css("display","none");
+		$("#p2").css("display","block");
+		$(".formdata").removeAttr("readonly");
+		$("#frm").attr("action","/updatePost");
+	});
+	
+	//2. 취소 버튼 클릭
+	$("#cancel").on("click",function(){
+		//주소표시줄 : /detail?bookId=1
+	    //param : bookId=1
+	    //param.bookId : 1
+	    location.href="/detail?bookId=${param.bookId}";
+	});
+	//3. 삭제 버튼 클릭
+	/*
+	요청URI : /deletePost
+	요청파라미터 : {bookId=3,title=김정민과 박선혜의 콜라보, category=음악, price=1200000}
+	요청방식 : post
+	*/
+	$("#delete").on("click",function(){
+		//<form id="frm" action="/deletePost" method="post">	   
+		$("#frm").attr("action","/deletePost");
+		
+		let result = confirm("삭제하시겠습니까?");
+		console.log("result : ", result);//true / false
+		
+		if(result){//확인
+			$("#frm").submit();
+		}else{//취소
+			alert("삭제가 취소되었습니다");
+		}
+	});
+	
+	//4.목록으로 이동
+	
+});
+</script>
+</head>
+<body>
+	<!-- 
+	JSTL(JSP Standard Tag Library) : 개발자들이 자주 사용하는 패턴을 모아놓은 집합
+	=> BookController에서 보내준 데이터를 뷰(jsp)에 표현하도록 도와줌
+	
+	method
+	1) GET : 데이터를 변경하지 않을 때. 목록/상세보기
+	2) POST : 데이터를 변경할 때. 입력/수정/삭제
+	
+	업데이트 쎄대여
+	UPDATE BOOK
+	SET    TITLE='개똥이의 모험', CATEGORY='소설', PRICE=12000, CONTENT='재미있다냥'
+	WHERE  BOOK_ID = 1
+	
+	등푸른생선 주세여
+	DELETE FROM BOOK
+	WHERE  BOOK_ID = 1
+	
+	WHERE
+	1) 단일행 : =, <, >, <=, >=, !=, <>
+	2) 다중행 : IN(교집합), ANY(OR), ALL(AND), EXISTS(교집합)
+	 -->
+	<!-- mav.addObject("bookVO", bookVO); -->
+	<!-- 폼페이지
+	요청URI : /createPost
+	요청파라미터(HTTP파라미터, QueryString) : request{title=개똥이의 모험, category=소설, price=12000}
+	요청방식 : post
+	
+	get방식 : 주소표시줄에 요청파라미터가 노출됨
+	post방식 : 주소표시줄에 요청파라미터가 노출되지 않음. 주소창에 변화 없이
+				데이터만 서버로 전달 됨
+				
+	mav.addObject("bookVO", bookVO);
+	
+	BookVO(bookId=1, title=1, category=2, price=3, insertDate=Mon Nov 04 11:29:38 KST 2024)
+	-->
+	<!-- 
+	요청URI : /updatePost
+	요청파라미터 : request{bookId=1, title=개똥이의 여행, category=소설, price=12000}
+	요청방식 : post
+	 -->
+	<form id="frm" action="/createPost" method="post">
+	   <!-- 폼데이터 -->
+	   <input type="text" name="bookId" value="${bookVO.bookId}" />
+	   <p>제목 : <input type="text" class="formdata" name="title"
+	   				value="${bookVO.title}" required readonly placeholder="제목" /></p>
+	   <p>카테고리 : <input type="text" class="formdata" name="category"
+	   				value="${bookVO.category}" required readonly placeholder="카테고리" /></p>
+	   <p>가격 : <input type="number" class="formdata" name="price" 
+	   				value="${bookVO.price}" required readonly placeholder="가격" /></p>
+	   <p>
+	   <p>
+	   	<!-- /// 첨부 이미지 목록 시작 /// -->
+	   	<!-- 첨부이미지 출력 시작 -->
+             <div class="row">
+             	<!-- 반복 시작 
+             	bookVO.fileGroupVO.fileDetailVOList : List<FileDetailVO>
+             	-->
+             	<c:forEach var="fileDetailVO" items="${bookVO.fileGroupVO.fileDetailVOList}" varStatus="stat">
+	                <div class="col-sm-3">
+	                  <img class="img-fluid mb-3" src="${fileDetailVO.fileSaveLocate}" alt="Photo">
+	                </div>
+             	</c:forEach>
+               <!-- 반복 끝 -->
+               <!-- /.col -->
+             </div>
+        <!-- 첨부이미지 출력 끝 -->
+	   	<!-- /// 첨부 이미지 목록 끝 /// -->
+	   <p>
+	   <!-- ///////일반모드 시작/////// -->
+		<p id="p1">
+			<input type="button" id="edit" value="수정" />
+			<input type="button" id="delete" value="삭제" />
+			<input type="button" id="list" value="목록" />
+		</p>
+		<!-- ///////일반모드 끝/////// -->
+		<!-- ///////수정모드 시작/////// -->
+		<p id="p2" style="display:none;">
+			<input type="submit" id="confirm" value="확인" />
+			<input type="button" id="cancel"  value="취소" />
+		</p>
+		<!-- ///////수정모드 끝/////// -->
+	      <!-- <form>~</form> 태그 안에 내용이 서버로 전송됨
+	            서버로 전달되는 항목들은 form 태그 안에 존재해야 함.
+	            name 속성은 key로, value 속성을 value로 판단함
+	          -->
+	   </p>
+	</form>
+	
+<!-- ///// footer 시작 ///// -->
+<jsp:include page="../include/footer.jsp"></jsp:include>
+<!-- ///// footer 끝 ///// -->  
+
+
+

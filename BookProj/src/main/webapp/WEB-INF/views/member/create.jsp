@@ -1,0 +1,353 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<!-- 
+../ : views폴더(부모)
+ -->
+<!-- ///// header 시작 ///// -->
+<jsp:include page="../include/header.jsp"></jsp:include>
+<!-- ///// header 끝 ///// -->
+
+<!-- Main content -->
+<section class="content">
+  <div class="container-fluid">
+    <!-- ///// content 시작 ///// -->
+    
+    <div class="card card-primary">
+        <div class="card-header">
+          <h3 class="card-title">회원 등록</h3>
+        </div>
+        <!-- /.card-header -->
+        <!-- form start 
+        요청URI : /member/createPost
+        요청파라미터 : request{memId=t001, memPass=0506, memName=성원태2,
+	 			memZip=306-702, 
+				memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호,
+				memBir=2024-11-27,uploadFiles=파일객체}
+		요청방식 : post
+        -->
+        <form id="frm" action="/member/createPost" method="post" enctype="multipart/form-data">
+          <div class="card-body">
+            <div class="form-group">
+              <code>*</code><label for="memId">회원 아이디</label>
+              <input type="text" class="form-control col-md-5" id="memId" 
+              		name="memId" value="" required 
+              		placeholder="회원 아이디" />
+              <button type="button" id="btnIdDupChk" 
+              		class="btn btn-block btn-info col-md-2">아이디 중복 체크</button>
+            </div>
+            <div class="form-group">
+              <code>*</code><label for="memPass">비밀번호</label>
+              <input type="password" class="form-control" id="memPass" 
+              		name="memPass" value="" required
+              		placeholder="비밀번호" />
+            </div>
+            <div class="form-group">
+              <code>*</code><label for="memName">성명</label>
+              <input type="text" class="form-control" id="memName" 
+              		name="memName" value="" required
+              		placeholder="성명" />
+            </div>
+            <div class="form-group">
+              <code>*</code><label for="memZip">우편번호</label>
+              <input type="text" class="form-control col-md-5" id="memZip" 
+              		name="memZip" value="" required
+              		readonly placeholder="우편번호" />
+              <button type="button" id="btnPost" 
+              		class="btn btn-block btn-info col-md-2">우편번호검색</button>
+            </div>
+            <div class="form-group">
+              <code>*</code><label for="memAdd1">주소1</label>
+              <input type="text" class="form-control" id="memAdd1" 
+              		name="memAdd1" value="" required 
+              		readonly placeholder="주소1" />
+            </div>
+            <div class="form-group">
+              <label for="memAdd2">주소2</label>
+              <input type="text" class="form-control" id="memAdd2" 
+              		name="memAdd2" value="" 
+              		placeholder="주소2" />
+            </div>
+            <div class="form-group">
+            	<!-- private Date memBir; 
+            	2024-11-27
+            	-->
+              <label for="memBir">생일</label>
+              <input type="date" class="form-control" id="memBir" 
+              		name="memBir" value="" 
+              		placeholder="생일" />
+            </div>
+            <div class="form-group">
+              <label for="uploadFiles">회원사진</label>
+              <input type="file" class="form-control" id="uploadFiles" 
+              		name="uploadFiles" value="" 
+              		placeholder="회원사진" multiple />
+            </div>
+          </div>
+          <!-- /.card-body -->
+
+          <div class="card-footer">
+	        <span id="spn1" class="justify-between">
+		        <p style="float:left;">
+		          <button type="button" id="btnSubmit"  
+		          	class="btn btn-primary btn-user" 
+		          	style="float:left;" disabled>등록</button>&nbsp;
+		         </p>
+		         <p style="float:right;">
+		          <a href="/member/list" class="btn btn-success btn-user">
+		              	목록
+		          </a>
+		         </p>
+	        </span>
+          </div>
+        </form>
+      </div>
+    
+    <!-- ///// content 끝 ///// -->
+  </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+
+<script type="text/javascript">
+$(function(){
+	//회원 가입 비동기 처리
+	$("#btnSubmit").on("click",function(){
+		console.log("회원 가입 비동기 처리");
+		//1. 가상 폼(이미지 포함) <form></form>
+		let formData = new FormData();
+		
+		//2. 엘리먼트들을 가상 폼에 넣기
+		let memId = $("#memId").val();
+		let memPass = $("#memPass").val();
+		let memName = $("#memName").val();
+		let memZip = $("#memZip").val();
+		let memAdd1 = $("#memAdd1").val();
+		let memAdd2 = $("#memAdd2").val();
+		let memBir = $("#memBir").val();
+		
+		formData.append("memId",memId);
+		formData.append("memPass",memPass);
+		formData.append("memName",memName);
+		formData.append("memZip",memZip);
+		formData.append("memAdd1",memAdd1);
+		formData.append("memAdd2",memAdd2);
+		formData.append("memBir",memBir);
+		/*
+		<form>
+			<input type="text" name="memId" value="a022" />
+			<input type="text" name="memPass" value="asdf" />
+			<input type="text" name="memName" value="개똥이" />
+			..
+		</form>
+		*/
+		
+		//3. 파일 엘리먼트를 선택하여 가상 폼에 넣기
+		/*
+		[0]*****<input type="file" name="uploadFiles"..
+		[1]<input type="file" name="uploadFiles"..
+		[2]<input type="file" name="uploadFiles"..
+		*/
+		let inputFile = $("#uploadFiles");
+		//이미지 파일들(a001.jpg, b001.jpg..)
+		let files = inputFile[0].files;
+		console.log("files : ", files);
+		
+		/*
+		<form>
+			<input type="file" name="uploadFiles" 파일객체 />
+			<input type="file" name="uploadFiles" 파일객체 />
+			..
+		</form>
+		*/
+		for(let i=0;i<files.length;i++){
+			formData.append("uploadFiles", files[i]);
+		}
+		
+		//4. 아작나써유.. 피씨다타써
+		/*
+		요청URI : /member/createPostAjax
+		요청파라미터 : request{memId=t001, memPass=0506, memName=성원태2,
+ 			memZip=306-702, 
+			memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호,
+			memBir=2024-11-27,uploadFiles=파일객체}
+		요청방식 : post
+		*/
+		$.ajax({
+			url:"/member/createPostAjax",
+			processData:false,
+			contentType:false,
+			data:formData,
+			type:"post",
+			dataType:"text",
+			success:function(result){
+				//5. 결과 확인(1 또는 0)				
+				//0 또는 1
+				console.log("result : ", result);
+				
+				if(result==1){//등록 성공
+					//success, error, warning, info, question
+					var Toast = Swal.mixin({
+					      toast: true,
+					      position: 'top-end',
+					      showConfirmButton: false,
+					      timer: 3000
+					    });
+					
+					Toast.fire({
+						icon:'success',
+						title:'등록 성공!'
+					});
+					
+					setTimeout(function(){
+						location.href="/member/detail?memId="+$("#memId").val();
+					},3000);
+				}else{
+					//success, error, warning, info, question
+					var Toast = Swal.mixin({
+					      toast: true,
+					      position: 'top-end',
+					      showConfirmButton: false,
+					      timer: 3000
+					    });
+					
+					Toast.fire({
+						icon:'warning',
+						title:'등록 실패!'
+					});
+				}
+			}
+		});
+		
+	});
+	
+	//아이디 중복 체크
+	$("#btnIdDupChk").on("click",function(){
+		//달러.trim() : 양쪽공백제거
+		let memId = $.trim($("#memId").val());
+		console.log("memId : " + memId);
+		
+		if(memId==""){
+			//success, error, warning, info, question
+			var Toast = Swal.mixin({
+			      toast: true,
+			      position: 'top-end',
+			      showConfirmButton: false,
+			      timer: 3000
+			    });
+			
+			Toast.fire({
+				icon:'warning',
+				title:'아이디를 입력해주세요'
+			});
+			
+			$("#memId").focus();
+			
+			return;
+		}
+		
+		//JSON오브젝트
+		let data = {
+			"memId":memId
+		}
+		
+		console.log("data : ",data);
+		
+		//아작나써유..(피)씨다타써
+		/*
+		요청URI : /member/idDupChk
+		요청파라미터 : JSONString{"memId":"a001"}
+		요청방식 : post
+		
+		SELECT COUNT(*) FROM MEMBER WHERE MEM_ID = 'a001'
+		return타입은 int타입 => 1) 1 : 중복됨 2) 0 : 중복안됨
+		
+		dataType:"text" => int 또는 String으로 리턴될 때
+		datatype:"json" => VO, Map, List..
+		*/
+		$.ajax({
+			url:"/member/idDupChk",
+			contentType:"application/json;charset=utf-8",
+			data:JSON.stringify(data),
+			type:"post",
+			dataType:"text",
+			success:function(result){
+				//result => 1) 1 : 중복됨 2) 0 : 중복안됨
+				console.log("result : ", result);
+				
+				if(result==1){//중복됨
+					//success, error, warning, info, question
+					var Toast = Swal.mixin({
+					      toast: true,
+					      position: 'top-end',
+					      showConfirmButton: false,
+					      timer: 3000
+					    });
+					
+					Toast.fire({
+						icon:'warning',
+						title:'아이디가 중복되었습니다.'
+					});
+					
+					$("#memId").focus();
+					//등록 버튼 비활성
+					$("#btnSubmit").attr("disabled",true);
+				}else{//중복안됨
+					var Toast = Swal.mixin({
+					      toast: true,
+					      position: 'top-end',
+					      showConfirmButton: false,
+					      timer: 3000
+					    });
+					
+					Toast.fire({
+						icon:'success',
+						title:'아이디를 사용가능합니다.'
+					});
+					//등록 버튼 활성
+					$("#btnSubmit").removeAttr("disabled");
+				}
+			}
+		});
+	});
+	
+	//다음 우편번호 검색
+	$("#btnPost").on("click",function(){
+		console.log("우편번호 검색!");
+		new daum.Postcode({
+			//다음 창에서 검색이 완료되어 클릭하면 콜백함수에 의해 
+			//	결과 데이터(JSON string)가 data 객체로 들어옴
+			oncomplete:function(data){
+				//data{"zonecode":"12345","address":"대전 중구","buildingName":"123-67"}
+				$("#memZip").val(data.zonecode);
+				$("#memAdd1").val(data.address);
+				$("#memAdd2").val(data.buildingName);
+			}
+		}).open();
+	});
+	
+	//수정버튼 클릭 -> 수정모드로 전환
+	$("#edit").on("click",function(){
+		$("#spn1").css("display","none");
+		$("#spn2").css("display","block");
+		//입력란 활성화
+		$(".form-control").removeAttr("readonly");
+		
+		$("#frm").attr("action","/member/updatePost");
+		$("#frm").attr("method","post");
+		
+		$("#memId").attr("readonly",true);
+		
+		//우편번호 검색 활성화
+		$("#btnPost").removeAttr("disabled");
+	});
+});
+</script> 
+
+
+<!-- ///// footer 시작 ///// -->
+<jsp:include page="../include/footer.jsp"></jsp:include>
+<!-- ///// footer 끝 ///// -->  
+
+

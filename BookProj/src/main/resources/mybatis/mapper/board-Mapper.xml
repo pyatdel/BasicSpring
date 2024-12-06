@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace : xml파일은 여러개일 수 있음. 
+이를 구별하기 위한 식별 용도로 사용 -->
+<mapper namespace="kr.or.ddit.mapper.BoardMapper">
+	
+	<!-- 
+	게시글 등록
+	public int insertPost(BoardVO boardVO);
+	
+	BoardVO(boNo=0, boTitle=개똥이게임, boWriter=이정재, boContent=<p>개똥이게임2탄</p>
+			  , boDate=null, boHit=0, fileGroupNo=20241121001)
+	 -->
+	<insert id="insertPost" parameterType="kr.or.ddit.vo.BoardVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="boNo">
+			SELECT NVL(MAX(BO_NO),0)+1 FROM BOARD
+		</selectKey>
+	
+		INSERT INTO BOARD(BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT
+			<if test="fileGroupNo!=null and fileGroupNo!=''">
+			,FILE_GROUP_NO
+			</if>
+			)
+		VALUES(#{boNo}, #{boTitle}, #{boWriter}, #{boContent}, SYSDATE, 0
+			<if test="fileGroupNo!=null and fileGroupNo!=''">
+			,#{fileGroupNo}
+			</if>
+			)
+	</insert>
+	
+	<!-- 게시글 : 파일그룹 = 1 : 1 -->
+	<resultMap type="kr.or.ddit.vo.BoardVO" id="boardMap">
+		<result property="boNo" column="BO_NO"/>
+		<result property="boTitle" column="BO_TITLE"/>
+		<result property="boWriter" column="BO_WRITER"/>
+		<result property="boContent" column="BO_CONTENT"/>
+		<result property="boDate" column="BO_DATE"/>
+		<result property="boHit" column="BO_HIT"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<association property="fileGroupVO" resultMap="fileGroupMap"></association>
+	</resultMap>
+	
+	<!-- 파일그룹 : 파일상세 = 1 : N -->
+	<resultMap type="kr.or.ddit.vo.FileGroupVO" id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileRegdate" column="FILE_REGDATE"/>
+		<collection property="fileDetailVOList" resultMap="fileDetailMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.vo.FileDetailVO" id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME"/>
+		<result property="fileSaveName" column="FILE_SAVE_NAME"/>
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE"/>
+		<result property="fileSize" column="FILE_SIZE"/>
+		<result property="fileExt" column="FILE_EXT"/>
+		<result property="fileMime" column="FILE_MIME"/>
+		<result property="fileFancysize" column="FILE_FANCYSIZE"/>
+		<result property="fileSaveDate" column="FILE_SAVE_DATE"/>
+		<result property="fileDowncount" column="FILE_DOWNCOUNT"/>
+	</resultMap>
+	
+	<!-- 
+	게시물 상세보기
+	public BoardVO detail(int boNo)
+	 -->
+	<select id="detail" parameterType="int" resultMap="boardMap">
+		SELECT B.BO_NO, B.BO_TITLE, B.BO_WRITER
+			 , B.BO_CONTENT, B.BO_DATE, B.BO_HIT
+			 , B.FILE_GROUP_NO
+		     , FG.FILE_REGDATE
+		     , FD.FILE_SN, FD.FILE_ORIGINAL_NAME
+		     , FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE, FD.FILE_SIZE
+		     , FD.FILE_EXT, FILE_MIME, FD.FILE_FANCYSIZE, FD.FILE_SAVE_DATE
+		     , FD.FILE_DOWNCOUNT
+		FROM   BOARD B LEFT OUTER JOIN FILE_GROUP FG ON(B.FILE_GROUP_NO = FG.FILE_GROUP_NO)
+		               LEFT OUTER JOIN FILE_DETAIL FD ON(B.FILE_GROUP_NO = FD.FILE_GROUP_NO)
+		WHERE  B.BO_NO = #{boNo}
+	</select>
+	
+	<!-- 게시물 수정
+	BoardVO{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄}
+	resultType="int"생략됨
+	 -->
+	<update id="updatePost" parameterType="kr.or.ddit.vo.BoardVO">
+		UPDATE BOARD
+		SET    BO_TITLE = #{boTitle}, BO_WRITER = #{boWriter}
+		     , BO_CONTENT = #{boContent}
+		WHERE  BO_NO = #{boNo}
+	</update>
+	
+	<!--게시물 삭제
+	public int deletePost(BoardVO boardVO);
+	
+	BoardVO{boNo=2,boTitle=개똥이게임3,boWriter=이정재3,boContent=개똥이게임3탄} 
+	 -->
+	<delete id="deletePost" parameterType="kr.or.ddit.vo.BoardVO">
+		DELETE FROM BOARD
+		WHERE  BO_NO = #{boNo}
+	</delete>
+	
+	<!-- 게시물 목록
+	public List<BoardVO> list(Map<String, Object> map)
+	
+	resultType : 조인이 없을 때
+	resultMap  : 조인이 있을 때
+	
+	map{keyword="",currentPage="4"}
+	 -->
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.vo.BoardVO">
+		SELECT T.RNUM, T.BO_NO, T.BO_TITLE, T.BO_WRITER
+		     , T.BO_CONTENT, T.BO_DATE, T.BO_HIT
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY BO_NO) RNUM
+		         , BO_NO, BO_TITLE, BO_WRITER, BO_CONTENT, BO_DATE, BO_HIT
+		    FROM   BOARD
+		) T
+		WHERE  T.RNUM BETWEEN (#{currentPage}*10)-9 AND (#{currentPage}*10)
+	</select>
+	
+	<!-- 전체 행의 수
+	public int getTotal() -->
+	<select id="getTotal" resultType="int">
+		SELECT COUNT(*) FROM BOARD
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+

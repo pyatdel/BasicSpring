@@ -1,0 +1,87 @@
+1. 기본 환경 설정
+
+
+Maven 의존성 추가 (필수 라이브러리)
+
+spring-boot-starter-security: 기본 시큐리티 기능
+spring-security-test: 시큐리티 테스트 기능
+commons-fileupload, commons-io: 파일 처리 관련 라이브러리
+
+
+
+
+2. 데이터베이스 구조
+
+
+ARTICLE 테이블: 블로그 게시글 관리
+
+ID (PK), TITLE, CONTENT, CREATED_AT 컬럼 구성
+기본적인 CRUD 기능을 위한 테이블 구조
+
+
+CRUD 테이블: 파일 업로드 기능 포함
+
+CRUD_NUM (PK), CRUD_CONTENT, CRUD_NAME, CURD_FILE 컬럼 구성
+
+
+
+
+3. 사용자 인증/권한 시스템
+
+
+사용자 관리
+
+USERNAME (PK): 사용자 식별자
+PASSWORD: 암호화된 비밀번호 저장
+ENABLED: 계정 활성화 상태
+
+
+역할 기반 접근 제어(RBAC)
+
+ROLE_ADMIN: 관리자 권한
+ROLE_MEMBER: 일반 회원 권한
+한 사용자가 여러 역할 가질 수 있음 (N:N 관계)
+
+
+
+
+4. UserDetails 인터페이스 구현
+
+
+핵심 메서드:
+
+getAuthorities(): 사용자 권한 목록 반환
+getUsername(): 사용자 식별자 반환
+getPassword(): 암호화된 비밀번호 반환
+
+
+
+
+5. 보안 설정
+
+
+WebSecurityConfig 주요 설정:
+
+// 1. 정적 리소스 보안 비활성화
+// 2. HTTP 요청 보안 설정
+// 3. URL 별 접근 권한 설정
+// 4. 로그인 폼 설정
+// 5. 로그아웃 처리
+// 6. CSRF 설정
+// 7. 인증 관리자 설정
+// 8. UserDetailsService 설정
+// 9. 패스워드 인코더 설정
+
+
+6. 중요 보안 고려사항
+
+
+로그인은 반드시 POST 방식 사용
+패스워드는 반드시 암호화하여 저장
+CSRF 보안 설정 (실제 운영 시 활성화 필요)
+
+
+7. API 엔드포인트 예시
+
+GET /api/getCrud/{crudNum} : CRUD 조회
+POST /user : 회원가입 처리

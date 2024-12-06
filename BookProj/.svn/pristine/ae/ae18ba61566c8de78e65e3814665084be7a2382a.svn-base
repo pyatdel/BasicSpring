@@ -1,0 +1,37 @@
+package kr.or.ddit.vo;
+
+import java.util.Date;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import lombok.Data;
+
+//자바빈(프로퍼티,기본생성자,getter/setter메서드) 클래스
+//스프링삼각형(PSA,PoJo,IoC,DI,AOP)
+//PoJo가 약해짐
+@Data
+public class MemberVO {
+	private String memId;
+	private String memPass;
+	private String memName;
+	private String memRegno1;
+	private String memRegno2;
+	//2024-11-27(문자타입)->pattern->날짜타입
+	@DateTimeFormat(pattern="yyyy-MM-dd")
+	private Date   memBir;
+	private String memZip;
+	private String memAdd1;
+	private String memAdd2;
+	private String memHometel;
+	private String memComtel;
+	private String memHp;
+	private String memMail;
+	private String memJob;
+	private String memLike;
+	private String memMemorial;
+	private Date   memMemorialday;
+	private int    memMileage;
+	private String memDelete;
+	
+	private int rnum;//행번호
+}

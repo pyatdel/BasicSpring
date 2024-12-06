@@ -1,0 +1,10 @@
+package kr.or.ddit.service;
+
+import kr.or.ddit.vo.StudVO;
+
+public interface StudService {
+
+	//학생 등록
+	public int createPost(StudVO studVO);
+	
+}

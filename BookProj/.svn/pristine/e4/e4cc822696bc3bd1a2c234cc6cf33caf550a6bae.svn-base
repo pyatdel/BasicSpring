@@ -1,0 +1,26 @@
+package kr.or.ddit.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import lombok.extern.slf4j.Slf4j;
+
+@RequestMapping("/lprod")
+@Slf4j
+@Controller
+public class LprodController {
+
+	/*
+	요청URI : /lprod/create
+	요청파라미터 : 
+	요청방식 : get
+	
+	lprod/create.jsp를 forwarding해보자
+	 */
+	@RequestMapping("/create")
+	public String create() {
+		//forwarding : jsp
+		return "lprod/create";
+	}
+	
+}

@@ -1,0 +1,11 @@
+package kr.or.ddit.vo;
+
+import lombok.Data;
+
+//자바빈클래스(프로퍼티, 기본생성자, getter/getter메서드)
+@Data
+public class StudVO {
+	private String email;
+	private String password;
+	private String rememberMe;
+}

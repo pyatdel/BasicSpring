@@ -1,0 +1,63 @@
+package kr.or.ddit.mapper;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import kr.or.ddit.vo.LprodVO;
+
+@Mapper
+public interface LprodMapper {
+
+	//LPROD 테이블에 insert
+	public int createPost(LprodVO lprodVO);
+
+	//상품분류 상세
+	public LprodVO detail(int lprodId);
+
+	//상품분류 수정
+	public int updatePost(LprodVO lprodVO);
+
+	//상품분류 삭제
+	public int deletePost(LprodVO lprodVO);
+
+	//상품 목록
+	public List<LprodVO> list(Map<String, Object> map);
+
+	//전체 행의 수 *******
+	public int getTotal(Map<String, Object> map);
+	
+	/*등록할 대상 상품 미리 준비해보기
+	1. 상품 코드 : 상품분류에 해당하는 마지막 상품 코드 + 1 가져옴
+	lprodVO{lprodId=10,lprodId=P501,lprodNm=도서류}
+	
+	결과 : P101000007
+	<select id="getMaxProdId" parameterType="kr.or.ddit.vo.LprodVO"
+		resultType="String">
+	 */
+	public String getMaxProdId(LprodVO lprodVO);
+	
+	/*등록할 대상 상품 미리 준비해보기
+	2. 거래처 코드 : select 태그 구성을 위해 상품분류에 해당하는 거래처 목록을 준비
+	lprodVO{lprodId=10,lprodGu=P501,lprodNm=도서류}
+	리턴 : [
+			{BUYER_ID=P30201,BUYER_NAME=한국화장품}, 
+			{BUYER_ID=P30202,BUYER_NAME=피리어스},
+			{BUYER_ID=P30203,BUYER_NAME=참존} 
+		]
+	<select id="getBuyerList" parameterType="kr.or.ddit.vo.LprodVO"
+		resultType="hashMap">
+	*/
+	public List<Map<String,Object>> getBuyerList(LprodVO lprodVO);
+	
+	//PROD 테이블에 다중insert
+	//<update id="insertAllProd" parameterType="kr.or.ddit.vo.LprodVO">
+	public int insertAllProd(LprodVO lprodVO);
+}
+
+
+
+
+
+

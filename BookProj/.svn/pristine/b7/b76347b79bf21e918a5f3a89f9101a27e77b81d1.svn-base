@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace : xml파일은 여러개일 수 있음. 
+이를 구별하기 위한 식별 용도로 사용 -->
+<mapper namespace="kr.or.ddit.mapper.LprodMapper">
+	
+	<!-- 반복되는 조건문 -->
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+			AND    (
+				LPROD_ID LIKE '%' || #{keyword} || '%' OR
+				LPROD_GU LIKE '%' || #{keyword} || '%' OR
+				LPROD_NM LIKE '%' || #{keyword} || '%' 
+			)		
+		</if>
+	</sql>
+	
+	<!--LPROD 테이블에 insert
+	public int createPost(LprodVO lprodVO)
+	드루와 : lprodVO{lprodId=0,lprodGu=P701, lprodNm=도서류}
+	나갈때 : lprodVO{lprodId=10,lprodGu=P701, lprodNm=도서류}
+	 -->
+	<insert id="createPost" parameterType="kr.or.ddit.vo.LprodVO">
+		
+		<selectKey resultType="int" order="BEFORE" keyProperty="lprodId">
+			SELECT NVL(MAX(LPROD_ID),0)+1 FROM LPROD
+		</selectKey>
+		
+		INSERT INTO LPROD(LPROD_ID, LPROD_GU, LPROD_NM)
+		VALUES(#{lprodId},#{lprodGu},#{lprodNm})
+		
+	</insert>
+	
+	<!--상품분류 상세
+	public LprodVO detail(int lprodId)
+	 -->
+	<select id="detail" parameterType="int" resultType="kr.or.ddit.vo.LprodVO">
+		SELECT LPROD_ID, LPROD_GU, LPROD_NM
+		FROM   LPROD
+		WHERE  LPROD_ID = #{lprodId}
+	</select>
+	
+	<!-- 상품분류 수정
+	public int updatePost(LprodVO lprodVO)
+	
+	request{lprodId=3,lprodGu=P201,lprodNm=여성캐주얼}
+	 -->
+	<update id="updatePost" parameterType="kr.or.ddit.vo.LprodVO">
+		UPDATE LPROD
+		SET    LPROD_NM = #{lprodNm}
+		WHERE  LPROD_ID = #{lprodId}
+	</update>
+	
+	<!-- 상품분류 삭제
+	public int deletePost(LprodVO lprodVO) -->
+	<delete id="deletePost" parameterType="kr.or.ddit.vo.LprodVO">
+		DELETE FROM LPROD WHERE LPROD_ID = #{lprodId}
+	</delete>
+	
+	<!-- 상품 목록
+	public List<LprodVO> list()
+	map{currentPage=1,keyword=}
+	
+	휴..낮엔더워 : () NOT AND OR
+	 -->
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.vo.LprodVO">
+		SELECT T.RNUM, T.LPROD_ID, T.LPROD_GU, T.LPROD_NM
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY LPROD_ID DESC) RNUM
+		         , LPROD_ID, LPROD_GU, LPROD_NM 
+		    FROM   LPROD
+		    WHERE  1 = 1
+		    <include refid="where"></include>
+		) T
+		WHERE  T.RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+	</select>
+	
+	<!-- 전체 행의 수(카디널리티) *******
+	public int getTotal(Map<String, Object> map)
+	
+	map{currentPage=1,keyword=}
+	 -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) 
+		FROM    LPROD
+		WHERE  1 = 1
+	    <include refid="where"></include>
+	</select>
+	
+	<!-- 등록할 대상 상품 미리 준비해보기
+	1. 상품 코드 : 상품분류에 해당하는 마지막 상품 코드 + 1 가져옴
+	lprodVO{lprodId=10,lprodGu=P501,lprodNm=도서류}
+	
+	결과 : P101000007
+	 -->
+	<select id="getMaxProdId" parameterType="kr.or.ddit.vo.LprodVO"
+		resultType="String">
+		SELECT NVL(SUBSTR(MAX(PROD_ID),1,4)
+		     || TRIM(TO_CHAR(SUBSTR(MAX(PROD_ID),5) + 1,'000000')),#{lprodGu}||'000001')
+		FROM   PROD
+		WHERE  PROD_LGU = #{lprodGu}
+	</select>
+	 
+	<!-- 등록할 대상 상품 미리 준비해보기
+	2. 거래처 코드 : select 태그 구성을 위해 상품분류에 해당하는 거래처 목록을 준비
+	lprodVO{lprodId=10,lprodGu=P501,lprodNm=도서류}
+	리턴 : [
+			{BUYER_ID=P30201,BUYER_NAME=한국화장품}, 
+			{BUYER_ID=P30202,BUYER_NAME=피리어스},
+			{BUYER_ID=P30203,BUYER_NAME=참존} 
+		]
+	 -->
+	<select id="getBuyerList" parameterType="kr.or.ddit.vo.LprodVO"
+		resultType="hashMap">
+		SELECT BUYER_ID
+		     , BUYER_NAME
+		FROM   BUYER
+		WHERE  BUYER_LGU = #{lprodGu}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+

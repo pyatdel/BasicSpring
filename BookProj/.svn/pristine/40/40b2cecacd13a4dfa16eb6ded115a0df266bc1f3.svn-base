@@ -1,0 +1,31 @@
+package kr.or.ddit.service;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.or.ddit.vo.MemberVO;
+
+public interface MemberService {
+	/* 회원 목록
+	<select id="list" resultType="kr.or.ddit.vo.MemberVO">
+	 */
+	public List<MemberVO> list(Map<String, Object> map);
+
+	//회원 상세
+	public MemberVO detail(String memId);
+
+	//회원 수정
+	public int updatePost(MemberVO memberVO);
+
+	//회원 등록 실행
+	public int createPost(MemberVO memberVO);
+
+	//회원 가입 시 중복체크
+	public int idDupChk(MemberVO memberVO);
+
+	//회원 삭제
+	public int deletePostAjax(MemberVO memberVO);
+
+	//행의 수
+	public int getTotal(Map<String, Object> map);
+}
