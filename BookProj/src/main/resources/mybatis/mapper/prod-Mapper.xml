@@ -48,14 +48,17 @@
 </resultMap>
 
 <select id="list" parameterType="map" resultMap="prodDetailMap">
-    SELECT 
-        P.PROD_ID, P.PROD_NAME, P.PROD_LGU, P.PROD_BUYER, P.PROD_SALE, P.PROD_OUTLINE,
-        L.LPROD_ID, L.LPROD_GU, L.LPROD_NM,
-        B.BUYER_ID, B.BUYER_NAME, B.BUYER_LGU
-    FROM PROD P
-    LEFT OUTER JOIN LPROD L ON (P.PROD_LGU = L.LPROD_GU)
-    LEFT OUTER JOIN BUYER B ON (P.PROD_BUYER = B.BUYER_ID)
-    ORDER BY P.PROD_ID DESC
+    SELECT T.* 
+    FROM (
+        SELECT ROW_NUMBER() OVER(ORDER BY P.PROD_ID DESC) AS RNUM
+             , P.PROD_ID, P.PROD_NAME, P.PROD_LGU, P.PROD_BUYER, P.PROD_SALE, P.PROD_OUTLINE
+             , L.LPROD_ID, L.LPROD_GU, L.LPROD_NM
+             , B.BUYER_ID, B.BUYER_NAME, B.BUYER_LGU
+        FROM PROD P
+        LEFT OUTER JOIN LPROD L ON (P.PROD_LGU = L.LPROD_GU)
+        LEFT OUTER JOIN BUYER B ON (P.PROD_BUYER = B.BUYER_ID)
+    ) T
+    WHERE T.RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
 </select>
 
 <select id="getTotal" parameterType="map" resultType="int">

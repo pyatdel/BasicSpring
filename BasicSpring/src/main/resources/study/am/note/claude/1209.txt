@@ -1,0 +1,102 @@
+1. 스프링 프레임워크 면접 답변 준비
+
+
+핵심 개념: 프레임워크(디자인 패턴 패키지)
+주요 특징: PSA, POJO, DI/IoC, AOP
+보안 관련 중요 개념:
+
+인증(Authentication): 로그인 처리
+인가(Authorization): 권한 관리
+횡단관심사(Cross-cutting Concerns)
+
+
+
+
+2. 스프링 시큐리티 구성 요소
+
+// 1. Security Configuration (Config 패키지)
+- 보안 필터 체인 구성
+- 인증/인가 처리자 설정
+- 기본 보안 설정
+
+// 2. 사용자 조회
+- Repository/Service 구현
+- 사용자 정보 조회 로직
+
+// 3. UserDetails
+- 사용자 상세 정보 구현
+- 권한 정보 매핑
+- 인증 정보 구성
+
+
+3. 파일 업로드 처리
+
+
+FormData 사용 필수 (파일 구조가 있을 경우 JSON 사용 불가)
+주요 구현 내용:
+
+// 파일 업로드 처리
+let formData = new FormData();
+formData.append("sujinContent", sujinContent);
+formData.append("sujinName", sujinName);
+
+// 다중 파일 처리
+for(let i=0; i<files.length; i++){
+    formData.append("uploadFile", files[i]);
+}
+
+
+4. 이미지 미리보기 기능
+
+// FileReader 활용
+reader.onload = function(e){
+    str = "<img src='" + e.target.result + "' style='width:30%;margin:10 10 10 10;' />";
+    $("#tdImgShow").append(str);
+}
+reader.readAsDataURL(f);
+
+
+5. 리소스 핸들링
+
+// 웹 주소와 파일 위치 매핑
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    registry.addResourceHandler("/upload/**")
+            .addResourceLocations("file:///C:/upload/");
+}
+
+
+6. 페이징 처리
+
+-- 페이징 쿼리
+WITH T AS(
+    SELECT ROW_NUMBER() OVER(ORDER BY SUJIN_NUM DESC) RNUM,
+           SUJIN_NUM, SUJIN_CONTENT, SUJIN_NAME, SUJIN_FILE
+    FROM   SUJIN
+)
+SELECT *
+FROM   T
+WHERE  T.RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+
+
+7. 검색 기능
+
+<!-- MyBatis 동적 쿼리 -->
+<if test="keyword!=null and keyword!=''">
+    AND (SUJIN_NAME LIKE '%' || #{keyword} || '%' OR
+         SUJIN_CONTENT LIKE '%' || #{keyword} || '%')
+</if>
+
+
+8. AJAX를 이용한 CRUD 작업
+
+GET, POST, DELETE 등 HTTP 메소드 활용
+XMLHttpRequest 객체 사용
+비동기 통신 처리
+
+xhr.open("post", "/sujin/insertSujinFile", true);
+xhr.onreadystatechange = () => {
+    if(xhr.readyState == 4 && xhr.status == 200){
+        // 처리 로직
+    }
+}

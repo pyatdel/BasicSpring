@@ -281,5 +281,3 @@ $(function(){
 <!-- ///// footer 시작 ///// -->
 <jsp:include page="../include/footer.jsp"></jsp:include>
 <!-- ///// footer 끝 ///// -->  
-
-

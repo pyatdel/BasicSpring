@@ -1,6 +1,5 @@
 package kr.or.ddit.controller;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,9 +9,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import kr.or.ddit.service.BuyerService;
 import kr.or.ddit.service.LprodService;
@@ -60,6 +61,59 @@ public class ProdController {
 		
 		return "prod/list";
 	}
+	
+	/*
+	 요청URI : /lprod/listAjax
+	 요청파라미터 : JSONString{"currentPage":"1","keyword"=""}
+	 			 JSONString{"currentPage":"1","keyword"="도서"}
+	 요청방식 : get
+	 
+	 return lprodVOList;
+	              serialize								deserialize
+	 (List<LprodVO>)서버(JSONString) -> 인터넷 -> (JSONString)클라이언트(Object)
+	 
+	 오버로딩 : 동일한 클래스 내에 같은 이름의 메소드를 여러번 사용 가능(파라미터 개수, 파라미터 타입이 다르게 처리)
+	 */
+	
+	
+	
+	@ResponseBody
+	@PostMapping("/listAjax")
+	public ArticlePage<ProdVO> listAjax(@RequestBody Map<String,Object> map){
+		log.info("list->map : " + map);
+		
+		List<ProdVO> prodVOList = this.prodService.list(map);
+		log.info("list->memberVOList" + prodVOList);
+		
+		int total = this.prodService.getTotal(map);
+		log.info("list->total : " + total);
+		
+		
+		
+		// 검색한 페이지들
+		// 검색 결과가 없을 때, 페이지를 대체
+		int currentPage = 1;
+		
+		// 검색 결과가 있다면, 객체 타입의 currentPage 값을, int로 만들어서 사용한다
+		if(map.get("currentPage") !=null) {
+			currentPage = Integer.parseInt(map.get("currentPage").toString());
+		}
+		
+		String keyword = "";//검색이 없는 것이 기본
+		
+		// 검색어가 있을 때만 처리
+		if(map.get("keyword") !=null) {
+			keyword = map.get("keyword").toString();
+		}
+		
+		// 페이지 객체 생성
+		ArticlePage<ProdVO> articlePage = 
+				new ArticlePage<ProdVO>(total, currentPage, 10, prodVOList
+										, keyword, "ajax");
+		
+		return articlePage;
+	}
+	
 	
 	// 상품 상세
 	@GetMapping("/detail")

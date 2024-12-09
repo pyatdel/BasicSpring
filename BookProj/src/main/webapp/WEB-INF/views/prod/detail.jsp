@@ -36,26 +36,10 @@
    <input type="text" name="prodId" value="${prodVO.prodId}" />
    <p>상품명 : <input class="form-control" type="text" name="prodName" 
         value="${prodVO.prodName}" required placeholder="상품명" readonly /></p>
-   <p>상품 분류 코드 : 
-    <select class="form-control" name="prodLgu" required>
-        <c:forEach var="lprodVO" items="${lprodVOList}">
-            <option value="${lprodVO.lprodGu}" 
-                    ${prodVO.prodLgu eq lprodVO.lprodGu ? 'selected' : ''}>
-                ${lprodVO.lprodNm}
-            </option>
-        </c:forEach>
-    </select>
-</p>
-   <p>거래처 코드 : 
-    <select class="form-control" name="prodBuyer" required>
-        <c:forEach var="buyerVO" items="${buyerVOList}">
-            <option value="${buyerVO.buyerId}" 
-                    ${prodVO.prodBuyer eq buyerVO.buyerId ? 'selected' : ''}>
-                ${buyerVO.buyerName}
-            </option>
-        </c:forEach>
-    </select>
-</p>
+   <p>상품 분류 코드 : <input type="text" class="form-control" name="prodLgu" 
+        value="${prodVO.prodLgu}" required placeholder="상품 분류 코드" readonly /></p>
+   <p>거래처 코드 : <input type="text" class="form-control" name="prodBuyer" 
+        value="${prodVO.prodBuyer}" required placeholder="거래처 코드" readonly /></p>
    <p>판매가 : <input type="text" class="form-control" name="prodSale" 
         value="${prodVO.prodSale}" required placeholder="판매가" readonly /></p>
    <p>설명 : <input type="text" class="form-control" name="prodOutline" 
@@ -119,12 +103,6 @@
 </section>
 
 <script type="text/javascript">
-//CKEditor5 그리기
-//<div id="prodOutline0"..
-//window.editor를 통해 CKEditor 객체에 접근하겠음
-ClassicEditor.create(document.querySelector('#prodOutline0'),{ckfinder:{uploadUrl:'/image/upload'}})
-			 .then(editor=>{window.editor=editor;})
-			 .catch(err=>{console.error(err.stack);});
 
 </script>
 

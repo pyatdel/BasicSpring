@@ -82,7 +82,7 @@ public class MemberController {
 	 */
 	@ResponseBody
 	@PostMapping("/listAjax")
-	public ArticlePage<MemberVO> listAjax(@RequestBody Map<String,Object> map,Model model) {
+	public ArticlePage<MemberVO> listAjax(@RequestBody Map<String,Object> map) {
 		//list->map : {currentPage=1, keyword=길동}
 		log.info("list->map : " + map);
 		
