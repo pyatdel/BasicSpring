@@ -267,12 +267,3 @@
 		WHERE  IDX = #{idx}
 	</update>
 </mapper>
-
-
-
-
-
-
-
-
-
