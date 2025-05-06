@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.workspace.mapper.FileStorageMapper">
+
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+			AND (
+			EMP_NAME LIKE '%' || #{keyword} || '%' OR
+            FILE_ORIGINAL_NAME LIKE '%' || #{keyword} || '%' OR
+              FILE_MIME LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	<sql id="deptNo">
+	    <!-- state 값이 전달되지 않거나 빈 값일 경우 필터를 적용하지 않음 -->
+	    <if test="deptNo != null and deptNo != ''">
+	        <choose>
+	            <when test="deptNo == 1">
+	                AND DEPT_NO = '1'
+	            </when>
+	            <when test="deptNo == 2">
+	                AND DEPT_NO = '2'
+	            </when>
+	            <when test="deptNo == 3">
+	                 AND DEPT_NO = '3'
+	            </when>
+	            <when test="deptNo == 4">
+	                 AND DEPT_NO = '4'
+	            </when>
+	            <when test="deptNo == 4">
+	                 AND DEPT_NO = '5'
+	            </when>
+	        </choose>
+	    </if>
+	</sql>
+
+
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.workspace.vo.FileStorageVO">
+		SELECT *
+		FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY FG.FILE_REG_DATE DESC) AS RNUM
+                
+				, FG.FILE_REG_DATE
+				, FD.FILE_SN, FD.FILE_ORIGINAL_NAME, FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE
+				, FD.FILE_SIZE, FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+				, TO_TIMESTAMP(FD.FILE_SAVE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS FILE_SAVE_DATEE
+				, FD.FILE_SAVE_DATE
+				, EP.EMP_NO , EP.EMP_NAME
+			FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'com'
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+				<include refid="where"></include>
+		)F
+		WHERE F.RNUM BETWEEN (#{currentPage} * 10 )-( 10- 1 )
+		AND (#{currentPage} * 10)
+	
+
+	</select>
+	<select id="myList" parameterType="hashMap" resultType="kr.or.ddit.workspace.vo.FileStorageVO">
+		SELECT *
+		FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY FG.FILE_REG_DATE DESC) AS RNUM
+                
+				, FG.FILE_REG_DATE
+				, FD.FILE_SN, FD.FILE_ORIGINAL_NAME, FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE
+				, FD.FILE_SIZE, FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+				, TO_TIMESTAMP(FD.FILE_SAVE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS FILE_SAVE_DATEE
+				, FD.FILE_SAVE_DATE
+				, EP.EMP_NO , EP.EMP_NAME
+			FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'my'
+                AND EMP_NO = #{empNo}
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+		)F
+		WHERE F.RNUM BETWEEN (#{currentPage} * 10 )-( 10- 1 )
+		AND (#{currentPage} * 10)
+	
+	
+	
+	</select>
+
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'com'
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+				<include refid="where"></include>
+
+	</select>
+	<select id="meGetTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'my'
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+       		AND FS.EMP_NO = #{empNo}
+
+	</select>
+	<insert id="insert" parameterType="kr.or.ddit.workspace.vo.FileStorageVO">
+         INSERT INTO file_storage (
+			    FILE_STORAGE_NO
+         <if test="fileGroupNo != null and fileGroupNo !='' ">
+				,FILE_GROUP_NO
+		</if>
+			    ,EMP_NO
+			    ,FILE_TYPE
+			    ,FILE_STATE
+			) VALUES ( file_storage_seq.NEXTVAL
+					<if test="fileGroupNo != null and fileGroupNo !='' ">
+					,#{fileGroupNo}
+					</if>		
+			         ,  
+			         #{empNo}
+			         ,#{fileType}
+			         ,'Y'
+			         
+			          ) 
+						
+	
+	
+	
+	</insert>
+	<insert id="myInsert" parameterType="kr.or.ddit.workspace.vo.FileStorageVO">
+         INSERT INTO file_storage (
+			    FILE_STORAGE_NO
+         <if test="fileGroupNo != null and fileGroupNo !='' ">
+				,FILE_GROUP_NO
+		</if>
+			    ,EMP_NO
+			    ,FILE_TYPE
+			    ,FILE_STATE
+			) VALUES ( file_storage_seq.NEXTVAL
+					<if test="fileGroupNo != null and fileGroupNo !='' ">
+					,#{fileGroupNo}
+					</if>		
+			         , #{empNo}
+			         , #{fileType}
+			         , 'Y' ) 
+						
+	
+	
+	
+	</insert>
+	<insert id="deptInsert" parameterType="kr.or.ddit.workspace.vo.FileStorageVO">
+         INSERT INTO file_storage (
+			    FILE_STORAGE_NO
+         <if test="fileGroupNo != null and fileGroupNo !='' ">
+				,FILE_GROUP_NO
+		</if>
+			    ,EMP_NO
+			    ,FILE_TYPE
+			    ,DEPT_NO
+			    ,FILE_STATE
+			) VALUES ( file_storage_seq.NEXTVAL
+					<if test="fileGroupNo != null and fileGroupNo !='' ">
+					,#{fileGroupNo}
+					</if>		
+			         , #{empNo}
+			         , #{fileType}
+			         , #{deptNo}
+			         , 'Y' ) 
+						
+	
+	
+	
+	</insert>
+	
+	<select id="deptFileVOList" parameterType="hashMap" resultType="kr.or.ddit.workspace.vo.FileStorageVO">
+				SELECT *
+		FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY FG.FILE_REG_DATE DESC) AS RNUM
+                
+				, FG.FILE_REG_DATE
+				, FD.FILE_SN, FD.FILE_ORIGINAL_NAME, FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE
+				, FD.FILE_SIZE, FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+				, TO_TIMESTAMP(FD.FILE_SAVE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS FILE_SAVE_DATEE
+				, FD.FILE_SAVE_DATE
+				, EP.EMP_NO , EP.EMP_NAME
+				, FS.DEPT_NO
+			FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'dept'
+                <include refid="deptNo">
+                </include>
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+		)F
+		WHERE F.RNUM BETWEEN (#{currentPage} * 10 )-( 10- 1 )
+		AND (#{currentPage} * 10)
+	
+	
+	</select>
+	<select id="deptGetTotal" parameterType="hashMap" resultType="int">
+				SELECT COUNT(*)
+		FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY FG.FILE_REG_DATE DESC) AS RNUM
+                
+				, FG.FILE_REG_DATE
+				, FD.FILE_SN, FD.FILE_ORIGINAL_NAME, FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE
+				, FD.FILE_SIZE, FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+				, TO_TIMESTAMP(FD.FILE_SAVE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS FILE_SAVE_DATEE
+				, FD.FILE_SAVE_DATE
+				, EP.EMP_NO , EP.EMP_NAME
+				, FS.DEPT_NO
+			FROM FILE_GROUP FG
+				INNER JOIN FILE_DETAIL FD
+    			ON FD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+                INNER JOIN FILE_STORAGE FS
+                ON FG.FILE_GROUP_NO = FS.FILE_GROUP_NO AND FS.FILE_TYPE = 'dept'
+                <include refid="deptNo">
+                </include>
+                INNER JOIN EMPLOYEE EP
+				ON FS.EMP_NO = EP.EMP_NO
+		)F
+
+	</select>
+	<resultMap type="kr.or.ddit.workspace.vo.FileStorageVO"
+		id="fileStorageMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileStorageNo" column="FILE_STORAGE_NO"/>
+		<result property="empNo" column="EMP_NO"/>
+		<result property="fileType" column="FILE_TYPE"/>
+		<association property="fileGroupVO"
+			resultMap="fileGroupMap"></association>
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileGroupVO"
+		id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileRegDate" column="FILE_REG_DATE" />
+		<collection property="fileDetailVOList"
+			resultMap="fileDetailMap"></collection>
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileDetailVO"
+		id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME" />
+		<result property="fileSaveName" column="FILE_SAVE_NAME" />
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE" />
+		<result property="fileSize" column="FILE_SIZE" />
+		<result property="fileExt" column="FILE_EXT" />
+		<result property="fileMime" column="FILE_MIME" />
+		<result property="fileFancysize" column="FILE_FANCYSIZE" />
+		<result property="fileSaveDate" column="FILE_SAVE_DATE" />
+		<result property="fileDowncount" column="FILE_DOWNCOUNT" />
+
+	</resultMap>
+
+</mapper>

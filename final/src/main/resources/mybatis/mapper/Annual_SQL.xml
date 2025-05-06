@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.att.mapper.AnnualMapper">
+
+<sql id="where">
+	
+	<if test="keyword != null and keyword != ''">
+		AND(
+			AT.ATTENDANCE_CODE LIKE '%' || #{keyword} || '%' OR
+			TO_CHAR(AT.ANN_START_DATE, 'YYYY-MM-DD') LIKE '%' || #{keyword} || '%' OR
+			TO_CHAR(AT.ANN_END_DATE, 'YYYY-MM-DD') LIKE '%' || #{keyword} || '%' OR
+			AT.APP_STATUS_CODE LIKE '%' || #{keyword} || '%' OR
+			AT.EMP_NO LIKE '%' || #{keyword} || '%'
+		)
+	</if>
+</sql>
+
+<select id="getList" parameterType="hashMap" resultType="kr.or.ddit.att.vo.AnnualListVO">
+	SELECT R.RNUM, R.ANN_NO, R.EMP_NO, R.ANN_TITLE, R.ANN_CONTENT, R.ANN_TOTAL, R.ANN_START_DATE,
+			R.ANN_END_DATE, R.EMP_NAME, R.APP_STATUS_NAME, R.APP_STATUS_CODE, R.ATTENDANCE_NAME, R.ANN_YEAR, R.ANN_CNT
+		FROM(
+			SELECT ROW_NUMBER() OVER(ORDER BY ANN_NO DESC) RNUM
+				, AT.ANN_NO AS ANN_NO
+			    , AT.EMP_NO AS EMP_NO
+			    , AT.ANN_TITLE AS ANN_TITLE
+			    , AT.ANN_CONTENT AS ANN_CONTENT
+			    , (TRUNC(AT.ANN_END_DATE) - TRUNC(AT.ANN_START_DATE) +1) AS ANN_TOTAL
+			    , TO_CHAR(AT.ANN_START_DATE,'YYYY-MM-DD') AS ANN_START_DATE
+			    , TO_CHAR(AT.ANN_END_DATE,'YYYY-MM-DD') AS ANN_END_DATE
+			    , E.EMP_NAME AS EMP_NAME
+			    , APS.APP_STATUS_NAME AS APP_STATUS_NAME
+			    , APS.APP_STATUS_CODE AS APP_STATUS_CODE
+			    , AC.ATTENDANCE_NAME AS ATTENDANCE_NAME
+			    , AH.ANN_YEAR AS ANN_YEAR
+                , AH.ANN_CNT AS ANN_CNT
+			FROM ANNUAL_T AT
+			JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+			JOIN APPROVAL_STATUS APS ON AT.APP_STATUS_CODE = APS.APP_STATUS_CODE
+			JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+			JOIN ANN_HISTORY AH ON AT.EMP_NO = AH.EMP_NO
+			WHERE 1 = 1
+			AND AT.EMP_NO = #{empNo}
+			AND AH.ANN_YEAR = AT.ANN_YEAR
+			AND AH.ANN_YEAR = NVL(#{year}, TO_CHAR(SYSDATE,'YYYY'))
+			<include refid="where"></include>
+		)R
+	WHERE R.RNUM BETWEEN #{currentPage} *10 - (10-1) AND #{currentPage} * 10
+</select>
+
+<select id="getAttendanceCode" parameterType="kr.or.ddit.att.vo.AttendanceCodeVO" resultType="kr.or.ddit.att.vo.AttendanceCodeVO">
+	SELECT ATTENDANCE_CODE, ATTENDANCE_NAME
+	FROM ATTENDANCE_CODE
+	WHERE ATTENDANCE_CODE >= 7
+</select>
+
+<select id="getTotal" parameterType="hashMap" resultType="int">
+	SELECT COUNT(*)
+	FROM ANNUAL_T AT
+		JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+		JOIN APPROVAL_STATUS APS ON AT.APP_STATUS_CODE = APS.APP_STATUS_CODE
+		JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+		JOIN ANN_HISTORY AH ON AT.EMP_NO = AH.EMP_NO
+    WHERE 1 = 1
+    AND AT.EMP_NO = #{empNo}
+    AND AH.ANN_YEAR = AT.ANN_YEAR
+	<include refid="where"/>
+</select>
+
+<insert id="annualSignUp" parameterType="kr.or.ddit.att.vo.AnnualListVO">
+	<selectKey resultType="int" order="BEFORE" keyProperty="annNo">
+		SELECT ANNUALLIST_SEQ.NEXTVAL FROM DUAL
+	</selectKey>
+	INSERT INTO ANNUAL_T (
+	  ANN_NO
+	, EMP_NO
+	, ATTENDANCE_CODE
+	, ANN_TITLE
+	, ANN_CONTENT
+	, ANN_START_DATE
+	, ANN_END_DATE
+	, ANN_TOTAL
+	, APP_STATUS_CODE
+	, ANN_YEAR)
+	VALUES (
+	#{annNo}
+	, #{empNo}
+	, #{attendanceCode}
+	, #{annTitle}
+	, #{annContent}
+	, TO_DATE(#{annStartDate}, 'YYYY-MM-DD"T"HH24:MI')
+	, TO_DATE(#{annEndDate},'YYYY-MM-DD"T"HH24:MI')
+	, (TRUNC(TO_DATE(#{annEndDate}, 'YYYY-MM-DD"T"HH24:MI')) - TRUNC(TO_DATE(#{annStartDate},'YYYY-MM-DD"T"HH24:MI')) +1)
+	, 1
+	, TO_CHAR(SYSDATE,'YYYY')
+	)
+
+</insert>
+
+<select id="getEmpAnnual" parameterType="int" resultType="int">
+	SELECT NVL(ANN_CNT,0)
+    FROM ANN_HISTORY
+    WHERE EMP_NO = #{empNo}
+    AND ANN_YEAR = TO_CHAR(SYSDATE,'YYYY')
+</select>
+
+<select id="getListAll" parameterType="hashMap" resultType="kr.or.ddit.att.vo.AnnualListVO">
+	SELECT R.RNUM, R.ANN_NO, R.EMP_NO, R.ANN_TITLE, R.ANN_CONTENT, R.ANN_TOTAL, R.ANN_START_DATE,
+			R.ANN_END_DATE, R.EMP_NAME, R.APP_STATUS_NAME,R.APP_STATUS_CODE, R.ATTENDANCE_NAME, R.ANN_YEAR, R.ANN_CNT
+			,R.DEPT_NAME
+		FROM(
+			SELECT ROW_NUMBER() OVER(ORDER BY ANN_NO DESC) RNUM
+				, AT.ANN_NO AS ANN_NO
+			    , AT.EMP_NO AS EMP_NO
+			    , AT.ANN_TITLE AS ANN_TITLE
+			    , AT.ANN_CONTENT AS ANN_CONTENT
+			    , (TRUNC(AT.ANN_END_DATE) - TRUNC(AT.ANN_START_DATE) +1) AS ANN_TOTAL
+			    , TO_CHAR(AT.ANN_START_DATE,'YYYY-MM-DD') AS ANN_START_DATE
+			    , TO_CHAR(AT.ANN_END_DATE,'YYYY-MM-DD') AS ANN_END_DATE
+			    , E.EMP_NAME AS EMP_NAME
+			    , APS.APP_STATUS_NAME AS APP_STATUS_NAME
+			    , APS.APP_STATUS_CODE AS APP_STATUS_CODE
+			    , AC.ATTENDANCE_NAME AS ATTENDANCE_NAME
+			    , AH.ANN_YEAR AS ANN_YEAR
+                , AH.ANN_CNT AS ANN_CNT
+                , DP.DEPT_NAME AS DEPT_NAME
+			FROM ANNUAL_T AT
+			JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+			JOIN APPROVAL_STATUS APS ON AT.APP_STATUS_CODE = APS.APP_STATUS_CODE
+			JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+			JOIN ANN_HISTORY AH ON AT.EMP_NO = AH.EMP_NO
+			JOIN DEPARTMENT DP ON E.DEPT_NO = DP.DEPT_NO
+			WHERE 1 = 1
+			AND APS.APP_STATUS_CODE =1
+			AND DP.DEPT_NO = #{deptNo}
+			AND AH.ANN_YEAR = AT.ANN_YEAR
+			AND AH.ANN_YEAR = NVL(#{year}, TO_CHAR(SYSDATE,'YYYY'))
+			<include refid="where"></include>
+		)R
+	WHERE R.RNUM BETWEEN #{currentPage} *10 - (10-1) AND #{currentPage} * 10
+
+</select>
+
+<select id="getAllTotal" parameterType="hashMap" resultType="int">
+	SELECT COUNT(*)
+	FROM ANNUAL_T AT
+		JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+		JOIN APPROVAL_STATUS APS ON AT.APP_STATUS_CODE = APS.APP_STATUS_CODE
+		JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+		JOIN ANN_HISTORY AH ON AT.EMP_NO = AH.EMP_NO
+    WHERE 1 = 1
+    AND AH.ANN_YEAR = AT.ANN_YEAR
+	<include refid="where"/>
+</select>
+
+<update id="updateAppStatus" parameterType="hashMap">
+	UPDATE ANNUAL_T
+    SET APP_STATUS_CODE = #{appStatus}
+    WHERE (EMP_NO, ANN_NO) IN 
+    <foreach collection="empList" item="emp" open = "(" separator="," close = ")">
+    	(#{emp.empNo},#{emp.annNo})
+    </foreach>
+    AND APP_STATUS_CODE = 1
+</update>
+
+
+<update id="updateAnnCnt" parameterType="hashMap">
+	UPDATE ANN_HISTORY AH
+	SET AH.ANN_CNT = AH.ANN_CNT - (
+		SELECT (TRUNC(AT.ANN_END_DATE) - TRUNC(AT.ANN_START_DATE) +1)
+		FROM ANNUAL_T AT
+		WHERE AT.APP_STATUS_CODE = 4
+		AND AT.EMP_NO = AH.EMP_NO
+		AND AT.ANN_YEAR = AH.ANN_YEAR
+		AND AT.ANN_NO IN
+		<foreach collection="annNoList" item="annNo" open="(" separator="," close=")">
+			#{annNo}
+		</foreach>
+	)
+	WHERE EXISTS (
+		SELECT 1
+		FROM ANNUAL_T AT
+		WHERE AT.APP_STATUS_CODE = 4
+		AND AT.EMP_NO = AH.EMP_NO
+		AND AT.ANN_YEAR = AH.ANN_YEAR
+		AND AT.ANN_NO IN
+		<foreach collection="annNoList" item ="annNo" open="(" separator="," close=")">
+			#{annNo}
+		</foreach>
+	)
+</update>
+
+<select id="getListComplete" parameterType="hashMap" resultType="kr.or.ddit.att.vo.AnnualListVO">
+	SELECT R.RNUM, R.ANN_NO, R.EMP_NO, R.ANN_TITLE, R.ANN_CONTENT, R.ANN_TOTAL, R.ANN_START_DATE,
+			R.ANN_END_DATE, R.EMP_NAME, R.APP_STATUS_NAME,R.APP_STATUS_CODE, R.ATTENDANCE_NAME, R.ANN_YEAR, R.ANN_CNT
+			,R.DEPT_NAME
+		FROM(
+			SELECT ROW_NUMBER() OVER(ORDER BY ANN_NO DESC) RNUM
+				, AT.ANN_NO AS ANN_NO
+			    , AT.EMP_NO AS EMP_NO
+			    , AT.ANN_TITLE AS ANN_TITLE
+			    , AT.ANN_CONTENT AS ANN_CONTENT
+			    , (TRUNC(AT.ANN_END_DATE) - TRUNC(AT.ANN_START_DATE) +1) AS ANN_TOTAL
+			    , TO_CHAR(AT.ANN_START_DATE,'YYYY-MM-DD') AS ANN_START_DATE
+			    , TO_CHAR(AT.ANN_END_DATE,'YYYY-MM-DD') AS ANN_END_DATE
+			    , E.EMP_NAME AS EMP_NAME
+			    , APS.APP_STATUS_NAME AS APP_STATUS_NAME
+			    , APS.APP_STATUS_CODE AS APP_STATUS_CODE
+			    , AC.ATTENDANCE_NAME AS ATTENDANCE_NAME
+			    , AH.ANN_YEAR AS ANN_YEAR
+                , AH.ANN_CNT AS ANN_CNT
+                , DP.DEPT_NAME AS DEPT_NAME
+			FROM ANNUAL_T AT
+			JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+			JOIN APPROVAL_STATUS APS ON AT.APP_STATUS_CODE = APS.APP_STATUS_CODE
+			JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+			JOIN ANN_HISTORY AH ON AT.EMP_NO = AH.EMP_NO
+			JOIN DEPARTMENT DP ON E.DEPT_NO = DP.DEPT_NO
+			WHERE 1 = 1
+			AND APS.APP_STATUS_CODE = 4
+			AND DP.DEPT_NO = #{deptNo}
+			AND AH.ANN_YEAR = AT.ANN_YEAR
+			AND AH.ANN_YEAR = NVL(#{year}, TO_CHAR(SYSDATE,'YYYY'))
+			<include refid="where"></include>
+		)R
+	WHERE R.RNUM BETWEEN #{currentPage} *10 - (10-1) AND #{currentPage} * 10
+
+</select>
+
+<select id="getApproverEmpNo" parameterType="int" resultType="int">
+    SELECT EMP_NO
+    FROM EMPLOYEE
+    WHERE DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = #{empNo})
+    AND POST_NO = 0
+</select>
+
+<select id="getEmpName" parameterType="int" resultType="String">
+	SELECT EMP_NAME
+	FROM EMPLOYEE
+	WHERE EMP_NO = #{empNo}
+
+</select>
+
+
+
+</mapper>

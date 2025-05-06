@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.business.mapper.BusinessChanceMapper">
+
+
+		<select id="list" resultType="kr.or.ddit.business.vo.BusinessChanceVO" parameterType="hashMap">
+				SELECT * FROM (
+				    SELECT 
+				        ROW_NUMBER() OVER (ORDER BY CM.CONTRACT_NO DESC) AS PAGE_NUM,
+				        CM.CONTRACT_NO, 
+				        E.ENT_NO, 
+				        E.ENT_NAME,
+				        CM.EMP_NO, 
+				        EE.EMP_NAME, 
+				        CM.FROM_DATE, 
+				        CM.TO_DATE,
+				        CM.CONTRACT_PRICE,
+				        CM.CONTRACT_NM, 
+				        CASE CM.CONTRACT_TYPE 
+				            WHEN 'A' THEN '신규'
+				            WHEN 'B' THEN '연장계약'
+				            WHEN 'C' THEN '변경계약'
+				        END AS CONTRACT_TYPE,
+				        CASE  
+				            WHEN CM.STATE = '1' THEN CAST(CM.STATE_STAGE AS VARCHAR2(10))  
+				            WHEN CM.STATE = '0' THEN '계약완료'
+				            WHEN CM.STATE = '2' THEN '완료'
+				            WHEN CM.STATE = '3' THEN '취소' 
+				            WHEN CM.STATE = '4' THEN '보류'
+				            ELSE '-'
+				        END AS STATE,
+				        (SELECT 
+				            CASE 
+				                WHEN COUNT(*) = 0 THEN 0 
+				                ELSE (SUM(CASE WHEN CM_SUB.STATE = '0' THEN 1 ELSE 0 END) * 100) / COUNT(*)
+				            END 
+				         FROM CONTRACT_MASTER CM_SUB
+				         WHERE CM_SUB.CONTRACT_NO = CM.CONTRACT_NO
+				         GROUP BY CM_SUB.CONTRACT_NO
+				        ) AS SUCCESS_RATE,
+				        E.ENT_TYPE, 
+				        E.ENT_REG_DATE
+				    FROM CONTRACT_MASTER CM
+				    JOIN ENTERPRICE E ON CM.ENT_NO = E.ENT_NO
+				    JOIN EMPLOYEE EE ON CM.EMP_NO = EE.EMP_NO
+				) P
+				WHERE P.PAGE_NUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+
+		</select>
+
+
+		<select id="getTotal"  parameterType="hashMap" resultType="int">
+			SELECT COUNT(*)
+			FROM CONTRACT_MASTER CM, ENTERPRICE E, EMPLOYEE EE
+			WHERE 1 = 1
+				AND  CM.ENT_NO = E.ENT_NO
+			    AND EE.EMP_NO = CM.EMP_NO
+		</select>
+
+ 
+
+		<select id="successRate" resultType="kr.or.ddit.business.vo.BusinessChanceVO" parameterType="Long">
+		    SELECT          
+			    CM.CONTRACT_NO,
+			    CM.CONTRACT_NM, 
+			    CASE 
+			        WHEN COUNT(*) = 0 THEN 0 
+			        ELSE (SUM(CASE WHEN CM.STATE = '0' THEN 1 ELSE 0 END) * 100) / COUNT(*) 
+			    END AS SUCCESS_RATE
+			FROM CONTRACT_MASTER CM
+			WHERE CM.CONTRACT_NO = #{contractNo} 
+			GROUP BY CM.CONTRACT_NO, CM.CONTRACT_NM
+		</select>
+		
+		
+		
+		<select id="stateList" resultType="kr.or.ddit.business.vo.BusinessChanceVO">
+			select     CASE STATE
+			        WHEN '0' THEN '계약완료'
+			        WHEN '1' THEN '진행중'
+			        WHEN '2' THEN '완료'
+			        WHEN '3' THEN '취소' 
+			        WHEN '4' THEN '보류'
+			        ELSE  '-'
+			    END AS STATE
+			from contract_master
+			group by state
+		</select>
+		
+	
+</mapper>

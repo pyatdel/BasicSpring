@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.community.mapper.iCommunityMapper">
+
+	
+	
+	
+	<!-- 커뮤니티 -->
+	<resultMap type="kr.or.ddit.community.vo.CommunityVO" id="communityMap">
+		<result property="comNo" column="COM_NO"/>
+		<result property="comTitle" column="COM_TITLE"/>
+		<result property="comCont" column="COM_CONT"/>
+		<result property="comCreDate" column="COM_CRE_DATE"/>
+		<result property="comModiDate" column="COM_MODI_DATE"/>
+		<result property="comState" column="COM_STATE"/>
+		<result property="comHit" column="COM_HIT"/>
+		<result property="comStateType" column="COM_STATE_TYPE"/>
+		<result property="comWriter" column="COM_WRITER"/>
+		<result property="comSec" column="COM_SEC"/>
+		
+		
+		<association property="communityTypeVO" resultMap="communityTypeMap"></association>
+		
+		<association property="communityStateTypeVO" resultMap="communityStateTypeMap"></association>
+
+		<association property="employeeVO" resultMap="employeeMap"></association>
+		
+	</resultMap>
+	
+	<!-- 커뮤니티 타입 -->
+	<resultMap id="communityTypeMap" type="kr.or.ddit.community.vo.CommunityTypeVO">
+	    <result property="comTypeNo" column="COM_TYPE_NO"/>
+	    <result property="comTypeName" column="COM_TYPE_NAME"/>
+	</resultMap>
+	
+	<!-- 커뮤니티 게시글 타입 -->
+	<resultMap id="communityStateTypeMap" type="kr.or.ddit.community.vo.CommunityStateTypeVO">
+	    <result property="comStateTypeNo" column="COM_STATE_TYPE_NO"/>
+	    <result property="comStateTypeName" column="COM_STATE_TYPE_NAME"/>
+	</resultMap>
+
+	<!-- 직원 -->
+	<resultMap id="employeeMap" type="kr.or.ddit.personnel.vo.EmployeeVO">
+	    <result property="empNo" column="EMP_NO"/>
+	    <result property="enabled" column="ENABLED"/>
+	    <result property="empId" column="EMP_ID"/>
+	    <result property="empPw" column="EMP_PW"/>
+	    <result property="empEmail" column="EMP_EMAIL"/>
+	    <result property="empPhone" column="EMP_PHONE"/>
+	    <result property="empZip" column="EMP_ZIP"/>
+	    <result property="empStreet" column="EMP_STREET"/>
+	    <result property="empDetail" column="EMP_DETAIL"/>
+	    <result property="empSign" column="EMP_SIGN"/>
+	    <result property="empAnnual" column="EMP_ANNUAL"/>
+	    <result property="empIn" column="EMP_IN"/>
+	    <result property="empOut" column="EMP_OUT"/>
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+	    <result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+	    <result property="empProfile" column="EMP_PROFILE"/>
+	</resultMap>
+	
+	<!-- 대댓글 작성 -->
+	<resultMap id="comReplyMap" type="kr.or.ddit.community.vo.CommunityReplyVO">
+	    <result property="comIdx" column="COM_IDX"/>
+	    <result property="comReWriter" column="COM_RE_WRITER"/>
+	    <result property="comReDate" column="COM_RE_DATE"/>
+	    <result property="comReCont" column="COM_RE_CONT"/>
+	    <result property="comNo" column="COM_NO"/>
+	    <result property="comParentIdx" column="COM_PARENT_IDX"/>
+	    <result property="comReState" column="COM_RE_STATE"/>
+	    <result property="comLvl" column="COM_LVL"/>
+	    <result property="comParentReWriter" column="COM_PARENT_RE_WRITER"/>
+	    
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	</resultMap>
+	
+	<!-- 게시판 타입 목록 조회 -->
+	<select id="comListAll" resultMap="communityTypeMap">
+	    SELECT 
+	        COM_TYPE_NO,
+	        COM_TYPE_NAME
+	    FROM COMMUNITY_TYPE
+	    ORDER BY COM_TYPE_NO ASC
+	</select>
+	
+	<!-- 게시글 타입 목록 조회 -->
+	<select id="comStateListAll" resultMap="communityStateTypeMap">
+	    SELECT 
+	        COM_STATE_TYPE_NO,
+	        COM_STATE_TYPE_NAME
+	    FROM COMMUNITY_STATE_TYPE
+	    ORDER BY COM_STATE_TYPE_NO ASC
+	</select>
+	
+	<!-- 커뮤니티 등록 -->
+	<insert id="insertPost" parameterType="kr.or.ddit.community.vo.CommunityVO">
+	    <selectKey resultType="int" order="BEFORE" keyProperty="comNo">
+	        SELECT NVL(MAX(COM_NO),0)+1 FROM COMMUNITY
+	    </selectKey>
+	    
+	    INSERT INTO COMMUNITY(COM_NO, COM_TITLE, COM_CONT, COM_CRE_DATE
+	    , COM_STATE, COM_HIT, COM_WRITER, COM_SEC
+	    , EMP_NO
+	    <if test="communityStateTypeVO != null and communityStateTypeVO.comStateTypeNo != null">
+	    , COM_STATE_TYPE_NO
+	    </if>
+	    <if test="fileGroupVO != null and fileGroupVO.fileGroupNo != null">
+	    ,FILE_GROUP_NO
+	    </if>
+	    <if test="communityTypeVO != null and communityTypeVO.comTypeNo != null">
+	    ,COM_TYPE_NO
+	    </if>
+	    )
+	    VALUES(#{comNo}, #{comTitle}, #{comCont}, SYSDATE
+	    , #{comState}, 0, #{comWriter}, #{comSec}
+	    , #{empNo}
+	    <if test="communityStateTypeVO != null and communityStateTypeVO.comStateTypeNo != null">
+	    , #{communityStateTypeVO.comStateTypeNo}
+	    </if>
+	    <if test="fileGroupVO != null and fileGroupVO.fileGroupNo != null">
+	    ,#{fileGroupVO.fileGroupNo}
+	    </if>
+	    <if test="communityTypeVO != null and communityTypeVO.comTypeNo != null">
+	    , #{communityTypeVO.comTypeNo}
+	    </if>
+	    )
+	</insert>
+	
+	<!-- 게시물 상세 -->
+	<select id="detail" parameterType="int" resultMap="communityMap">
+	  SELECT 
+        C.COM_NO, C.COM_TITLE, C.COM_CONT, C.COM_CRE_DATE
+        , C.COM_STATE, C.COM_HIT, C.COM_WRITER, C.COM_SEC
+        , C.EMP_NO, C.COM_STATE_TYPE_NO, C.FILE_GROUP_NO, C.COM_TYPE_NO
+        , CST.COM_STATE_TYPE_NAME
+        , CT.COM_TYPE_NAME
+        , E.EMP_NAME, E.EMP_PROFILE
+    FROM 
+        COMMUNITY C
+        LEFT OUTER JOIN COMMUNITY_STATE_TYPE CST ON (C.COM_STATE_TYPE_NO = CST.COM_STATE_TYPE_NO)
+        LEFT OUTER JOIN COMMUNITY_TYPE CT ON (C.COM_TYPE_NO = CT.COM_TYPE_NO)
+        LEFT OUTER JOIN EMPLOYEE E ON (C.EMP_NO = E.EMP_NO)
+    WHERE 
+        C.COM_NO = #{comNo}
+	</select>
+	
+	<!-- 게시물 수정 -->
+	<update id="updatePost" parameterType="kr.or.ddit.community.vo.CommunityVO">
+		UPDATE COMMUNITY
+		SET    COM_CONT = #{comCont}
+		WHERE  COM_NO = #{comNo}
+	</update>
+	
+	<!-- 게시물 삭제 -->
+	<delete id="deletePost" parameterType="kr.or.ddit.community.vo.CommunityVO">
+	    DELETE FROM COMMUNITY
+    	WHERE COM_NO = #{comNo}
+	</delete>
+	
+	<!-- 조회수 증가 -->
+	<update id="updateHit" parameterType="kr.or.ddit.community.vo.CommunityVO">
+	    UPDATE COMMUNITY
+	    SET    COM_HIT = COM_HIT + 1
+	    WHERE  COM_NO = #{comNo}
+	</update>
+	
+	<!-- 게시글 전체 개수 조회 -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+	    SELECT COUNT(*) 
+	    FROM COMMUNITY C
+	    LEFT OUTER JOIN COMMUNITY_TYPE CT ON (C.COM_TYPE_NO = CT.COM_TYPE_NO)
+	    WHERE 1=1
+	    <if test="keyword != null and keyword != ''">
+	        AND (
+	            C.COM_TITLE LIKE '%' || #{keyword} || '%'
+	            OR C.COM_CONT LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	    <if test="comType != null and comType != ''">
+	        AND CT.COM_TYPE_NO = #{comType}
+	    </if>
+	</select>
+
+	<!-- 게시글 목록 조회 (페이징) -->
+	<select id="list" parameterType="hashMap" resultMap="communityMap">
+	    SELECT T.*
+			FROM (
+			SELECT ROW_NUMBER() OVER(ORDER BY COM_NO DESC) RNUM
+			, C.COM_NO, C.COM_TITLE, C.COM_CONT, C.COM_CRE_DATE
+			, C.COM_STATE, C.COM_HIT, C.COM_WRITER, C.COM_SEC
+			, C.EMP_NO, C.COM_STATE_TYPE_NO, C.FILE_GROUP_NO, C.COM_TYPE_NO
+			, CST.COM_STATE_TYPE_NAME
+			, CT.COM_TYPE_NAME
+			, E.EMP_NAME, E.EMP_PROFILE
+			FROM
+			COMMUNITY C
+			LEFT OUTER JOIN COMMUNITY_STATE_TYPE CST ON (C.COM_STATE_TYPE_NO = CST.COM_STATE_TYPE_NO)
+			LEFT OUTER JOIN COMMUNITY_TYPE CT ON (C.COM_TYPE_NO = CT.COM_TYPE_NO)
+			LEFT OUTER JOIN EMPLOYEE E ON (C.EMP_NO = E.EMP_NO)
+			WHERE 1=1
+			AND C.COM_TYPE_NO != 1
+			<if test="keyword != null and keyword != ''">
+			AND (
+			C.COM_TITLE LIKE '%' || #{keyword} || '%'
+			OR C.COM_CONT LIKE '%' || #{keyword} || '%'
+			)
+			</if>
+			<if test="comType != null and comType != ''">
+			AND CT.COM_TYPE_NO = #{comType}
+			</if>
+			) T
+			WHERE T.RNUM BETWEEN (#{currentPage} * 15) - 14
+			AND (#{currentPage} * 15)
+	</select>
+	
+	<!-- 댓글 등록 -->
+	<insert id="createReplyPost" parameterType="kr.or.ddit.community.vo.CommunityReplyVO">
+	    <selectKey resultType="int" order="BEFORE" keyProperty="comIdx">
+	        SELECT NVL(MAX(COM_IDX),0)+1 FROM COMMUNITY_REPLY
+	    </selectKey>
+	    INSERT INTO COMMUNITY_REPLY (
+	        COM_IDX, COM_RE_WRITER, COM_RE_DATE, COM_RE_CONT
+	        , COM_PARENT_IDX, COM_RE_STATE, COM_PARENT_RE_WRITER
+	        , COM_LVL, COM_NO, EMP_NO
+	    ) 
+	    SELECT 
+	        #{comIdx}, 
+	        (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_NO = #{empNo}), 
+	        SYSDATE, 
+	        #{comReCont},
+	        #{comParentIdx}, 
+	        1, 
+	        CASE 
+	            WHEN #{comParentIdx} > 0 THEN 
+	                (SELECT COM_RE_WRITER FROM COMMUNITY_REPLY WHERE COM_IDX = #{comParentIdx})
+	            ELSE NULL 
+	        END,
+	        CASE 
+	            WHEN #{comParentIdx} > 0 THEN 
+	                (SELECT COM_LVL + 1 FROM COMMUNITY_REPLY WHERE COM_IDX = #{comParentIdx})
+	            ELSE 1 
+	        END,
+	        #{comNo}, 
+	        #{empNo}
+	    FROM DUAL
+	    WHERE EXISTS (
+	        SELECT 1 FROM COMMUNITY WHERE COM_NO = #{comNo}
+	    )
+	</insert>
+	
+	<!-- 댓글 목록 조회 
+	<select id="reList" parameterType="hashMap" resultMap="comReplyMap">
+	    SELECT 
+	        CR.COM_IDX, CR.COM_PARENT_IDX, CR.COM_RE_STATE
+	        , CR.COM_PARENT_RE_WRITER, CR.COM_LVL, CR.COM_NO
+	        , E.EMP_NAME AS comReWriter
+	        , CR.COM_RE_DATE, CR.COM_RE_CONT
+	    FROM 
+	        COMMUNITY_REPLY CR
+	        LEFT OUTER JOIN EMPLOYEE E ON (CR.EMP_NO = E.EMP_NO)
+	    WHERE 
+	        CR.COM_NO = #{comNo}
+	        AND CR.COM_RE_STATE != '2'
+	    START WITH 
+	        CR.COM_PARENT_IDX IS NULL
+	    CONNECT BY 
+	        PRIOR CR.COM_IDX = CR.COM_PARENT_IDX
+	    ORDER SIBLINGS BY 
+	        CR.COM_RE_DATE ASC
+	</select> -->
+	
+	<!-- 댓글 목록 조회 (테스트용) -->
+	<select id="reList" parameterType="hashMap" resultMap="comReplyMap">
+  SELECT
+    CR.COM_IDX, CR.COM_PARENT_IDX, CR.COM_RE_STATE
+    , CR.COM_PARENT_RE_WRITER, CR.COM_LVL, CR.COM_NO
+    , CR.COM_RE_WRITER
+    , CR.COM_RE_DATE, CR.COM_RE_CONT
+    , E.EMP_NO, E.EMP_NAME
+FROM
+    COMMUNITY_REPLY CR
+    LEFT OUTER JOIN EMPLOYEE E ON (CR.EMP_NO = E.EMP_NO)
+WHERE
+    CR.COM_NO = #{comNo}
+    AND CR.COM_RE_STATE != '2'
+ORDER BY
+    CR.COM_RE_DATE DESC
+</select> 
+	
+	<!-- 댓글 전체 수 조회 -->
+	<select id="getReTotal" parameterType="hashMap" resultType="int">
+	    SELECT COUNT(*) 
+	    FROM COMMUNITY_REPLY
+	    WHERE 1 = 1
+	    AND COM_NO = #{comNo}
+	    AND COM_RE_STATE != '2'
+	</select>
+	
+	<!-- 댓글 삭제 -->
+	<update id="deleteReplyPost" parameterType="kr.or.ddit.community.vo.CommunityReplyVO">
+	    UPDATE COMMUNITY_REPLY
+	    SET COM_RE_STATE = '2'  
+	    WHERE COM_IDX = #{comIdx}
+	</update>
+	
+	<!-- 댓글 수정 -->
+	<update id="updateReplyPostAjax" parameterType="kr.or.ddit.community.vo.CommunityReplyVO">
+	    UPDATE COMMUNITY_REPLY
+	    SET COM_RE_CONT = #{comReCont}
+	    WHERE COM_IDX = #{comIdx}
+	</update>
+	
+		 
+</mapper>

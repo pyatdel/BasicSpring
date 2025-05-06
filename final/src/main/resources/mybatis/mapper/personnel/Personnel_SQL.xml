@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.personnel.mapper.EmployeeListMapper">
+
+	<sql id="where"> <!-- 반복된 조건문을 뺄 수 있다 -->
+	 <if test="keyword!=null and keyword!=''">
+    	AND(
+    		EMP_NAME LIKE '%' || #{keyword} || '%' OR
+    		DEPT_NAME LIKE '%' || #{keyword} || '%' OR
+    		POST_NAME LIKE '%' || #{keyword} || '%'
+    	)
+    </if>
+	</sql>
+	<resultMap type="kr.or.ddit.personnel.vo.EmployeeVO" id="employeeMap">
+		<result property="empNo" column="EMP_NO"/>
+		<result property="enabled" column="ENABLED"/>
+		<result property="empId" column="EMP_ID"/>
+		<result property="empPw" column="EMP_PW"/>
+		<result property="empName" column="EMP_NAME"/>
+		<result property="empEmail" column="EMP_EMAIL"/>
+		<result property="empPhone" column="EMP_PHONE"/>
+		<result property="empZip" column="EMP_ZIP"/>
+		<result property="empStreet" column="EMP_STREET"/>
+		<result property="empDetail" column="EMP_DETAIL"/>
+		<result property="empSign" column="EMP_SIGN"/>
+		<result property="empAnnual" column="EMP_ANNUAL"/>
+		<result property="empIn" column="EMP_IN"/>
+		<result property="empOut" column="EMP_OUT"/>
+		<result property="deptNo" column="DEPT_NO"/>
+		<result property="postNo" column="POST_NO"/>
+		<result property="deptName" column="DEPT_NAME"/>
+		<result property="postName" column="POST_NAME"/>
+		<result property="empOutCount" column="EMP_OUT_COUNT"/>
+		<result property="empInCount" column="EMP_IN_COUNT"/>
+		<result property="empCount" column="EMP_COUNT"/>
+		<result property="year" column="YEAR"/>
+		<association property="fileGroupVO" resultMap="fileGroupMap"></association>
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileGroupVO"
+		id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileRegDate" column="FILE_REG_DATE" />
+		<collection property="fileDetailVOList"
+			resultMap="fileDetailMap"></collection>
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileDetailVO"
+		id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME" />
+		<result property="fileSaveName" column="FILE_SAVE_NAME" />
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE" />
+		<result property="fileSize" column="FILE_SIZE" />
+		<result property="fileExt" column="FILE_EXT" />
+		<result property="fileMime" column="FILE_MIME" />
+		<result property="fileFancysize" column="FILE_FANCYSIZE" />
+		<result property="fileSaveDate" column="FILE_SAVE_DATE" />
+		<result property="fileDowncount" column="FILE_DOWNCOUNT" />
+
+	</resultMap>
+	
+
+	<!-- 직원 전체 목록 조회 
+	public List<EmployeeVO> list(Map<String, Object> map);-->
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.personnel.vo.EmployeeVO">
+		SELECT
+		    T.RNUM,
+		    T.EMP_ID,
+		    T.EMP_NAME,
+		    T.DEPT_NAME,
+		    T.POST_NAME,
+		    T.EMP_PHONE,
+		    T.EMP_EMAIL
+		FROM
+		    (
+		        SELECT
+		            ROW_NUMBER() OVER (
+		                ORDER BY
+		                    CASE
+		                        D.DEPT_NAME
+		                        WHEN '개발부' THEN 1
+		                        WHEN '영업부' THEN 2
+		                        WHEN '인사부' THEN 3
+		                        WHEN '회계부' THEN 4
+		                        WHEN '행정부' THEN 5
+		                        ELSE 6 
+		                    END ASC,
+		                    E.EMP_NO DESC 
+		            ) RNUM,
+		            E.EMP_ID,
+		            E.EMP_NAME,
+		            D.DEPT_NAME,
+		            P.POST_NAME,
+		            E.EMP_PHONE,
+		            E.EMP_EMAIL
+		        FROM
+		            EMPLOYEE   E,
+		            DEPARTMENT D,
+		            POSITION   P
+		        WHERE
+		            1 = 1
+		            AND E.ENABLED = '1'
+		            AND E.DEPT_NO = D.DEPT_NO
+		            AND E.POST_NO = P.POST_NO
+		            <include refid="where"></include> 
+		    ) T
+		WHERE T.RNUM BETWEEN (#{currentPage} * 10)-(10-1) AND (#{currentPage} * 10)    
+		ORDER BY
+		    CASE
+		        T.DEPT_NAME
+		        WHEN '개발부' THEN 1
+		        WHEN '영업부' THEN 2
+		        WHEN '인사부' THEN 3
+		        WHEN '회계부' THEN 4
+		        WHEN '행정부' THEN 5
+		        ELSE 6
+		    END ASC,
+		    T.RNUM
+		
+	</select>
+	
+	<!-- 전체 행의 수(카디널리티)
+	 -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT count(*)
+        FROM
+            EMPLOYEE   E,
+            DEPARTMENT D,
+            POSITION   P
+        WHERE
+            1 = 1
+            AND E.ENABLED = '1'
+            AND E.DEPT_NO = D.DEPT_NO
+            AND E.POST_NO = P.POST_NO
+            <include refid="where"></include> 
+	</select>
+
+	<!-- //직원 조회
+	public EmployeeVO detail(EmployeeVO employeeVO); -->
+	<select id="detail" parameterType="kr.or.ddit.personnel.vo.EmployeeVO"
+		resultMap="employeeMap">
+		SELECT
+		    EMP_ID
+		    , EMP_NAME
+		    , DEPT_NO
+		    , POST_NO
+		    , EMP_PHONE
+		    , EMP_EMAIL
+		    , EMP_SIGN 
+		    , FD.FILE_SN
+		    , FD.FILE_ORIGINAL_NAME
+		    , FD.FILE_SAVE_NAME
+		    , FD.FILE_SAVE_LOCATE
+		    , FD.FILE_SIZE
+		    , FD.FILE_EXT
+		    , FILE_MIME
+		    , FD.FILE_FANCYSIZE
+		    , FD.FILE_SAVE_DATE
+		FROM
+		    EMPLOYEE    E
+		    LEFT OUTER JOIN FILE_DETAIL FD ON ( E.EMP_SIGN = FD.FILE_GROUP_NO )
+		    LEFT OUTER JOIN FILE_GROUP  FG ON ( FD.FILE_GROUP_NO = FG.FILE_GROUP_NO )
+		WHERE
+		    EMP_ID = #{empId}
+		    AND ENABLED = '1'
+		
+	</select>
+	
+	<!-- 직원 데이터 수정  
+	//employeeVO{"empId": "20241224005","empName": "양2강","deptNo": "2","postNo": "2","empPhone": "010-5555-2722","empEmail": "test2@test.com"}
+	-->
+	<update id="updatePost" parameterType="kr.or.ddit.personnel.vo.EmployeeVO">
+		UPDATE EMPLOYEE
+			SET 
+			 EMP_NAME = #{empName}
+		    ,DEPT_NO = #{deptNo}
+		    ,POST_NO = #{postNo}
+		    ,EMP_PHONE = #{empPhone}
+		    ,EMP_EMAIL = #{empEmail}
+		    <if test="fileGroupNo != null and fileGroupNo !='' ">
+		    ,EMP_SIGN = #{fileGroupNo}
+		    </if>
+		WHERE EMP_ID =  #{empId}
+	</update>
+	
+	<!-- // 직원 등록
+	public int createPost(EmployeeVO employeeVO); -->
+	<insert id="createPost" parameterType="kr.or.ddit.personnel.vo.EmployeeVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="empNo">
+         SELECT NVL(max(EMP_NO),0)+1 FROM EMPLOYEE
+      	</selectKey>
+		INSERT 
+			INTO EMPLOYEE(
+				EMP_NO
+				,EMP_ID
+				, EMP_PW
+				, EMP_NAME
+				, DEPT_NO
+				, POST_NO
+				, EMP_PHONE
+				, EMP_EMAIL
+				, EMP_IN
+			<if test="fileGroupNo != null and fileGroupNo !='' ">
+				, EMP_SIGN
+			</if>
+				) 
+			VALUES 
+				(
+				#{empNo}
+				,#{empId}
+				,#{empPw}
+				,#{empName}
+				,#{deptNo}
+				,#{postNo}
+				,#{empPhone}
+				,#{empEmail}
+				,SYSDATE
+			<if test="fileGroupNo != null and fileGroupNo !='' ">
+				,#{fileGroupNo}
+			</if>
+				) 
+	</insert>
+	
+	<!-- //직원 탈퇴 처리
+	public int delete(EmployeeVO employeeVO); -->
+	<update id="delete" parameterType="kr.or.ddit.personnel.vo.EmployeeVO">
+		UPDATE EMPLOYEE
+			SET 
+			 ENABLED = '0',
+			 EMP_OUT = SYSDATE
+		WHERE EMP_ID =  #{empId}
+	</update>
+	
+	<!-- //직원 사원번호 중복 체크
+	public int idDupChk(EmployeeVO employeeVO); -->
+	<select id="idDupChk" parameterType="kr.or.ddit.personnel.vo.EmployeeVO" resultType="int">
+		SELECT COUNT(*)
+		FROM EMPLOYEE
+		WHERE EMP_ID = #{empId} 
+	</select>
+	
+	<!-- //퇴사자 리스트
+	public List<EmployeeVO> resign(Map<String, Object> map); -->
+	<select id="resign" parameterType="hashMap" resultType="kr.or.ddit.personnel.vo.EmployeeVO">
+		SELECT
+		    T.RNUM,
+		    T.EMP_ID,
+		    T.EMP_NAME,
+		    T.DEPT_NAME,
+		    T.POST_NAME,
+		    T.EMP_PHONE,
+		    T.EMP_EMAIL
+		FROM
+		    (
+		        SELECT
+		            ROW_NUMBER() OVER (
+		                ORDER BY
+		                    CASE
+		                        D.DEPT_NAME
+		                        WHEN '개발부' THEN 1
+		                        WHEN '영업부' THEN 2
+		                        WHEN '인사부' THEN 3
+		                        WHEN '회계부' THEN 4
+		                        WHEN '행정부' THEN 5
+		                        ELSE 6 
+		                    END ASC,
+		                    E.EMP_NO DESC 
+		            ) RNUM,
+		            E.EMP_ID,
+		            E.EMP_NAME,
+		            D.DEPT_NAME,
+		            P.POST_NAME,
+		            E.EMP_PHONE,
+		            E.EMP_EMAIL
+		        FROM
+		            EMPLOYEE   E,
+		            DEPARTMENT D,
+		            POSITION   P
+		        WHERE
+		            1 = 1
+		            AND E.ENABLED = '0'
+		            AND E.DEPT_NO = D.DEPT_NO
+		            AND E.POST_NO = P.POST_NO
+		            <include refid="where"></include> 
+		    ) T
+		WHERE T.RNUM BETWEEN (#{currentPage} * 10)-(10-1) AND (#{currentPage} * 10)    
+		ORDER BY
+		    CASE
+		        T.DEPT_NAME
+		        WHEN '개발부' THEN 1
+		        WHEN '영업부' THEN 2
+		        WHEN '인사부' THEN 3
+		        WHEN '회계부' THEN 4
+		        WHEN '행정부' THEN 5
+		        ELSE 6
+		    END ASC,
+		    T.RNUM
+	</select>
+	
+	<!-- // 퇴사자 개수
+	public int getResignTotal(Map<String, Object> map); -->
+	<select id="getResignTotal" parameterType="hashMap" resultType="int">
+			SELECT count(*)
+	        FROM
+	            EMPLOYEE   E,
+	            DEPARTMENT D,
+	            POSITION   P
+	        WHERE
+	            1 = 1
+	            AND E.ENABLED = '0'
+	            AND E.DEPT_NO = D.DEPT_NO
+	            AND E.POST_NO = P.POST_NO
+	            <include refid="where"></include> 
+	</select>
+
+	<!-- //연도,입사,퇴사,총인원수
+	public List<EmployeeVO> chartList(Map<String, Object> map); -->
+	<select id="chartList" resultMap="employeeMap">
+		SELECT
+			    YEAR,
+			    EMP_IN_COUNT,
+			    EMP_OUT_COUNT,
+			    EMP_COUNT
+			FROM (
+			    SELECT
+			        '2022' AS YEAR,
+			        (SELECT COUNT(EMP_IN) FROM EMPLOYEE WHERE TO_CHAR(EMP_IN, 'YYYY') = '2022') AS EMP_IN_COUNT,
+			        (SELECT COUNT(EMP_OUT) FROM EMPLOYEE WHERE TO_CHAR(EMP_OUT, 'YYYY') = '2022') AS EMP_OUT_COUNT,
+			        (SELECT COUNT(EMP_NO) FROM EMPLOYEE 
+			        WHERE ENABLED = 1 
+			        AND EMP_IN BETWEEN TO_DATE('2005-01-01','YYYY-MM-DD') AND TO_DATE('2022-12-31','YYYY-MM-DD')
+			        AND (TO_CHAR(EMP_OUT, 'YYYY') > '2022' OR EMP_OUT IS NULL)) AS EMP_COUNT
+			    FROM DUAL
+			    UNION ALL
+			    SELECT
+			        '2023' AS YEAR,
+			        (SELECT COUNT(EMP_IN) FROM EMPLOYEE WHERE TO_CHAR(EMP_IN, 'YYYY') = '2023') AS EMP_IN_COUNT,
+			        (SELECT COUNT(EMP_OUT) FROM EMPLOYEE WHERE TO_CHAR(EMP_OUT, 'YYYY') = '2023') AS EMP_OUT_COUNT,
+			        (SELECT COUNT(EMP_NO) FROM EMPLOYEE 
+                    WHERE ENABLED = 1 
+                    AND EMP_IN BETWEEN TO_DATE('2005-01-01','YYYY-MM-DD') AND TO_DATE('2023-12-31','YYYY-MM-DD') 
+                    AND (TO_CHAR(EMP_OUT, 'YYYY') > '2023' OR EMP_OUT IS NULL)) AS EMP_COUNT
+			    FROM DUAL
+			    UNION ALL
+			    SELECT
+			        '2024' AS YEAR,
+			        (SELECT COUNT(EMP_IN) FROM EMPLOYEE WHERE TO_CHAR(EMP_IN, 'YYYY') = '2024') AS EMP_IN_COUNT,
+			        (SELECT COUNT(EMP_OUT) FROM EMPLOYEE WHERE TO_CHAR(EMP_OUT, 'YYYY') = '2024') AS EMP_OUT_COUNT,
+			        (SELECT COUNT(EMP_NO) FROM EMPLOYEE 
+                    WHERE ENABLED = 1
+                    AND EMP_IN BETWEEN TO_DATE('2005-01-01','YYYY-MM-DD') AND TO_DATE('2024-12-31','YYYY-MM-DD') 
+                    AND (TO_CHAR(EMP_OUT, 'YYYY') > '2024' OR EMP_OUT IS NULL)) AS EMP_COUNT
+			    FROM DUAL
+			    UNION ALL
+			    SELECT
+			        '2025' AS YEAR,
+			        (SELECT COUNT(EMP_IN) FROM EMPLOYEE WHERE TO_CHAR(EMP_IN, 'YYYY') = '2025') AS EMP_IN_COUNT,
+			        (SELECT COUNT(EMP_OUT) FROM EMPLOYEE WHERE TO_CHAR(EMP_OUT, 'YYYY') = '2025') AS EMP_OUT_COUNT,
+			        (SELECT COUNT(EMP_NO) FROM EMPLOYEE 
+                    WHERE ENABLED = 1 
+                    AND EMP_IN BETWEEN TO_DATE('2005-01-01','YYYY-MM-DD') AND TO_DATE('2025-12-31','YYYY-MM-DD')
+                    AND (TO_CHAR(EMP_OUT, 'YYYY') > '2025' OR EMP_OUT IS NULL)) AS EMP_COUNT
+			    FROM DUAL
+			) EMP_STATS
+			ORDER BY YEAR
+	</select>
+
+</mapper>

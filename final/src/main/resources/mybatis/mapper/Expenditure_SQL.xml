@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.contract.mapper.ExpenditureMapper">
+	
+	<select id="expditList" resultType="kr.or.ddit.contract.vo.ExpenditureVO">
+		SELECT T.EXP_NO, T.CATE_NO, T.EXP_OBJ, T.EXP_QTY
+	    , T.EXP_REASON, T.BUDGET_NO, T.EXP_PRICE, T.EXP_DATE
+		FROM
+			(
+				SELECT ROW_NUMBER() OVER(ORDER BY EXP_NO) RNUM
+				, EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY
+		        , EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE
+				FROM EXPENSE
+			) T
+		WHERE T.RNUM BETWEEN (#{currentPage}*10)-9 AND (#{currentPage}*10)
+	</select>
+	
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+        SELECT COUNT(*) 
+        FROM EXPENSE
+	</select>
+
+</mapper>

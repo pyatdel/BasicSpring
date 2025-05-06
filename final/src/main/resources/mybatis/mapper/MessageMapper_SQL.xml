@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.websocket.MessageMapper">
+
+	<!-- 메시지 삽입 -->
+	<insert id="insertMessage"
+		parameterType="kr.or.ddit.websocket.MessageDto">
+		<selectKey keyProperty="masageSeq" resultType="int"
+			order="BEFORE">
+			SELECT NVL(MAX(MASAGE_SEQ), 0) + 1 FROM MESSAGE
+		</selectKey>
+		INSERT INTO MESSAGE (
+		MASAGE_SEQ, SENDER_EMP_NO, RECEIVER_EMP_NO,
+		MASAGE_CONTENT, SEND_DATE,
+		READ_STATUS
+		) VALUES (
+		#{masageSeq},
+		#{senderEmpNo}, (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID =
+		#{receiverEmpId}),
+		#{content}, SYSDATE, 'N'
+		)
+	</insert>
+
+	<!-- 수신 메시지 조회 -->
+	<select id="selectMessagesByReceiver" parameterType="long"
+		resultType="kr.or.ddit.websocket.MessageDto">
+		SELECT
+		M.MASAGE_SEQ AS messageId,
+		S.EMP_NAME AS senderName,
+		R.EMP_NAME AS receiverName,
+		M.MASAGE_CONTENT AS content,
+		M.SEND_DATE AS
+		sendTime,
+		M.READ_STATUS AS readStatus
+		FROM MESSAGE M
+		INNER JOIN EMPLOYEE
+		S ON M.SENDER_EMP_NO = S.EMP_NO
+		INNER JOIN EMPLOYEE R ON
+		M.RECEIVER_EMP_NO = R.EMP_NO
+		WHERE R.EMP_NO = #{receiverEmpNo}
+		ORDER BY
+		M.SEND_DATE DESC
+	</select>
+
+	<!-- 특정 메시지 상세 조회 -->
+	<select id="selectMessageById" parameterType="long"
+		resultType="kr.or.ddit.websocket.MessageDto">
+		SELECT
+		M.MASAGE_SEQ AS messageId,
+		S.EMP_NAME AS senderName,
+		R.EMP_NAME AS receiverName,
+		M.MASAGE_CONTENT AS content,
+		M.SEND_DATE AS
+		sendTime,
+		M.READ_STATUS AS readStatus
+		FROM MESSAGE M
+		INNER JOIN EMPLOYEE
+		S ON M.SENDER_EMP_NO = S.EMP_NO
+		INNER JOIN EMPLOYEE R ON
+		M.RECEIVER_EMP_NO = R.EMP_NO
+		WHERE M.MASAGE_SEQ = #{messageId}
+	</select>
+
+	<select id="getReceiverNameById" resultType="String"
+		parameterType="String">
+		SELECT EMP_NAME
+		FROM EMPLOYEE
+		WHERE EMP_ID = #{receiverId}
+	</select>
+
+	<select id="getReceiverEmpNoById" resultType="long"
+		parameterType="string">
+		SELECT EMP_NO
+		FROM EMPLOYEE
+		WHERE EMP_ID =
+		#{receiverEmpId}
+	</select>
+
+	<delete id="deleteMessage" parameterType="int">
+		DELETE FROM MESSAGE WHERE MASAGE_SEQ = #{messageId}
+	</delete>
+	
+	<update id="updateReadStatus" parameterType="long">
+    UPDATE MESSAGE
+    SET READ_STATUS = 'Y'
+    WHERE MASAGE_SEQ = #{messageId}
+</update>
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.workspace.mapper.ToDoListMapper">
+	
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.workspace.vo.ToDoListVO">
+		SELECT TODO_NO, EMP_NO, TODO_TITLE, TODO_DESCRIPTION
+		    , TODO_STATUS
+		    , TO_CHAR(TODO_ED, 'YYYY-DD-MM') AS TODO_EDC
+		    , TO_CHAR(TODO_CONS, 'YYYY-DD-MM') AS TODO_CONSC
+		    , TODO_CONS, TODO_UPD , TODO_ED, TODO_RANK 
+		FROM TODO_LIST
+		WHERE EMP_NO = #{empNo}	
+		
+		
+	
+	</select>
+	<insert id="create" parameterType="kr.or.ddit.workspace.vo.ToDoListVO">
+	  INSERT INTO TODO_LIST (TODO_NO, EMP_NO, TODO_TITLE, TODO_DESCRIPTION
+                            , TODO_STATUS, TODO_ED, TODO_CONS, TODO_UPD
+                            , TODO_RANK
+                   ) VALUES (TODO_SEQ.NEXTVAL,#{empNo},#{todoTitle},#{todoDescription}
+                   			,1,#{todoEd},SYSDATE,#{todoUpd}
+                   			,#{todoRank}
+                            )
+	
+	</insert>
+	<select id="getTodo" parameterType="kr.or.ddit.workspace.vo.ToDoListVO">
+		SELECT TODO_NO, EMP_NO, TODO_TITLE, TODO_DESCRIPTION
+        , TODO_STATUS, TODO_ED, TODO_CONS, TODO_UPD
+        , TODO_RANK , TO_CHAR(TODO_ED, 'YYYY-DD-MM') AS TODO_EDC
+        , TO_CHAR(TODO_CONS, 'YYYY-DD-MM') AS TODO_CONSC
+		FROM TODO_LIST
+		WHERE TODO_NO = #{todoNo}
+	
+	</select>
+	<delete id="delete" parameterType="kr.or.ddit.workspace.vo.ToDoListVO">
+		DELETE FROM TODO_LIST
+		WHERE TODO_NO = #{todoNo}
+	
+	</delete>
+	<update id="upTodo" parameterType="kr.or.ddit.workspace.vo.ToDoListVO">
+		UPDATE TODO_LIST
+		SET TODO_STATUS = 2
+		WHERE TODO_NO = #{todoNo}
+		
+	
+	
+	</update>
+
+
+</mapper>

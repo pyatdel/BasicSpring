@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.system.mapper.ReportMapper">
+
+	<sql id="where">
+		<if test="bodTypeName != null and bodTypeName != ''">
+			  AND BOD_TYPE_NAME LIKE '%' || #{bodTypeName} || '%'
+		</if>
+		<if test="repTypeName != null and repTypeName != ''">
+			AND REP_TYPE_NAME LIKE '%' || #{repTypeName} || '%'
+		</if>
+		<if test="keyword != null and keyword != ''">
+			AND(
+	    		BOD_TITLE LIKE '%' || #{keyword} || '%' OR
+	    		REP_REASON LIKE '%' || #{keyword} || '%' OR
+	    		REP_WRITER LIKE '%' || #{keyword} || '%' OR
+	    		BOD_WRITER LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+		
+	</sql>
+
+
+	<!-- //신고관리 페이지 리스트 전체 개수 불러오기
+	public int getTotal(Map<String, Object> map); -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+			 SELECT
+	    COUNT(*)
+	FROM
+	    REPORT     R
+            LEFT JOIN BOARD      B ON R.BOD_NO = B.BOD_NO
+            LEFT JOIN BOARD_TYPE BT ON B.BOD_TYPE_NO = BT.BOD_TYPE_NO
+            LEFT JOIN REPORT_TYPE RT ON RT.REP_TYPE = R.REP_TYPE
+       WHERE
+	    (
+	    B.BOD_TYPE_NO = '2'
+	    OR B.BOD_TYPE_NO = '3'
+	    )
+	    AND  REP_STATE = '1'
+	 	<include refid="where"></include>   
+	</select>
+
+	<!-- //신고관리 페이지 리스트 불러오기
+	public List<SystemReportVO> reportlist(Map<String, Object> map); -->
+	<select id="reportlist" parameterType="hashMap" resultType="kr.or.ddit.system.vo.SystemReportVO">
+		  SELECT
+    T.RNUM
+    , T.BOD_TYPE_NO
+    , T.BOD_TYPE_NAME
+    , T.BOD_NO
+    , T.BOD_TITLE
+    , T.BOD_WRITER
+    , T.REP_NO
+    , T.REP_REASON
+    , T.REP_STATE
+    , T.REP_DATE
+    , T.REP_WRITER
+    , T.REP_TYPE
+    , T.REP_TYPE_NAME
+FROM
+     (
+        SELECT
+            ROW_NUMBER()
+            OVER(
+                ORDER BY
+                    R.REP_NO DESC
+            ) RNUM
+            , B.BOD_TYPE_NO
+            , BOD_TYPE_NAME
+            , B.BOD_NO
+            , B.BOD_TITLE
+            , B.BOD_WRITER
+            , REP_NO
+            , REP_REASON
+            , REP_STATE
+            , REP_DATE
+            , REP_WRITER
+            , R.REP_TYPE
+            , REP_TYPE_NAME
+        FROM
+            REPORT     R
+            LEFT JOIN BOARD      B ON R.BOD_NO = B.BOD_NO
+            LEFT JOIN BOARD_TYPE BT ON B.BOD_TYPE_NO = BT.BOD_TYPE_NO
+            LEFT JOIN REPORT_TYPE RT ON RT.REP_TYPE = R.REP_TYPE
+       WHERE
+	    (
+	    B.BOD_TYPE_NO = '2'
+	    OR B.BOD_TYPE_NO = '3'
+	    )
+	    AND  REP_STATE = '1'
+	 <include refid="where"></include>        
+    ) T
+WHERE
+    T.RNUM BETWEEN (#{currentPage} * 10 ) - ( 10 - 1 ) AND (#{currentPage} * 10 )
+	</select>
+	
+
+	<!-- //게시판 타입 가져오기
+	public List<SystemReportVO> bodTypeNameList(); -->
+	<select id="bodTypeNameList" resultType="kr.or.ddit.system.vo.SystemReportVO">
+		 SELECT
+	    BOD_TYPE_NAME
+	FROM
+	    BOARD_TYPE
+	WHERE
+	    BOD_TYPE_NO = '2'
+	    OR BOD_TYPE_NO = '3'
+	</select>
+
+	<!-- //신고 타입 가져오기
+	public List<SystemReportVO> repType(); -->
+	<select id="repType" resultType="kr.or.ddit.system.vo.SystemReportVO">
+		SELECT
+	    REP_TYPE_NAME
+	FROM
+	    REPORT_TYPE
+	</select>
+	
+	<!-- //신고 완료 페이지 전체 개수 불러오기
+	public int getreportEndTotal(Map<String, Object> map); -->
+	<select id="getreportEndTotal" parameterType="hashMap" resultType="int">
+			 SELECT
+	    COUNT(*)
+	FROM
+	    REPORT     R
+	            LEFT JOIN BOARD      B ON R.BOD_NO = B.BOD_NO
+	            LEFT JOIN BOARD_TYPE BT ON B.BOD_TYPE_NO = BT.BOD_TYPE_NO
+	            LEFT JOIN REPORT_TYPE RT ON RT.REP_TYPE = R.REP_TYPE
+	       WHERE
+		    REP_STATE = '2'  
+		    AND (
+            B.BOD_TYPE_NO = '2'
+		    OR B.BOD_TYPE_NO = '3'
+            )
+        <include refid="where"></include>   
+	</select>
+
+	<!-- //신고 완료 페이지 리스트 불러오기
+	public List<SystemReportVO> reportEndlist(Map<String, Object> map); -->
+	<select id="reportEndlist" parameterType="hashMap" resultType="kr.or.ddit.system.vo.SystemReportVO">
+			  SELECT
+	    T.RNUM
+	    , T.BOD_TYPE_NO
+	    , T.BOD_TYPE_NAME
+	    , T.BOD_NO
+	    , T.BOD_TITLE
+	    , T.BOD_WRITER
+	    , T.REP_NO
+	    , T.REP_REASON
+	    , T.REP_STATE
+	    , T.REP_DATE
+	    , T.REP_WRITER
+	    , T.REP_TYPE
+	    , T.REP_TYPE_NAME
+	FROM
+	     (
+	        SELECT
+	            ROW_NUMBER()
+	            OVER(
+	                ORDER BY
+	                    R.REP_NO DESC
+	            ) RNUM
+	            , B.BOD_TYPE_NO
+	            , BOD_TYPE_NAME
+	            , B.BOD_NO
+	            , B.BOD_TITLE
+	            , B.BOD_WRITER
+	            , REP_NO
+	            , REP_REASON
+	            , REP_STATE
+	            , REP_DATE
+	            , REP_WRITER
+	            , R.REP_TYPE
+	            , REP_TYPE_NAME
+	        FROM
+	            REPORT     R
+	            LEFT JOIN BOARD      B ON R.BOD_NO = B.BOD_NO
+	            LEFT JOIN BOARD_TYPE BT ON B.BOD_TYPE_NO = BT.BOD_TYPE_NO
+	            LEFT JOIN REPORT_TYPE RT ON RT.REP_TYPE = R.REP_TYPE
+	       WHERE
+		    REP_STATE = '2'  
+		    AND (
+            B.BOD_TYPE_NO = '2'
+		    OR B.BOD_TYPE_NO = '3'
+            )
+        <include refid="where"></include>    	   
+	    ) T
+	WHERE
+	    T.RNUM BETWEEN (#{currentPage} * 10 ) - ( 10 - 1 ) AND (#{currentPage} * 10 )
+	</select>
+	
+	<!-- // 신고 처리 하기(대기->완료)
+	public int reportUpdatePost(SystemReportVO systemReportVO); -->
+	<update id="reportUpdatePost" parameterType="kr.or.ddit.system.vo.SystemReportVO">
+		UPDATE REPORT
+	SET
+	    REP_STATE = '2'
+	WHERE
+	    REP_NO = #{repNo}
+	</update>	
+	
+</mapper>

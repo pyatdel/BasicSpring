@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.contract.mapper.TaxInvoiceMapper">
+	<!-- <if test="keyword != null and keyword != '' "> AND( BUS_NO LIKE '%' 
+		|| #{keyword} || '%' OR ENT_NAME LIKE '%' || #{keyword} || '%' OR CONTRACT_NO 
+		LIKE '%' || #{keyword} || '%' ) -->
+
+	<sql id="where">
+		<if test="contractNo != null and contractNo != ''">
+			AND CONTRACT_NO LIKE '%' || #{contractNo} || '%'
+		</if>
+		<if test="entName != null and entName != ''">
+			AND ENT_NAME LIKE '%' || #{entName} || '%'
+		</if>
+		<if test="tiTransdate != null and tiIssuedate != null">
+			AND TI_TRANSDATE LIKE '%' || #{tiTransdate} || '%'
+			AND TI_ISSUEDATE LIKE '%' ||#{tiIssuedate} || '%'
+		</if>
+		<if test="busNo != null and busNo != ''">
+			AND BUS_NO LIKE '%' || #{busNo} || '%'
+		</if>
+	</sql>
+	<sql id="and">
+		<if test="keyword != null and keyword != ''">
+			AND(
+			ENT_NAME LIKE '%' || #{keyword} ||'%' OR
+			BUS_NO LIKE '%' || #{keyword} ||'%' OR
+			REP_NAME LIKE '%' || #{keyword} ||'%' OR
+			ENT_TYPE LIKE '%' || #{keyword} ||'%'
+			)
+		</if>
+
+	</sql>
+	<!-- 세금계산서 1 계약 1 거래처 1 계약한 품목들 N 1 품목 1 -->
+	<resultMap type="kr.or.ddit.contract.vo.TaxinvoiceVO"
+		id="taxinvoiceMap">
+		<result property="tiCode" column="TI_CODE" />
+		<result property="appDocNo" column="APP_DOC_NO" />
+		<result property="tiTransdate" column="TI_TRANSDATE" />
+		<result property="tiIssuedate" column="TI_ISSUEDATE" />
+		<result property="tiIssuedvs" column="TI_ISSUEDVS" />
+		<result property="tiBilldvs" column="TI_BILLDVS" />
+		<result property="tiSupplyprice" column="TI_SUPPLYPRICE" />
+		<result property="tiVat" column="TI_VAT" />
+		<result property="state" column="STATE" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="detailAdd" column="DETAIL_ADD" />
+		<result property="tiRmrk" column="TI_RMRK" />
+		<result property="contractNo" column="CONTRACT_NO" />
+		<result property="totalAmount" column="TOTAL_AMOUNT" />
+		<association property="contractMasterVO"
+			resultMap="contractMasterMap"></association>
+		<association property="enterPriceVO"
+			resultMap="enterpriceMap"></association>
+		<collection property="contractDetailVOList"
+			resultMap="contractDetailMap"></collection>
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.contract.vo.ContractMasterVO"
+		id="contractMasterMap">
+		<result property="cancelContent" column="CANCEL_CONTENT" />
+		<result property="contractStatus" column="CONTRACT_STATUS" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="contractNo" column="CONTRACT_NO" />
+		<result property="empNo" column="EMP_NO" />
+		<result property="contractNm" column="CONTRACT_NM" />
+		<result property="contractPrice" column="CONTRACT_PRICE" />
+		<result property="contractType" column="CONTRACT_TYPE" />
+		<result property="state" column="STATE" />
+		<result property="fromDate" column="FROM_DATE" />
+		<result property="toDate" column="TO_DATE" />
+		<result property="approvalDate" column="APPROVAL_DATE" />
+		<result property="approvalEmp" column="APPROVAL_EMP" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="inputDatetime" column="INPUT_DATETIME" />
+		<result property="delDatetime" column="DEL_DATETIME" />
+		<result property="nttNt" column="NTT_NT" />
+		<result property="ctCreateDate" column="CT_CREATE_DATE" />
+		<result property="ctCreator" column="CT_CREATOR" />
+		<result property="ctModifyDate" column="CT_MODIFY_DATE" />
+		<result property="ctModifier" column="CT_MODIFIER" />
+		<result property="entMemo" column="ENT_MEMO" />
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.contract.vo.EnterPriceVO"
+		id="enterpriceMap">
+		<result property="entTel" column="ENT_TEL" />
+		<result property="entCode" column="ENT_CODE" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="entName" column="ENT_NAME" />
+		<result property="busNo" column="BUS_NO" />
+		<result property="birDate" column="BIR_DATE" />
+		<result property="busAdd" column="BUS_ADD" />
+		<result property="repName" column="REP_NAME" />
+		<result property="entType" column="ENT_TYPE" />
+		<result property="entComment" column="ENT_COMMENT" />
+		<result property="entCust" column="ENT_CUST" />
+		<result property="entRegDate" column="ENT_REG_DATE" />
+		<result property="entEmail" column="ENT_EMAIL" />
+		<result property="detailAdd" column="DETAIL_ADD" />
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.contract.vo.ContractDetailVO"
+		id="contractDetailMap">
+		<result property="contractDetailNo" column="CONTRACT_DETAIL_NO" />
+		<result property="contractNo" column="CONTRACT_NO" />
+		<result property="itemCode" column="ITEM_CODE" />
+		<result property="itemQty" column="ITEM_QTY" />
+		<result property="itemPrice" column="ITEM_PRICE" />
+		<result property="tiVat" column="TI_VAT" />
+		<result property="amt" column="AMT" />
+		
+		<association property="contractObjectVO"
+			resultMap="contractObjectMap"></association>
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.contract.vo.ContractObjectVO"
+		id="contractObjectMap">
+		<result property="itemCode" column="ITEM_CODE" />
+		<result property="itemName" column="ITEM_NAME" />
+		<result property="spec" column="SPEC" />
+		<result property="unit" column="UNIT" />
+		<result property="amt" column="AMT" />
+		<result property="remark" column="REMARK" />
+		<result property="inputDatetime" column="INPUT_DATETIME" />
+		<result property="itemDvs" column="ITEM_DVS" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="result" column="RESULT" />
+	</resultMap>
+
+	<!-- 세금계산서 상세 -->
+	<select id="taxinDetail"
+		parameterType="kr.or.ddit.contract.vo.TaxinvoiceVO"
+		resultMap="taxinvoiceMap">
+    
+               SELECT TV.TI_CODE, TV.APP_DOC_NO, TV.TI_TRANSDATE,TV.TI_ISSUEDATE
+			, TV.TI_ISSUEDVS, TV.TI_BILLDVS, TV.TI_SUPPLYPRICE,TV.TI_VAT
+			, TV.ENT_NO, TV.TI_RMRK, TV.CONTRACT_NO , TV.TOTAL_AMOUNT
+			, CM.EMP_NO, CM.CONTRACT_NM, CM.CONTRACT_PRICE, CM.CONTRACT_TYPE
+			, CM.STATE,CM.FROM_DATE, CM.TO_DATE, CM.APPROVAL_DATE
+			, CM.APPROVAL_EMP,CM.FILE_GROUP_NO, CM.INPUT_DATETIME, CM.DEL_DATETIME
+			, CM.NTT_NT,CM.CT_CREATE_DATE, CM.CT_CREATOR, CM.CT_MODIFY_DATE
+			, CM.CT_MODIFIER,CM.ENT_MEMO,CM.CANCEL_CONTENT, CM.CONTRACT_STATUS
+			, ET.ENT_NAME,ET.BUS_NO, ET.ENT_TYPE, ET.ENT_CUST
+			, ET.ENT_CODE, ET.REP_NAME ,ET.ENT_EMAIL
+			, CB.CONTRACT_DETAIL_NO, CB.ITEM_CODE, CB.ITEM_QTY
+			, CB.ITEM_PRICE , CB.TI_VAT AS VAT
+			, CO.AMT, CO.ITEM_NAME
+		FROM CONTRACT_MASTER CM INNER JOIN ENTERPRICE ET
+				ON(CM.ENT_NO = ET.ENT_NO)
+				INNER JOIN TAX_INVOICE TV
+				ON(CM.CONTRACT_NO = TV.CONTRACT_NO)
+				INNER JOIN CONTRACT_DETAIL CB 
+				ON(CM.CONTRACT_NO = CB.CONTRACT_NO)
+				INNER JOIN CONTRACT_OBJECT CO 
+				ON(CB.ITEM_CODE = CO.ITEM_CODE)
+		WHERE TV.TI_CODE = #{tiCode}
+	</select>
+	
+	<select id="objectDetail"
+		parameterType="kr.or.ddit.contract.vo.TaxinvoiceVO" 
+		resultMap="contractObjectMap">
+		SELECT * FROM CONTRACT_OBJECT
+	</select>
+	
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT count(*)
+		FROM
+		(
+			SELECT ROW_NUMBER() OVER(ORDER BY TI_CODE ASC)RNUM
+				, TI_CODE,APP_DOC_NO, TO_CHAR(TI_TRANSDATE,'YYYY-MM-DD')TI_TRANSDATE
+				, TO_CHAR(TI_ISSUEDATE,'YYYY-MM-DD')TI_ISSUEDATE, TI_ISSUEDVS
+				, TI_BILLDVS, TI_SUPPLYPRICE,TI_VAT, ENT_NO, TI_RMRK
+				, CONTRACT_NO
+			FROM TAX_INVOICE
+			WHERE 1=1
+		)T
+		INNER JOIN ENTERPRICE E ON T.ENT_NO = E.ENT_NO
+		<include refid="where"></include>
+
+	</select>
+	
+	<select id="list"
+		resultType="kr.or.ddit.contract.vo.TaxinvoiceVO"
+		parameterType="hashMap">
+		SELECT RNUM , T.TI_CODE, T.APP_DOC_NO,TI_TRANSDATE
+			, TI_ISSUEDATE, T.TI_ISSUEDVS , T.TI_BILLDVS, T.TI_SUPPLYPRICE
+			, T.TI_VAT, T.ENT_NO,T.TI_RMRK ,T.CONTRACT_NO
+			, E.ENT_NO, E.ENT_NAME, E.BUS_NO,E.REP_NAME
+			, E.ENT_TYPE , E.ENT_CUST, E.ENT_TEL, E.ENT_CODE
+		FROM
+		(
+			SELECT ROW_NUMBER()OVER(ORDER BY TI_TRANSDATE DESC) RNUM
+			, TI_CODE,APP_DOC_NO,TO_CHAR(TI_TRANSDATE, 'YYYY-MM-DD')TI_TRANSDATE
+			, TO_CHAR(TI_ISSUEDATE,'YYYY-MM-DD')TI_ISSUEDATE, TI_ISSUEDVS
+			, TI_BILLDVS, TI_SUPPLYPRICE,TI_VAT, ENT_NO, TI_RMRK
+			, CONTRACT_NO
+			FROM TAX_INVOICE
+			WHERE 1=1
+			AND STATE = 'Y'
+		)T
+		INNER JOIN ENTERPRICE E ON T.ENT_NO = E.ENT_NO
+		<include refid="where"></include>
+		WHERE T.RNUM BETWEEN ( #{currentPage} * 10 )-( 10 - 1 ) 
+		AND (#{currentPage} * 10)
+		ORDER BY T.RNUM
+
+	</select>
+	
+	<select id="getEntTotal" parameterType="hashMap"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM ENTERPRICE
+		WHERE 1 = 1
+		<include refid="and"></include>
+
+	</select>
+
+
+	<select id="getEnpList"
+		resultType="kr.or.ddit.contract.vo.EnterPriceVO"
+		parameterType="hashMap">
+		SELECT T.ENT_NO, T.ENT_NAME, T.BUS_NO, T.BIR_DATE
+			, T.ROAD_ADD, T.REP_NAME,T.ENT_TYPE, T.ENT_COMMENT
+			, T.ENT_CUST, T.ENT_REG_DATE , T.ENT_EMAIL,T.ENT_TEL
+			, T.DETAIL_ADD
+		FROM
+		(
+			SELECT ROW_NUMBER() OVER(ORDER BY ENT_NO) RNUM
+			,ENT_NO, ENT_NAME, BUS_NO, BIR_DATE
+			, ROAD_ADD, REP_NAME,ENT_TYPE, ENT_COMMENT
+			, ENT_CUST, ENT_REG_DATE,ENT_EMAIL,ENT_TEL
+			, DETAIL_ADD
+		FROM ENTERPRICE
+		WHERE 1=1
+		<include refid="and"></include>
+		) T
+		WHERE T.RNUM BETWEEN (#{currentPage}*10)-(10-1) AND
+		(#{currentPage}*10)
+	</select>
+
+
+	
+	<!-- tax_invoice 테이블에 삽입 -->
+	<insert id="taxinCreate" parameterType="kr.or.ddit.contract.vo.TaxinvoiceVO">
+		<!-- selectKey로 tiCode를 생성 -->
+	<selectKey resultType="String" order="BEFORE" keyProperty="tiCode">
+	    SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') 
+	           || LPAD(invoice_seq.NEXTVAL, 3, '0') AS invoice_number
+	    FROM dual
+	</selectKey>
+	    INSERT INTO tax_invoice (TI_CODE, TI_TRANSDATE, TI_ISSUEDATE, 
+	                             TI_SUPPLYPRICE, TI_VAT, APP_DOC_NO, 
+	                             ENT_NO, TI_RMRK, STATE,TOTAL_AMOUNT,
+	                             CONTRACT_NO)
+	    VALUES (#{tiCode}, SYSDATE, SYSDATE, 
+	            #{tiSupplyprice}, #{tiVat}, 4, 
+	            #{entNo}, #{tiRmrk}, 'Y' ,#{totalAmount},
+	            #{contractNo})
+	</insert>
+	
+	<!-- CONTRACT_DETAIL 테이블에 삽입 -->
+	<insert id="insertDetailAll" parameterType="kr.or.ddit.contract.vo.ContractDetailVO">
+	    INSERT INTO CONTRACT_DETAIL (CONTRACT_DETAIL_NO, ITEM_CODE, ITEM_QTY, ITEM_PRICE
+	    							, TI_VAT, TI_CODE, CONTRACT_NO)
+	    VALUES (contract_detail_seq.NEXTVAL, #{itemCode}, #{itemQty}, 
+	            #{itemPrice}, #{tiVat}, #{tiCode}, #{contractNo})
+	</insert>
+
+	<update id="deleteTaxin" parameterType="kr.or.ddit.contract.vo.TaxinvoiceVO">
+		UPDATE  TAX_INVOICE
+		SET 	STATE = 'N'
+		WHERE	TI_CODE = #{tiCode}
+	
+	</update>
+	<!-- <insert id="insertDetailAll" parameterType="java.util.List">
+	    INSERT ALL
+		<![CDATA[
+	    <foreach collection="detailList" item="item" separator=" " open="" close=" SELECT * FROM DUAL">
+	        INTO CONTRACT_DETAIL (CONTRACT_DETAIL_NO, CONTRACT_NO, ITEM_CODE, ITEM_QTY, ITEM_PRICE, TI_CODE)
+	        VALUES(
+	        		#{item.contractDetailNo}, #{item.contractNo}, #{item.itemCode}, #{item.itemQty}
+	        	  , #{item.itemPrice},#{item.tiCode})
+	    </foreach>
+    ]]>
+		
+	
+	</insert> -->
+</mapper>

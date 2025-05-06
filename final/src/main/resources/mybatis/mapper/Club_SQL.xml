@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.club.mapper.iClubMapper">
+
+	<!-- 커뮤니티 -->
+	<resultMap id="communityMap" type="kr.or.ddit.community.vo.CommunityVO">
+	    <result property="comNo" column="COM_NO"/>
+	    <result property="comTitle" column="COM_TITLE"/>
+	    <result property="comWriter" column="COM_WRITER"/>
+	    <result property="comCont" column="COM_CONT"/>
+	    <result property="comCreDate" column="COM_CRE_DATE"/>
+	    <result property="comModiDate" column="COM_MODI_DATE"/>
+	    <result property="comState" column="COM_STATE"/>
+	    <result property="comHit" column="COM_HIT"/>
+	    <result property="comSec" column="COM_SEC"/>
+	    <result property="comPwd" column="COM_PWD"/>
+	    <result property="comTypeNo" column="COM_TYPE_NO"/>
+	    <association property="communityTypeVO" resultMap="communityTypeMap"></association>
+	</resultMap>
+
+	<!-- 동호회 -->
+	<resultMap type="kr.or.ddit.club.vo.ClubVO" id="clubMap">
+	    <result property="clubNo" column="CLUB_NO"/>
+	    <result property="clubName" column="CLUB_NAME"/>
+	    <result property="clubDesc" column="CLUB_DESC"/>
+	    <result property="clubCreDate" column="CLUB_CRE_DATE"/>
+	    <result property="clubModiDate" column="CLUB_MODI_DATE"/>
+	    <result property="fileGroupNo" column="FILE_GROUP_NO"/>
+	    <result property="fileSaveLocate" column="FILE_SAVE_LOCATE"/>
+	    <result property="maxMember" column="MAX_MEMBER"/>
+	    <result property="nowMember" column="NOW_MEMBER"/>
+	    <result property="clubState" column="CLUB_STATE"/>
+	    <result property="joinWay" column="JOIN_WAY"/>
+	    <result property="clubOpenState" column="CLUB_OPEN_STATE"/>
+	    <result property="requestDate" column="REQUEST_DATE"/>
+	    <result property="clubCreMem" column="CLUB_CRE_MEM"/>
+	    <result property="clubSec" column="CLUB_SEC"/>
+	    <result property="clubPat" column="CLUB_PAT"/>
+	    <result property="comNo" column="COM_NO"/>
+	
+	    <association property="clubCategoryVO" resultMap="clubCategoryMap"/>
+	
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	
+	    <association property="communityVO" resultMap="communityMap"/>
+	
+	    <collection property="memberList" ofType="kr.or.ddit.club.vo.ClubMemberVO">
+	        <id property="clubMemNo" column="CLUB_MEM_NO"/>
+	        <result property="memState" column="MEM_STATE"/>
+	        <result property="stateMemo" column="STATE_MEMO"/>
+	        <result property="lastAccDate" column="LAST_ACC_DATE"/>
+	        <result property="memCreState" column="MEM_CRE_STATE"/>
+	        <result property="clubNo" column="CLUB_NO"/>
+	        <result property="empNo" column="EMP_NO"/>
+	        <association property="employeeVO" resultMap="employeeMap"/>
+	        <association property="clubRoleVO" resultMap="clubRoleMap"/>
+	    </collection>
+	</resultMap>
+	
+	<!-- 동호회 가입 신청 -->
+	<resultMap id="clubJoinRequestMap" type="kr.or.ddit.club.vo.ClubJoinRequestVO">
+	    <result property="reqNo" column="REQ_NO"/>
+	    <result property="reqDate" column="REQ_DATE"/>
+	    <result property="reqCont" column="REQ_CONT"/>
+	    <result property="reqState" column="REQ_STATE"/>
+	    <result property="clubNo" column="CLUB_NO"/>
+	    <result property="empNo" column="EMP_NO"/>
+	    <association property="clubVO" resultMap="clubMap"/>
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	</resultMap>
+	
+	<!-- 동호회 종류 -->
+	<resultMap id="clubCategoryMap" type="kr.or.ddit.club.vo.ClubCategoryVO">
+	    <result property="clubCateNo" column="CLUB_CATE_NO"/>
+	    <result property="comCateName" column="COM_CATE_NAME"/>
+	</resultMap>
+	
+	<!-- 부서 종류 -->
+	<resultMap id="departmentMap" type="kr.or.ddit.personnel.vo.DepartmentVO">
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="deptName" column="DEPT_NAME"/>
+	</resultMap>
+	
+	<!-- 직책 종류 -->
+	<resultMap id="positionMap" type="kr.or.ddit.personnel.vo.PositionVO">
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="postName" column="POST_NAME"/>
+	    <result property="auth" column="AUTH"/>
+	</resultMap>
+	
+	
+	
+	<!-- 동호회 회원 -->
+	<resultMap id="clubMemberMap" type="kr.or.ddit.club.vo.ClubMemberVO">
+	    <result property="clubMemNo" column="CLUB_MEM_NO"/>
+	    <result property="joinDate" column="JOIN_DATE"/>
+	    <result property="memState" column="MEM_STATE"/>
+	    <result property="stateMemo" column="STATE_MEMO"/>
+	    <result property="lastAccDate" column="LAST_ACC_DATE"/>
+	    <result property="memCreState" column="MEM_CRE_STATE"/>
+	    <result property="clubNo" column="CLUB_NO"/>
+	    <result property="empNo" column="EMP_NO"/>
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	    <association property="clubRoleVO" resultMap="clubRoleMap"/>
+	</resultMap>
+	
+	<!-- 동호회 권한 -->
+	<resultMap id="clubRoleMap" type="kr.or.ddit.club.vo.ClubRoleVO">
+	    <result property="roleNo" column="ROLE_NO"/>
+	    <result property="roleName" column="ROLE_NAME"/>
+	    <result property="roleDesc" column="ROLE_DESC"/>
+	    <result property="roleCreDate" column="ROLE_CRE_DATE"/>
+	    <result property="roleModiDate" column="ROLE_MODI_DATE"/>
+	</resultMap>
+	
+	<!-- 직원 -->
+	<resultMap id="employeeMap" type="kr.or.ddit.personnel.vo.EmployeeVO">
+	    <result property="empNo" column="EMP_NO"/>
+	    <result property="enabled" column="ENABLED"/>
+	    <result property="empId" column="EMP_ID"/>
+	    <result property="empPw" column="EMP_PW"/>
+	    <result property="empName" column="EMP_NAME"/>
+	    <result property="empEmail" column="EMP_EMAIL"/>
+	    <result property="empPhone" column="EMP_PHONE"/>
+	    <result property="empZip" column="EMP_ZIP"/>
+	    <result property="empStreet" column="EMP_STREET"/>
+	    <result property="empDetail" column="EMP_DETAIL"/>
+	    <result property="empSign" column="EMP_SIGN"/>
+	    <result property="empAnnual" column="EMP_ANNUAL"/>
+	    <result property="empIn" column="EMP_IN"/>
+	    <result property="empOut" column="EMP_OUT"/>
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+	    <result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+	    <result property="empProfile" column="EMP_PROFILE"/>
+	    
+	    <association property="departmentVO" resultMap="departmentMap"/>
+	    <association property="positionVO" resultMap="positionMap"/>
+	</resultMap>
+	
+	<!-- 커뮤니티 타입 -->
+	<resultMap id="communityTypeMap" type="kr.or.ddit.community.vo.CommunityTypeVO">
+	    <result property="comTypeNo" column="COM_TYPE_NO"/>
+	    <result property="comTypeName" column="COM_TYPE_NAME"/>
+	</resultMap>
+	
+	<!-- 동호회 종류 목록 조회 -->
+	<select id="clubListAll" resultMap="clubCategoryMap">
+	    SELECT 
+	        CLUB_CATE_NO,
+	        CLUB_CATE_NAME
+	    FROM CLUB_CATEGORY
+	    ORDER BY CLUB_CATE_NO ASC
+	</select>
+	
+	<!-- 동호회 등록 -->
+	<insert id="insertPost" parameterType="kr.or.ddit.club.vo.ClubVO">
+        <selectKey resultType="kr.or.ddit.club.vo.ClubVO" order="BEFORE" keyProperty="clubNo,comNo">
+            SELECT
+                NVL((SELECT MAX(CLUB_NO) FROM CLUB), 0) + 1 as CLUB_NO,
+                NVL((SELECT MAX(COM_NO) FROM COMMUNITY), 0) + 1 as COM_NO
+            FROM DUAL
+        </selectKey>
+        INSERT ALL
+        <!-- 커뮤니티 생성 -->
+        INTO COMMUNITY (
+            COM_NO, COM_TITLE, COM_CONT, COM_CRE_DATE,
+            COM_STATE, COM_STATE_TYPE_NO, COM_TYPE_NO,
+            EMP_NO, COM_WRITER
+        ) VALUES (
+            #{comNo}, #{clubName}, #{clubDesc}, SYSDATE,
+            1, 1, 1, #{empNo},
+            (SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_NO = #{empNo})
+        )
+        
+        <!-- 동호회 생성 -->
+        INTO CLUB (
+            CLUB_NO, CLUB_NAME, CLUB_DESC, CLUB_CRE_DATE, MAX_MEMBER, NOW_MEMBER,
+            CLUB_STATE, JOIN_WAY, CLUB_CRE_MEM, CLUB_SEC, CLUB_PAT,
+            COM_TYPE_NO, EMP_NO, COM_NO, CLUB_OPEN_STATE, REQUEST_DATE
+            <if test="clubCategoryVO != null and clubCategoryVO.clubCateNo != null">, CLUB_CATE_NO</if>
+        ) VALUES (
+            #{clubNo}, #{clubName}, #{clubDesc}, SYSDATE, 50, 1,
+            1, 1, #{clubCreMem}, 1, 1,
+            1, #{empNo}, #{comNo}, 1, SYSDATE
+            <if test="clubCategoryVO != null and clubCategoryVO.clubCateNo != null">, #{clubCategoryVO.clubCateNo}</if>
+        )
+
+        <!-- 동호회 회원 생성 (개설자를 마스터로) -->
+        INTO CLUB_MEMBER (
+            CLUB_MEM_NO, CLUB_NO, EMP_NO, ROLE_NO,
+            MEM_STATE, JOIN_DATE, MEM_CRE_STATE
+        ) VALUES (
+            CLUB_MEMBER_SEQ.NEXTVAL,
+            #{clubNo}, #{empNo}, 1,
+            1, SYSDATE, 1
+        )
+        SELECT * FROM DUAL
+    </insert>
+	
+	<!-- 조회수 증가 -->
+	<update id="updateHit" parameterType="int">
+	    UPDATE CLUB 
+	    SET CLUB_HIT = CLUB_HIT + 1 
+	    WHERE CLUB_NO = #{clubNo}
+	</update>
+	
+	<select id="myPage" parameterType="kr.or.ddit.club.vo.ClubVO" resultMap="clubMap">
+	    SELECT 
+	        C.CLUB_NO, C.CLUB_SEC, C.COM_NO, C.CLUB_NAME, C.CLUB_CRE_DATE
+	        , C.CLUB_DESC, C.CLUB_STATE, C.CLUB_HIT, C.MAX_MEMBER, C.NOW_MEMBER
+	        , CM.COM_TITLE
+	        , E1.EMP_NO, E1.EMP_NAME,
+	        (SELECT COUNT(*) 
+	         FROM CLUB_MEMBER CMB 
+	         WHERE CMB.CLUB_NO = C.CLUB_NO 
+	         AND CMB.EMP_NO = #{empNo}
+	         AND CMB.MEM_STATE = 1) as IS_MEMBER
+	    FROM CLUB C
+	    LEFT JOIN COMMUNITY CM ON C.COM_NO = CM.COM_NO
+	    LEFT JOIN CLUB_MEMBER CMR ON C.CLUB_NO = CMR.CLUB_NO AND CMR.ROLE_NO = 1
+	    LEFT JOIN EMPLOYEE E1 ON CMR.EMP_NO = E1.EMP_NO
+	    WHERE C.CLUB_NO = #{clubNo}
+	</select>
+	
+	<!-- 동호회 회원 추가 -->
+	<insert id="addMember" parameterType="map">
+        INSERT INTO CLUB_MEMBER (
+            CLUB_MEM_NO, CLUB_NO, EMP_NO, ROLE_NO,
+            MEM_STATE, JOIN_DATE, MEM_CRE_STATE
+        ) VALUES (
+            CLUB_MEMBER_SEQ.NEXTVAL,
+            #{clubNo}, #{empNo}, 3,
+            1, SYSDATE, 2
+        )
+    </insert>
+	
+	<!-- 동호회 회원 목록 조회 -->
+	<select id="getMemberList" parameterType="int" resultMap="clubMemberMap">
+	    SELECT
+	        CM.CLUB_NO, CM.EMP_NO, CM.MEM_STATE, CM.JOIN_DATE, CM.ROLE_NO,
+	        CM.STATE_MEMO, CM.LAST_ACC_DATE, CM.MEM_CRE_STATE, CM.CLUB_MEM_NO,
+	        E.EMP_NAME, E.EMP_PHONE, E.EMP_EMAIL, E.DEPT_NO,E.EMP_PROFILE,
+	        CR.ROLE_NAME, CR.ROLE_DESC    
+	    FROM
+	        CLUB_MEMBER CM
+	        LEFT JOIN EMPLOYEE E ON CM.EMP_NO = E.EMP_NO
+	        LEFT JOIN CLUB_ROLE CR ON CM.ROLE_NO = CR.ROLE_NO    
+	    WHERE
+	        CM.CLUB_NO = #{clubNo}
+	</select>
+	
+	<!-- 동호회 현재 회원 수 업데이트 -->
+	<update id="updateMember" parameterType="int">
+	    UPDATE CLUB C
+	    SET NOW_MEMBER = (
+	        SELECT COUNT(*)
+	        FROM CLUB_MEMBER CM
+	        WHERE CM.CLUB_NO = C.CLUB_NO
+	        AND CM.MEM_STATE = 1  
+	    )
+	    WHERE CLUB_NO = #{clubNo}
+	</update>
+	
+	<!-- 전체 동호회 수 조회 -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+	    SELECT COUNT(*) 
+	    FROM CLUB C
+	    WHERE 1=1
+	    <if test="keyword != null and keyword != ''">
+	        AND (
+	            C.CLUB_NAME LIKE '%' || #{keyword} || '%'
+	            OR C.CLUB_DESC LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	    <if test="category != null and category != ''">
+	        AND C.CLUB_CATE_NO = #{category}
+	    </if>
+	    AND C.CLUB_STATE = 1
+	</select>
+	
+	<!-- 전체 동호회 목록 조회 (페이징) -->
+	<select id="allClubs" parameterType="hashMap" resultMap="clubMap">
+	    SELECT A.*
+	    FROM (
+	        SELECT B.*, ROW_NUMBER() OVER(ORDER BY B.CLUB_NO DESC) AS RNUM
+	        FROM (
+	            SELECT 
+	                C.CLUB_NO, C.CLUB_NAME, C.CLUB_DESC,
+	                C.CLUB_CRE_DATE, C.MAX_MEMBER, C.NOW_MEMBER,
+	                (SELECT MAX(FD.FILE_SAVE_LOCATE) FROM FILE_DETAIL FD WHERE FD.FILE_GROUP_NO = C.FILE_GROUP_NO) FILE_SAVE_LOCATE,
+	                C.CLUB_STATE, C.CLUB_OPEN_STATE, C.CLUB_SEC,
+	                CC.CLUB_CATE_NO, CC.CLUB_CATE_NAME,
+	                E.EMP_NO, E.EMP_NAME
+	            FROM 
+	                CLUB C
+	                LEFT JOIN CLUB_CATEGORY CC ON C.CLUB_CATE_NO = CC.CLUB_CATE_NO
+	                LEFT JOIN EMPLOYEE E ON C.EMP_NO = E.EMP_NO
+	            WHERE 1=1
+	            <if test="keyword != null and keyword != ''">
+	                AND (
+	                    C.CLUB_NAME LIKE '%' || #{keyword} || '%'
+	                    OR C.CLUB_DESC LIKE '%' || #{keyword} || '%'
+	                )
+	            </if>
+	            <if test="category != null and category != ''">
+	                AND C.CLUB_CATE_NO = #{category}
+	            </if>
+	            AND C.CLUB_STATE = 1
+	        ) B
+	    ) A
+	    <![CDATA[
+			WHERE A.RNUM > (#{currentPage} - 1) * 10
+			AND A.RNUM <= #{currentPage} * 10
+			]]>
+	</select>
+	
+	<!-- 내가 가입한 동호회 목록 조회 -->
+	<select id="myClubs" parameterType="int" resultMap="clubMap">
+	    SELECT 
+	        C.CLUB_NO, C.CLUB_NAME, C.CLUB_DESC,
+	        C.CLUB_CRE_DATE, C.MAX_MEMBER, C.NOW_MEMBER,
+	        (SELECT MAX(FD.FILE_SAVE_LOCATE) FROM FILE_DETAIL FD WHERE FD.FILE_GROUP_NO = C.FILE_GROUP_NO) FILE_SAVE_LOCATE,
+	        C.CLUB_STATE, C.CLUB_OPEN_STATE,
+	        CC.CLUB_CATE_NO, CC.CLUB_CATE_NAME,
+	        E.EMP_NO, E.EMP_NAME
+	    FROM 
+	        CLUB C
+	        LEFT JOIN CLUB_CATEGORY CC ON C.CLUB_CATE_NO = CC.CLUB_CATE_NO
+	        LEFT JOIN EMPLOYEE E ON C.EMP_NO = E.EMP_NO
+	        INNER JOIN CLUB_MEMBER CM ON C.CLUB_NO = CM.CLUB_NO
+	    WHERE 
+	        CM.EMP_NO = #{empNo}
+	        AND (CM.MEM_STATE = 1 OR CM.MEM_STATE = 2) 
+	        AND C.CLUB_STATE = 1
+	    ORDER BY 
+	        C.CLUB_NO DESC
+	</select>
+	
+	<!-- 동호회 가입 신청 -->
+	<insert id="clubRequest" parameterType="map">
+	    BEGIN
+	        DECLARE
+	            v_join_way NUMBER;
+	            v_club_no NUMBER := #{clubNo};
+	            v_emp_no NUMBER := #{empNo};
+	            v_req_cont VARCHAR2(4000) := #{reqCont};
+	        BEGIN
+	            SELECT JOIN_WAY INTO v_join_way
+	            FROM CLUB
+	            WHERE CLUB_NO = v_club_no;
+	
+	            IF v_join_way = 1 THEN
+	                INSERT INTO CLUB_MEMBER (
+	                    CLUB_MEM_NO, ROLE_NO, CLUB_NO, 
+	                    EMP_NO, MEM_STATE, STATE_MEMO, JOIN_DATE, MEM_CRE_STATE
+	                ) VALUES (
+	                    CLUB_MEMBER_SEQ.NEXTVAL,
+	                    3, v_club_no, v_emp_no, 1,
+	                    '활동중', SYSDATE, 2
+	                );
+	                
+	                UPDATE CLUB 
+	                SET NOW_MEMBER = (
+	                    SELECT COUNT(*) 
+	                    FROM CLUB_MEMBER 
+	                    WHERE CLUB_NO = v_club_no 
+	                    AND MEM_STATE = 1
+	                )
+	                WHERE CLUB_NO = v_club_no;
+	                
+	                INSERT INTO CLUB_JOIN_REQUEST (
+	                    REQ_NO, CLUB_NO, EMP_NO,
+	                    REQ_CONT, REQ_DATE, REQ_STATE
+	                ) VALUES (
+	                    CLUB_JOIN_REQUEST_SEQ.NEXTVAL, 
+	                    v_club_no, v_emp_no,
+	                    v_req_cont, SYSDATE, 2
+	                );
+	            ELSE
+	                INSERT INTO CLUB_JOIN_REQUEST (
+	                    REQ_NO, CLUB_NO, EMP_NO,
+	                    REQ_CONT, REQ_DATE, REQ_STATE
+	                ) VALUES (
+	                    CLUB_JOIN_REQUEST_SEQ.NEXTVAL, 
+	                    v_club_no, v_emp_no,
+	                    v_req_cont, SYSDATE, 1
+	                );
+	            END IF;
+	        END;
+	    END;
+	</insert>
+	
+	<!-- 가입 신청 승인/반려 -->
+	<update id="updateRequest" parameterType="map">
+        BEGIN
+            UPDATE CLUB_JOIN_REQUEST 
+            SET REQ_STATE = #{reqState}
+            WHERE REQ_NO = #{reqNo};
+            
+            <!-- 승인(reqState=2)일 경우 회원 추가 및 회원수 업데이트 -->
+            <if test="reqState == 2">
+                INSERT INTO CLUB_MEMBER (
+                    CLUB_MEM_NO, ROLE_NO, CLUB_NO, 
+                    EMP_NO, MEM_STATE, STATE_MEMO, JOIN_DATE, MEM_CRE_STATE
+                ) VALUES (
+                    CLUB_MEMBER_SEQ.NEXTVAL,
+                    3, #{clubNo}, #{empNo}, 1,
+                    '활동중', SYSDATE, 2
+                );
+                
+                UPDATE CLUB 
+                SET NOW_MEMBER = (
+                    SELECT COUNT(*) 
+                    FROM CLUB_MEMBER 
+                    WHERE CLUB_NO = #{clubNo} 
+                    AND MEM_STATE = 1
+                )
+                WHERE CLUB_NO = #{clubNo};
+            </if>
+        END;
+    </update>
+	
+	<!-- 동호회 가입 신청 목록 조회 -->
+	<select id="joinRequestList" parameterType="int" resultMap="clubJoinRequestMap">
+	    SELECT 
+	        CJR.REQ_NO, CJR.REQ_DATE, CJR.REQ_CONT,CJR.REQ_STATE
+	        , CJR.CLUB_NO, CJR.EMP_NO, C.CLUB_NAME, C.CLUB_DESC
+	        , C.MAX_MEMBER, C.NOW_MEMBER, C.CLUB_CRE_DATE
+	        , E.EMP_NAME, E.EMP_PHONE, E.EMP_EMAIL
+	        , E.DEPT_NO, E.EMP_PROFILE
+	    FROM 
+	        CLUB_JOIN_REQUEST CJR
+	        INNER JOIN EMPLOYEE E ON CJR.EMP_NO = E.EMP_NO
+	        INNER JOIN CLUB C ON CJR.CLUB_NO = C.CLUB_NO
+	    WHERE 
+	        CJR.CLUB_NO = #{clubNo}
+	        AND CJR.REQ_STATE = 1
+	    ORDER BY 
+	        CJR.REQ_DATE DESC
+	</select>
+	
+	<!-- 동호회 정보 업데이트 -->
+	<update id="updateClub">
+	    UPDATE CLUB C 
+	    SET CLUB_NAME = #{clubName},
+	       CLUB_DESC = #{clubDesc},
+	       MAX_MEMBER = #{maxMember},
+	        JOIN_WAY = #{joinWay},
+	        CLUB_OPEN_STATE = #{clubOpenState},
+	        CLUB_SEC = #{clubSec},
+	        CLUB_MODI_DATE = SYSDATE
+	        <if test="clubCategoryVO != null and clubCategoryVO.clubCateNo != null">
+	        , CLUB_CATE_NO = #{clubCategoryVO.clubCateNo}
+	        </if>
+	    WHERE CLUB_NO = #{clubNo}
+	</update>
+	
+	<!-- 커뮤니티 정보 업데이트 -->
+	<update id="updateCommunity" parameterType="kr.or.ddit.community.vo.CommunityVO">
+	    UPDATE COMMUNITY 
+	    SET COM_TITLE = #{comTitle}, 
+	        COM_CONT = #{comCont} 
+	    WHERE COM_NO = #{comNo}
+	</update>
+	
+	<!-- 동호회 관리 -->
+	<select id="clubManage" parameterType="int" resultMap="clubMap">
+	    SELECT 
+	        C.CLUB_NO, C.CLUB_NAME, C.CLUB_DESC, C.CLUB_MODI_DATE
+	        , C.MAX_MEMBER, C.NOW_MEMBER, C.JOIN_WAY, C.CLUB_OPEN_STATE
+	        , C.CLUB_SEC, C.COM_NO
+	        , CC.CLUB_CATE_NO, CC.CLUB_CATE_NAME
+	    FROM 
+	        CLUB C
+	        LEFT JOIN CLUB_CATEGORY CC ON C.CLUB_CATE_NO = CC.CLUB_CATE_NO
+	    WHERE 
+	        C.CLUB_NO = #{clubNo}
+	</select>
+	
+	<!-- 카테고리 목록 조회 -->
+	<select id="categoryList" resultMap="clubCategoryMap">
+	    SELECT 
+	        CLUB_CATE_NO,
+	        CLUB_CATE_NAME
+	    FROM 
+	        CLUB_CATEGORY
+	    ORDER BY 
+	        CLUB_CATE_NO ASC
+	</select>
+	
+	<!-- 
+	// 커뮤니티 목록 조회
+	public List<CommunityVO> communityListAll()
+	 -->
+	 
+	 <!-- 동호회 멤버 권한 변경 -->
+	<update id="updateRole" parameterType="kr.or.ddit.club.vo.ClubMemberVO">
+	    UPDATE CLUB_MEMBER 
+	    SET 
+	        ROLE_NO = #{roleNo},
+	        LAST_ACC_DATE = SYSDATE
+	    WHERE 
+	        CLUB_NO = #{clubNo} 
+	        AND EMP_NO = #{empNo}
+	</update>
+	
+	<!-- 동호회 멤버 상세 정보 조회 -->
+	<select id="memberDetail" parameterType="kr.or.ddit.club.vo.ClubMemberVO" resultType="kr.or.ddit.club.vo.ClubMemberVO">
+	    SELECT
+	        CM.CLUB_MEM_NO,
+	        CM.CLUB_NO,
+	        CM.EMP_NO,
+	        CM.ROLE_NO,
+	        CM.MEM_STATE,
+	        CM.STATE_MEMO,
+	        CM.JOIN_DATE,
+	        CM.LAST_ACC_DATE,
+	        CM.MEM_CRE_STATE,
+	        E.EMP_NAME,
+	        E.EMP_PHONE,
+	        E.EMP_EMAIL,
+	        E.DEPT_NO,
+	        CR.ROLE_NAME,
+	        CR.ROLE_DESC
+	    FROM
+	        CLUB_MEMBER CM
+	        LEFT JOIN EMPLOYEE E ON CM.EMP_NO = E.EMP_NO
+	        LEFT JOIN CLUB_ROLE CR ON CM.ROLE_NO = CR.ROLE_NO
+	    WHERE
+	        CM.CLUB_NO = #{clubNo}
+	        AND CM.EMP_NO = #{empNo}
+	</select>
+	
+	<!-- 초대 가능한 멤버 목록 조회 -->
+	<select id="inviteMemberList" parameterType="hashMap" resultMap="employeeMap">
+	    SELECT 
+	        E.EMP_NO, E.EMP_NAME, E.EMP_PHONE, E.EMP_EMAIL
+	        , E.EMP_PROFILE
+	        , E.DEPT_NO, D.DEPT_NAME, E.POST_NO, P.POST_NAME
+	    FROM 
+	        EMPLOYEE E
+	        LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+	        LEFT JOIN POSITION P ON E.POST_NO = P.POST_NO
+	    WHERE 
+	        E.EMP_NO NOT IN (
+	            SELECT EMP_NO 
+	            FROM CLUB_MEMBER 
+	            WHERE CLUB_NO = #{clubNo}
+	            AND MEM_STATE IN (1, 2)  <!-- 활동중이거나 정지 상태인 멤버 제외 -->
+	        )
+	        <if test="employeeVO.empName != null and employeeVO.empName != ''">
+	        AND E.EMP_NAME LIKE '%' || #{employeeVO.empName} || '%'
+	        </if>
+	        <if test="employeeVO.deptNo != null and employeeVO.deptNo != 0">
+	        AND E.DEPT_NO = #{employeeVO.deptNo}
+	        </if>
+	        <if test="employeeVO.postNo != null and employeeVO.postNo != 0">
+	        AND E.POST_NO = #{employeeVO.postNo}
+	        </if>
+	    ORDER BY 
+	        E.EMP_NAME ASC
+	</select>
+	
+	<!-- 부서 목록 조회 -->
+	<select id="deptList" resultType="kr.or.ddit.personnel.vo.DepartmentVO">
+	    SELECT DEPT_NO, DEPT_NAME FROM DEPARTMENT
+	    ORDER BY DEPT_NO
+	</select>
+	
+	<!-- 직책 목록 조회 -->
+	<select id="positionList" resultType="kr.or.ddit.personnel.vo.PositionVO">
+	    SELECT POST_NO, POST_NAME FROM POSITION
+	    ORDER BY POST_NO
+	</select>
+	
+	<!-- 직원 목록 조회 -->
+	<select id="employeeList" resultMap="employeeMap">
+	    SELECT 
+	        E.EMP_NO, E.EMP_NAME, E.EMP_EMAIL, E.EMP_PHONE
+	        , D.DEPT_NO, D.DEPT_NAME
+	        , P.POST_NO, P.POST_NAME, P.AUTH
+	    FROM 
+	        EMPLOYEE E
+	        LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+	        LEFT JOIN POSITION P ON E.POST_NO = P.POST_NO
+	    ORDER BY 
+	        E.EMP_NAME ASC
+	</select>
+	
+	<!-- 다중 멤버 초대하기 -->
+	<insert id="inviteMembers">
+	    INSERT INTO CLUB_MEMBER (
+	        CLUB_MEM_NO, CLUB_NO, EMP_NO
+	        , ROLE_NO, MEM_STATE, JOIN_DATE, MEM_CRE_STATE
+	    )
+	    WITH EMP_LIST AS (
+	        SELECT COLUMN_VALUE as EMP_NO
+	        FROM TABLE(SYS.ODCINUMBERLIST(
+	            <foreach item="empNo" collection="empNoList" separator=",">
+	                #{empNo}
+	            </foreach>
+	        ))
+	    )
+	    SELECT 
+	        CLUB_MEMBER_SEQ.NEXTVAL,
+	        #{clubNo}, EMP.EMP_NO
+	        , 3, 1, SYSDATE, 2
+	    FROM EMP_LIST EMP
+	    WHERE NOT EXISTS (
+	        SELECT 1 
+	        FROM CLUB_MEMBER CM 
+	        WHERE CM.CLUB_NO = #{clubNo}
+	        AND CM.EMP_NO = EMP.EMP_NO
+	    )
+	</insert>
+	
+	<!-- 멤버 추방 -->
+	<delete id="kickMember" parameterType="kr.or.ddit.club.vo.ClubMemberVO">
+	    DELETE FROM CLUB_MEMBER 
+	    WHERE CLUB_NO = #{clubNo} 
+	    AND EMP_NO = #{empNo}
+	</delete>
+	
+	<!-- 동호회 페쇄 -->
+	<update id="updateClubState" parameterType="kr.or.ddit.club.vo.ClubVO">
+	    UPDATE CLUB 
+	    SET 
+	        CLUB_STATE = 2,
+	        CLUB_MODI_DATE = SYSDATE
+	    WHERE CLUB_NO = #{clubNo}
+	    AND EMP_NO = #{empNo}
+	</update>
+	 
+</mapper>

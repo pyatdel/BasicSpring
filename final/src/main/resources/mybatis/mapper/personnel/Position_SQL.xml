@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.personnel.mapper.PositionMapper">
+
+	<!-- public List<PositionVO> getPositionList(); -->
+	<select id="getPositionList" resultType="kr.or.ddit.personnel.vo.PositionVO">
+		SELECT POST_NO, POST_NAME
+		FROM   POSITION
+		ORDER BY POST_NO
+	</select>
+
+
+</mapper>

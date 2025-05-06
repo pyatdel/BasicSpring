@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.contract.mapper.ContractMapper">
+
+	<sql id="where">
+		<if test="contractNo != null and contractNo != ''">
+			AND CONTRACT_NO LIKE '%' || #{contractNo} || '%'
+		</if>
+		<if test="entName != null and entName != ''">
+			AND ENT_NAME LIKE '%' || #{entName} || '%'
+		</if>
+		<if test="contractNm != null and contractNm != ''">
+			AND CONTRACT_NM LIKE '%' || #{contractNm} || '%'
+		</if>
+	</sql>
+	<sql id="state">
+	    <!-- state 값이 전달되지 않거나 빈 값일 경우 필터를 적용하지 않음 -->
+	    <if test="state != null and state != ''">
+	        <choose>
+	            <when test="state == 0">
+	                AND STATE = '0'
+	            </when>
+	            <when test="state == 1">
+	                AND STATE = '1'
+	            </when>
+	            <when test="state == 2">
+	                AND STATE = '2'
+	            </when>
+	            <when test="state == 3">
+	                AND STATE = '3'
+	            </when>
+	            <when test="state == 4">
+	                AND STATE = '4'
+	            </when>
+	        </choose>
+	    </if>
+	</sql>
+
+	
+	
+	
+	<sql id="sort">
+		<choose>
+			<when test="sort == null">
+				ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') DESC
+			</when>	
+			<when test="sort == 'price'">
+				<choose>
+					<when test="direction == null">
+						ORDER BY U.CONTRACT_PRICE DESC
+					</when>
+					<when test="direction == 'ASC'">
+						ORDER BY U.CONTRACT_PRICE ASC
+					</when>
+					<when test="direction == 'DESC'">
+						ORDER BY U.CONTRACT_PRICE DESC
+					</when>
+				</choose>
+			</when>	
+			<when test="sort == 'date'">
+				<choose>
+					<when test="direction == null">
+						ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') DESC
+					</when>
+					<when test="direction == 'ASC'">
+						ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') ASC
+					</when>
+					<when test="direction == 'DESC'">
+						ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') DESC
+					</when>
+				</choose>
+			
+			</when>
+		
+		
+		</choose>
+	</sql>
+	
+	<select id="list"
+		resultType="kr.or.ddit.contract.vo.ContractMasterVO"
+		parameterType="hashMap">
+		WITH X AS (
+		    SELECT ROW_NUMBER() OVER(ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') DESC) RNUM
+		         , U.CONTRACT_NO, U.EMP_NAME, U.EMP_NO, U.CONTRACT_NM
+		         , U.CONTRACT_PRICE, U.STATE, U.FROM_DATE
+		         , TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') AS FROM_DATEC
+		         , U.TO_DATE
+		         , U.APPROVAL_DATE, U.APPROVAL_EMP, U.DEL_DATETIME, U.ENT_NAME
+		    FROM (
+	        SELECT T.CONTRACT_NO, M.EMP_NAME, M.EMP_NO, T.CONTRACT_NM
+	             , T.CONTRACT_PRICE, T.STATE, T.FROM_DATE, T.TO_DATE
+	             , T.APPROVAL_DATE, T.APPROVAL_EMP, T.DEL_DATETIME, E.ENT_NAME
+	        FROM (
+	            SELECT CONTRACT_NO, EMP_NO, ENT_NO, CONTRACT_NM
+	                 , CONTRACT_PRICE, STATE, FROM_DATE, TO_DATE
+	                 , APPROVAL_DATE, APPROVAL_EMP, DEL_DATETIME
+	            FROM CONTRACT_MASTER
+	            WHERE CONTRACT_STATUS = 'Y'
+	        ) T
+	        INNER JOIN EMPLOYEE M ON M.EMP_NO = T.EMP_NO
+	        INNER JOIN ENTERPRICE E ON T.ENT_NO = E.ENT_NO
+				<include refid="where"></include>
+				) U
+		)
+		SELECT X.*
+		FROM X
+		WHERE X.RNUM BETWEEN ( #{currentPage} * 10 )-( 10- 1 ) 
+		AND (#{currentPage}* 10)
+
+		<!-- -->
+	</select>
+	<select id="listPriceSort"
+		resultType="kr.or.ddit.contract.vo.ContractMasterVO"
+		parameterType="hashMap">
+		WITH X AS (
+	    SELECT ROW_NUMBER() OVER(
+	    <include refid="sort"></include>
+	    ) RNUM
+	         , U.CONTRACT_NO, U.EMP_NAME, U.EMP_NO, U.CONTRACT_NM
+	         , U.CONTRACT_PRICE, U.STATE, U.FROM_DATE
+	         , TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') AS FROM_DATEC
+	         , U.TO_DATE
+	         , U.APPROVAL_DATE, U.APPROVAL_EMP, U.DEL_DATETIME, U.ENT_NAME
+	    FROM (
+		        SELECT T.CONTRACT_NO, M.EMP_NAME, M.EMP_NO, T.CONTRACT_NM
+		             , T.CONTRACT_PRICE, T.STATE, T.FROM_DATE, T.TO_DATE
+		             , T.APPROVAL_DATE, T.APPROVAL_EMP, T.DEL_DATETIME, E.ENT_NAME
+		        FROM (
+		            SELECT CONTRACT_NO, EMP_NO, ENT_NO, CONTRACT_NM
+		                 , CONTRACT_PRICE, STATE, FROM_DATE, TO_DATE
+		                 , APPROVAL_DATE, APPROVAL_EMP, DEL_DATETIME
+		            FROM CONTRACT_MASTER
+		            WHERE CONTRACT_STATUS = 'Y'
+		        ) T
+		        INNER JOIN EMPLOYEE M ON M.EMP_NO = T.EMP_NO
+		        INNER JOIN ENTERPRICE E ON T.ENT_NO = E.ENT_NO
+		        WHERE 1=1
+					<include refid="where"></include>
+					<include refid="state"></include>
+					) U
+			)
+		SELECT X.*
+		FROM X
+		WHERE X.RNUM BETWEEN ( #{currentPage} * 10 ) - (10 - 1)
+		AND (#{currentPage} * 10)
+
+	</select>
+	
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+ 			WITH X AS (
+		    SELECT ROW_NUMBER() OVER(ORDER BY TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') DESC) RNUM
+		         , U.CONTRACT_NO, U.EMP_NAME, U.EMP_NO, U.CONTRACT_NM
+		         , U.CONTRACT_PRICE, U.STATE, U.FROM_DATE
+		         , TO_CHAR(U.FROM_DATE, 'YYYY-MM-DD') AS FROM_DATEC
+		         , U.TO_DATE
+		         , U.APPROVAL_DATE, U.APPROVAL_EMP, U.DEL_DATETIME, U.ENT_NAME
+		    FROM (
+	        SELECT T.CONTRACT_NO, M.EMP_NAME, M.EMP_NO, T.CONTRACT_NM
+	             , T.CONTRACT_PRICE, T.STATE, T.FROM_DATE, T.TO_DATE
+	             , T.APPROVAL_DATE, T.APPROVAL_EMP, T.DEL_DATETIME, E.ENT_NAME
+	        FROM (
+	            SELECT CONTRACT_NO, EMP_NO, ENT_NO, CONTRACT_NM
+	                 , CONTRACT_PRICE, STATE, FROM_DATE, TO_DATE
+	                 , APPROVAL_DATE, APPROVAL_EMP, DEL_DATETIME
+	            FROM CONTRACT_MASTER
+	            WHERE CONTRACT_STATUS = 'Y'
+	        ) T
+	        INNER JOIN EMPLOYEE M ON M.EMP_NO = T.EMP_NO
+	        INNER JOIN ENTERPRICE E ON T.ENT_NO = E.ENT_NO
+	        WHERE 1= 1
+				<include refid="where"></include>
+				<include refid="state"></include>
+				) U
+		)
+		SELECT COUNT(*)
+		FROM X
+		WHERE 1= 1
+
+	</select>
+	
+	<select id="detail"
+		parameterType="kr.or.ddit.contract.vo.ContViewVO"
+		resultMap="contViewMap">
+		SELECT C.CONTRACT_NO, C.CONTRACT_NM, C.EMP_NO, C.EMP_NAME
+			, C.FROM_DATE,C.TO_DATE, C.CONTRACT_PRICE,C.ENT_MEMO
+			, C.CONTRACT_TYPE,C.ENT_NAME,C.APPROVAL_DATE,C.APPROVAL_EMP
+			, C.ENT_TYPE, C.STATE_DESC,C.ENT_REG_DATE, C.ENT_TEL
+			, C.ENT_CUST
+			, FG.FILE_REG_DATE
+			, FD.FILE_SN,FD.FILE_ORIGINAL_NAME,FD.FILE_SAVE_NAME,FD.FILE_SAVE_LOCATE
+			, FD.FILE_SIZE, FD.FILE_EXT, FILE_MIME, FD.FILE_FANCYSIZE
+			, FD.FILE_SAVE_DATE
+		FROM CONT_VIEW C LEFT OUTER JOIN FILE_GROUP FG 
+			ON (C.FILE_GROUP_NO = FG.FILE_GROUP_NO)
+			LEFT OUTER JOIN FILE_DETAIL FD
+			ON (C.FILE_GROUP_NO = FD.FILE_GROUP_NO)
+		WHERE CONTRACT_NO = #{contractNo}
+	</select>
+	
+	<update id="updateCm"
+		parameterType="kr.or.ddit.contract.vo.ContViewVO">
+		UPDATE  CONT_VIEW
+		SET 	CONTRACT_NM = #{contractNm},EMP_NAME= #{empName}, ENT_NAME=#{entName}
+		WHERE	CONTRACT_NO = #{contractNo}
+
+
+	</update>
+	
+	<update id="deleteCm"
+		parameterType="kr.or.ddit.contract.vo.ContViewVO">
+		UPDATE  CONTRACT_MASTER
+		SET 	CONTRACT_STATUS = 'N'
+		WHERE 	CONTRACT_NO = #{contractNo}
+
+	</update>
+	
+	<insert id="createCm"
+		parameterType="kr.or.ddit.contract.vo.ContractMasterVO">
+		 <selectKey keyProperty="contractNo" resultType="long" order="BEFORE">
+		        SELECT TO_NUMBER(NVL(MAX(CONTRACT_NO),TO_CHAR(SYSDATE,'YYYYMMDD')||'000')+1)
+				FROM   CONTRACT_MASTER
+				WHERE  SUBSTR(CONTRACT_NO,1,8) = TO_CHAR(SYSDATE,'YYYYMMDD')
+		    </selectKey>  
+
+		INSERT INTO CONTRACT_MASTER (
+		    contract_no,
+		    emp_no,
+		    contract_nm,
+		    contract_price,
+		    contract_type,
+		    state,
+		    from_date,
+		    to_date,
+		    approval_date,
+		    approval_emp,
+		    input_datetime,
+		    ct_create_date,
+		    ct_creator,
+		    ent_no,
+		    ent_memo,
+		    contract_status
+		<if test="fileGroupNo != null and fileGroupNo !='' ">
+			,FILE_GROUP_NO
+		</if>
+		)
+		VALUES( #{contractNo}
+				,#{empNo},#{contractNm},#{contractPrice},
+				#{contractType},#{state},#{fromDate},#{toDate},
+				#{approvalDate},#{approvalEmp},SYSDATE,SYSDATE,
+		'홍길동',#{entNo},#{entMemo},'Y'
+		<if test="fileGroupNo != null and fileGroupNo !='' ">
+			,#{fileGroupNo}
+		</if>
+		)
+
+	</insert>
+	
+	<select id="getStatus"
+		parameterType="kr.or.ddit.contract.vo.ContViewVO">
+		SELECT
+		    contract_no,
+		    contract_nm,
+		    emp_no,
+		    contract_status,
+		    emp_name,
+		    from_date,
+		    to_date,
+		    contract_price,
+		    ent_memo,
+		    ent_no,
+		    contract_type,
+		    ent_name,
+		    ent_type,
+		    state_desc,
+		    ent_reg_date,
+		    ent_tel,
+		    ent_cust
+		FROM
+		    cont_view
+
+	</select>
+	<select id="chartDate" parameterType="hashMap" resultType="kr.or.ddit.contract.vo.ContractMasterVO">
+	    <![CDATA[ WITH MONTH_RANGE AS (
+	    SELECT TO_DATE('2024-01', 'YYYY-MM') + (LEVEL - 1) * INTERVAL '1' MONTH AS month, '2024' AS YEAR
+	    FROM DUAL
+	    CONNECT BY TO_DATE('2024-01', 'YYYY-MM') + (LEVEL - 1) * INTERVAL '1' MONTH <= TO_DATE('2024-12', 'YYYY-MM')
+	    UNION ALL
+	    SELECT TO_DATE('2025-01', 'YYYY-MM') + (LEVEL - 1) * INTERVAL '1' MONTH AS month, '2025' AS YEAR
+	    FROM DUAL
+	    CONNECT BY TO_DATE('2025-01', 'YYYY-MM') + (LEVEL - 1) * INTERVAL '1' MONTH <= TO_DATE('2025-12', 'YYYY-MM')
+		) ]]>
+		SELECT 
+		    TO_CHAR(MR.MONTH, 'YYYY-MM') AS MONTH,  
+		    MR.YEAR, 
+		    COALESCE(COUNT(CM.CONTRACT_NO), 0) AS TOTAL_CONTRACTS,  
+		    COALESCE(SUM(CM.CONTRACT_PRICE), 0) AS TOTAL_PRICE
+		FROM
+		    MONTH_RANGE MR
+		LEFT JOIN
+		    CONTRACT_MASTER CM
+		    ON TO_CHAR(cm.APPROVAL_DATE, 'YYYY-MM') = TO_CHAR(mr.month, 'YYYY-MM')
+		    AND cm.APPROVAL_DATE BETWEEN TO_DATE(MR.YEAR || '-01-01', 'YYYY-MM-DD') AND TO_DATE(MR.YEAR || '-12-31', 'YYYY-MM-DD')
+		GROUP BY
+		    MR.MONTH, MR.YEAR 
+		ORDER BY
+		    MR.YEAR, MR.MONTH
+
+	</select>
+	<select id="chartYearData" parameterType="hashMap" resultType="kr.or.ddit.contract.vo.ContractMasterVO">
+		SELECT 
+			CASE WHEN 
+				TO_CHAR(APPROVAL_DATE, 'YYYY') IS NULL THEN 'TOTAL'
+	        ELSE TO_CHAR(APPROVAL_DATE, 'YYYY') 
+	    	END AS YEARS
+			, COALESCE(COUNT(CONTRACT_NO), 0) AS YEAR_CONTRACTS
+			, SUM(CONTRACT_PRICE) AS YEAR_PRICE
+            , SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONTRACT_CONCLUDED 
+            , SUM(CASE WHEN STATE = '1' THEN 1 ELSE 0 END) AS CONTRACT_INPROGRESS
+            , SUM(CASE WHEN STATE = '2' THEN 1 ELSE 0 END) AS CONTRACT_COMPLETED
+            , SUM(CASE WHEN STATE = '3' THEN 1 ELSE 0 END) AS CONTRACT_CANCELLATION
+            , SUM(CASE WHEN STATE = '4' THEN 1 ELSE 0 END) AS CONTRACT_PENDING
+		FROM 
+		    CONTRACT_MASTER
+		<![CDATA[ 
+		WHERE 
+		    APPROVAL_DATE >= TO_DATE('2024-01-01', 'YYYY-MM-DD')
+		    AND APPROVAL_DATE <= TO_DATE('2026-12-31', 'YYYY-MM-DD')
+		GROUP BY ROLLUP(TO_CHAR(APPROVAL_DATE, 'YYYY') )
+		ORDER BY YEARS
+		]]>
+	</select>
+
+	<resultMap type="kr.or.ddit.contract.vo.ContractMasterVO"
+		id="contractMasterMap">
+		<result property="cancelContent" column="CANCEL_CONTENT" />
+		<result property="contractStatus" column="CONTRACT_STATUS" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="contractNo" column="CONTRACT_NO" />
+		<result property="empNo" column="EMP_NO" />
+		<result property="contractNm" column="CONTRACT_NM" />
+		<result property="contractPrice" column="CONTRACT_PRICE" />
+		<result property="contractType" column="CONTRACT_TYPE" />
+		<result property="state" column="STATE" />
+		<result property="fromDate" column="FROM_DATE" />
+		<result property="toDate" column="TO_DATE" />
+		<result property="approvalDate" column="APPROVAL_DATE" />
+		<result property="approvalEmp" column="APPROVAL_EMP" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="inputDatetime" column="INPUT_DATETIME" />
+		<result property="delDatetime" column="DEL_DATETIME" />
+		<result property="nttNt" column="NTT_NT" />
+		<result property="ctCreateDate" column="CT_CREATE_DATE" />
+		<result property="ctCreator" column="CT_CREATOR" />
+		<result property="ctModifyDate" column="CT_MODIFY_DATE" />
+		<result property="ctModifier" column="CT_MODIFIER" />
+		<result property="entMemo" column="ENT_MEMO" />
+		<association property="fileGroupVO"
+			resultMap="fileGroupMap"></association>
+	</resultMap>
+	<resultMap type="kr.or.ddit.contract.vo.ContViewVO"
+		id="contViewMap">
+		<result property="contractNo" column="CONTRACT_NO" />
+		<result property="contractNm" column="CONTRACT_NM" />
+		<result property="empNo" column="EMP_NO" />
+		<result property="contractStatus" column="CONTRACT_STATUS" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="empName" column="EMP_NAME" />
+		<result property="fromDate" column="FROM_DATE" />
+		<result property="toDate" column="TO_DATE" />
+		<result property="contractPrice" column="CONTRACT_PRICE" />
+		<result property="entMemo" column="ENT_MEMO" />
+		<result property="approvalDate" column="APPROVAL_DATE" />
+		<result property="approvalEmp" column="APPROVAL_EMP" />
+		<result property="entNo" column="ENT_NO" />
+		<result property="contractType" column="CONTRACT_TYPE" />
+		<result property="entName" column="ENT_NAME" />
+		<result property="entType" column="ENT_TYPE" />
+		<result property="stateDesc" column="STATE_DESC" />
+		<result property="entRegDate" column="ENT_REG_DATE" />
+		<association property="fileGroupVO"
+			resultMap="fileGroupMap"></association>
+
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileGroupVO"
+		id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileRegDate" column="FILE_REG_DATE" />
+		<collection property="fileDetailVOList"
+			resultMap="fileDetailMap"></collection>
+	</resultMap>
+	<resultMap type="kr.or.ddit.file.vo.FileDetailVO"
+		id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN" />
+		<result property="fileGroupNo" column="FILE_GROUP_NO" />
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME" />
+		<result property="fileSaveName" column="FILE_SAVE_NAME" />
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE" />
+		<result property="fileSize" column="FILE_SIZE" />
+		<result property="fileExt" column="FILE_EXT" />
+		<result property="fileMime" column="FILE_MIME" />
+		<result property="fileFancysize" column="FILE_FANCYSIZE" />
+		<result property="fileSaveDate" column="FILE_SAVE_DATE" />
+		<result property="fileDowncount" column="FILE_DOWNCOUNT" />
+
+	</resultMap>
+
+</mapper>

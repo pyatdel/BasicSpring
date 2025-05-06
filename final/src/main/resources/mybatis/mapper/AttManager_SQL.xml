@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.att.mapper.AttManagerMapper">
+
+<insert id="insertAttendance" parameterType="int">	
+	INSERT INTO ATTENDANCE_T (ATT_NO, ATT_IN_TIME, CREATE_DATE, EMP_NO, ATTENDANCE_CODE,PERCEPTION)
+	VALUES(
+	SEQ_ATTENDANCE_T.NEXTVAL
+	, SYSDATE
+	, SYSDATE
+	, #{empNo}
+	, #{status}
+	,
+	CASE 
+		WHEN #{perception} = 1 THEN '정상 출근'
+		WHEN #{perception} = 3 THEN '지각'
+		ELSE '알 수 없음'
+	END
+	)
+</insert>
+
+<update id="updateAttendance" parameterType="int">
+	UPDATE ATTENDANCE_T
+	SET
+		ATT_OUT_TIME = SYSDATE,
+		ATT_WORK_TIME = ROUND((SYSDATE - ATT_IN_TIME) *24,2),
+		ATTENDANCE_CODE = CASE
+						WHEN SYSDATE > TRUNC(SYSDATE) + INTERVAL '18' HOUR + INTERVAL '20' MINUTE THEN 6
+						WHEN SYSDATE > TRUNC(SYSDATE) + INTERVAL '18' HOUR THEN 2
+                        ELSE 4
+					END,
+		MODIFY_DATE = SYSDATE
+	WHERE
+		EMP_NO = #{empNo}
+		AND (ATTENDANCE_CODE = 1 OR ATTENDANCE_CODE = 3)
+		AND ATT_OUT_TIME = ATT_IN_TIME
+</update>
+<select id="profileRead" parameterType="kr.or.ddit.member.vo.MemberVO" resultType="kr.or.ddit.member.vo.MemberVO">
+	SELECT E.EMP_ID
+	, E.EMP_NO
+	, E.EMP_NAME
+	, E.DEPT_NO
+	, E.POST_NO
+	, P.POST_NAME
+	, D.DEPT_NAME
+	FROM EMPLOYEE E
+	JOIN POSITION P ON E.POST_NO = P.POST_NO
+	JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+	WHERE E.EMP_ID = #{empId}
+</select>
+
+
+<select id="getAttendanceList" parameterType="kr.or.ddit.att.vo.AttManagerVO" resultType="kr.or.ddit.att.vo.AttManagerVO">
+	SELECT E.EMP_NO
+	, E.EMP_NAME
+	, E.POST_NO
+	, AT.ATT_NO
+	, TO_CHAR(AT.ATT_IN_TIME,'YYYY-MM-DD"T"HH24:MI') AS ATT_IN_TIME
+	, TO_CHAR(AT.ATT_OUT_TIME,'YYYY-MM-DD"T"HH24:MI') AS ATT_OUT_TIME
+	, TO_CHAR(FLOOR(AT.ATT_WORK_TIME), 'FM00') || '시간 ' ||
+	  TO_CHAR(ROUND((AT.ATT_WORK_TIME - FLOOR(AT.ATT_WORK_TIME)) * 60), 'FM00') || '분' AS ATT_WORK_TIME_STR
+	, AT.ATTENDANCE_CODE
+	, AT.REASON
+	, AC.ATTENDANCE_NAME
+	FROM ATTENDANCE_T AT 
+	JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+	JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+	WHERE E.EMP_NO = #{empNo}
+</select>
+
+
+<select id="AttendanceDetail" parameterType="kr.or.ddit.att.vo.AttManagerVO" resultType="kr.or.ddit.att.vo.AttManagerVO">
+	SELECT E.EMP_NO
+	, E.EMP_NAME
+	, E.POST_NO
+	, AT.ATT_NO
+	, TO_CHAR(AT.ATT_IN_TIME,'YYYY-MM-DD"T"HH24:MI') AS ATT_IN_TIME
+	, TO_CHAR(AT.ATT_OUT_TIME,'YYYY-MM-DD"T"HH24:MI') AS ATT_OUT_TIME
+	, TO_CHAR(FLOOR(AT.ATT_WORK_TIME), 'FM00') || '시간 ' ||
+	  TO_CHAR(ROUND((AT.ATT_WORK_TIME - FLOOR(AT.ATT_WORK_TIME)) * 60), 'FM00') || '분' AS ATT_WORK_TIME_STR
+	, AT.ATTENDANCE_CODE
+	, AT.REASON
+	, AC.ATTENDANCE_NAME
+	FROM ATTENDANCE_T AT 
+	JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+	JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+	WHERE AT.ATT_NO = #{attNo}
+</select>
+
+<select id="getUser" parameterType="kr.or.ddit.member.vo.MemberVO" resultType="kr.or.ddit.member.vo.MemberVO">
+	SELECT E.EMP_ID
+	, E.EMP_NO
+	, E.EMP_NAME
+	, E.DEPT_NO
+	, E.POST_NO
+	, P.POST_NAME
+	, D.DEPT_NAME
+	FROM EMPLOYEE E
+	JOIN POSITION P ON E.POST_NO = P.POST_NO
+	JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+	WHERE E.EMP_ID = #{empId}
+</select>
+
+<select id="isEmployeeCheckedIn" parameterType="int" resultType="Integer">
+	SELECT COUNT(*)
+	FROM ATTENDANCE_T
+	WHERE EMP_NO = #{empNo}
+	AND TRUNC(ATT_IN_TIME) = TRUNC(SYSDATE)
+	AND ATTENDANCE_CODE IN (1,3) 
+</select>
+
+
+
+<sql id="where">
+	<if test="keyword != null and keyword != ''">
+		AND(
+			E.EMP_NAME LIKE '%' || #{keyword} || '%' OR
+			AT.ATT_IN_TIME LIKE '%' || #{keyword} || '%' OR
+			AT.ATT_OUT_TIME LIKE '%' || #{keyword} || '%' OR
+			AT.ATT_WORK_TIME LIKE '%' || #{keyword} || '%' OR
+			AC.ATTENDANCE_NAME LIKE '%' || #{keyword} || '%' OR
+			AT.PERCEPTION LIKE '%' || #{keyword} || '%' 
+		)
+	</if>
+</sql>
+
+<select id="commuteList" parameterType="hashMap" resultType="kr.or.ddit.att.vo.AttManagerVO">
+	SELECT R.RNUM, R.EMP_NAME,R.ATTENDANCE_CODE,R.ATT_DATE, R.ATT_IN_TIME_STR,
+    R.ATT_OUT_TIME_STR, R.ATT_WORK_TIME_STR,R.PERCEPTION, R.ATTENDANCE_NAME,R.REASON
+	FROM(
+	SELECT ROW_NUMBER() OVER (ORDER BY AT.ATT_IN_TIME DESC) RNUM,
+		       E.EMP_NO AS EMP_NO,
+		       E.EMP_NAME AS EMP_NAME,
+		       AT.ATTENDANCE_CODE AS ATTENDANCE_CODE,
+		       TO_CHAR(AT.ATT_IN_TIME, 'YYYY-MM-DD') AS ATT_DATE,
+		       TO_CHAR(AT.ATT_IN_TIME, 'HH24:MI') AS ATT_IN_TIME_STR,
+		       TO_CHAR(AT.ATT_OUT_TIME, 'HH24:MI') AS ATT_OUT_TIME_STR,
+		       TO_CHAR(FLOOR(AT.ATT_WORK_TIME), 'FM00') || '시간 ' ||
+		       TO_CHAR(ROUND((AT.ATT_WORK_TIME - FLOOR(AT.ATT_WORK_TIME)) * 60), 'FM00') || '분' AS ATT_WORK_TIME_STR,
+		       AT.PERCEPTION AS PERCEPTION, 
+		       AT.REASON AS REASON,
+		       AC.ATTENDANCE_NAME AS ATTENDANCE_NAME
+		FROM ATTENDANCE_T AT
+		JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+		JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+		WHERE E.EMP_NO = #{empNo}
+	<include refid="where"/>
+	)R
+	WHERE R.RNUM BETWEEN #{currentPage} * 10 - (10 - 1) AND #{currentPage} *10
+</select>
+
+<select id="getTotal" parameterType="hashMap" resultType="int">
+	SELECT COUNT(*)
+	FROM ATTENDANCE_T AT
+		JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+		JOIN ATTENDANCE_CODE AC ON AT.ATTENDANCE_CODE = AC.ATTENDANCE_CODE
+    WHERE 1 = 1
+    AND E.EMP_NO = #{empNo}
+	<include refid="where"/>
+</select>
+
+
+<select id="getCheckInTime" parameterType="int" resultType="java.time.LocalDateTime">
+	SELECT ATT_IN_TIME AS ATT_IN_DATE_TIME
+	FROM ATTENDANCE_T 
+	WHERE EMP_NO = #{empNo} 
+	  AND TRUNC(ATT_IN_TIME) = TRUNC(SYSDATE)
+	ORDER BY ATT_IN_TIME DESC 
+	FETCH FIRST 1 ROWS ONLY
+</select>
+
+
+<select id="getDeptAvgAttendance" resultType="map">
+	SELECT 
+    D.DEPT_NO
+    ,D.DEPT_NAME
+    ,
+    LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_IN_TIME, 'HH24')))), 2, '0') || ':' ||
+    LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_IN_TIME, 'MI')))), 2, '0') AS AVG_ATT_IN_TIME
+    , LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_OUT_TIME, 'HH24')))), 2, '0') || ':' ||
+      LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_OUT_TIME, 'MI')))), 2, '0') AS AVG_ATT_OUT_TIME
+	FROM ATTENDANCE_T AT
+	JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+	JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+	WHERE AT.ATT_IN_TIME IS NOT NULL 
+	  AND AT.ATT_OUT_TIME IS NOT NULL
+	GROUP BY D.DEPT_NO, D.DEPT_NAME
+	ORDER BY D.DEPT_NO
+</select>
+
+<select id="getEmpAvgAttendanceByDept" resultType="map" parameterType="int">
+	SELECT 
+     E.EMP_NO
+    ,E.EMP_NAME
+    ,D.DEPT_NO
+    ,D.DEPT_NAME
+    ,LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_IN_TIME, 'HH24')))), 2, '0') || ':' ||
+     LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_IN_TIME, 'MI')))), 2, '0') AS AVG_ATT_IN_TIME
+    ,LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_OUT_TIME, 'HH24')))), 2, '0') || ':' ||
+     LPAD(TRUNC(AVG(TO_NUMBER(TO_CHAR(AT.ATT_OUT_TIME, 'MI')))), 2, '0') AS AVG_ATT_OUT_TIME
+FROM ATTENDANCE_T AT
+JOIN EMPLOYEE E ON AT.EMP_NO = E.EMP_NO
+JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+WHERE D.DEPT_NO = #{deptNo}
+  AND AT.ATT_IN_TIME IS NOT NULL 
+  AND AT.ATT_OUT_TIME IS NOT NULL
+GROUP BY E.EMP_NO, E.EMP_NAME, D.DEPT_NO, D.DEPT_NAME
+ORDER BY E.EMP_NO
+</select>
+
+
+
+
+
+
+
+
+</mapper>

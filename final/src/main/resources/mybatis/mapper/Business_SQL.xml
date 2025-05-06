@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.business.mapper.BusinessMapper">
+
+<resultMap id="contractMasterMap" type="kr.or.ddit.business.vo.ContractMasterVO">
+    <result property="cancelContent" column="CANCEL_CONTENT"/>
+    <result property="contractStatus" column="CONTRACT_STATUS"/>
+    <result property="contractNo" column="CONTRACT_NO"/>
+    <result property="empNo" column="EMP_NO"/>
+    <result property="contractNm" column="CONTRACT_NM"/>
+    <result property="contractPrice" column="CONTRACT_PRICE"/>
+    <result property="contractType" column="CONTRACT_TYPE"/>
+    <result property="state" column="STATE"/>
+    <result property="fromDate" column="FROM_DATE"/>
+    <result property="toDate" column="TO_DATE"/>
+    <result property="approvalDate" column="APPROVAL_DATE"/>
+    <result property="approvalEmp" column="APPROVAL_EMP"/>
+    <result property="fileGroupNo" column="FILE_GROUP_NO"/>
+    <result property="inputDatetime" column="INPUT_DATETIME"/>
+    <result property="delDatetime" column="DEL_DATETIME"/>
+    <result property="nttNt" column="NTT_NT"/>
+    <result property="ctCreateDate" column="CT_CREATE_DATE"/>
+    <result property="ctCreator" column="CT_CREATOR"/>
+    <result property="ctModifyDate" column="CT_MODIFY_DATE"/>
+    <result property="ctModifier" column="CT_MODIFIER"/>
+    <result property="entMemo" column="ENT_MEMO"/>
+</resultMap>
+
+<resultMap id="enterpriceMap" type="kr.or.ddit.business.vo.EnterpriceVO">
+    <id property="entNo" column="ENT_NO"/>
+    <result property="entTel" column="ENT_TEL"/>
+    <result property="entCode" column="ENT_CODE"/>
+    <result property="entName" column="ENT_NAME"/>
+    <result property="busNo" column="BUS_NO" javaType="java.lang.String"/>
+    <result property="birDate" column="BIR_DATE"/>
+    <result property="busAdd" column="BUS_ADD"/>
+    <result property="repName" column="REP_NAME"/>
+    <result property="entType" column="ENT_TYPE"/>
+    <result column="inputDatetime" property="inputDatetime"/>
+    <result property="entComment" column="ENT_COMMENT"/>
+    <result property="entCust" column="ENT_CUST"/>
+    <result property="entRegDate" column="ENT_REG_DATE"/>
+    <!-- 1:N 관계를 처리하는 부분 -->
+    <collection property="ContractMasterVOList" resultMap="contractMasterMap"/>
+</resultMap>
+
+<resultMap id="employeeMap" type="kr.or.ddit.business.vo.EmployeeVO" >
+	<result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+	<result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+	<result property="empProfile" column="EMP_PROFILE"/>
+	<result property="empNo" column="EMP_NO"/>
+	<result property="enabled" column="ENABLED"/>
+	<result property="empId" column="EMP_ID"/>
+	<result property="empPw" column="EMP_PW"/>
+	<result property="empName" column="EMP_NAME"/>
+	<result property="empEmail" column="EMP_EMAIL"/>
+	<result property="empPhone" column="EMP_PHONE"/>
+	<result property="empZip" column="EMP_ZIP"/>
+	<result property="empStreet" column="EMP_STREET"/>
+	<result property="empDetail" column="EMP_DETAIL"/>
+	<result property="empSign" column="EMP_SIGN"/>
+	<result property="empAnnual" column="EMP_ANNUAL"/>
+	<result property="empIn" column="EMP_IN"/>
+	<result property="empOut" column="EMP_OUT"/>
+	<result property="deptNo" column="DEPT_NO"/>
+	<result property="postNo" column="POST_NO"/>
+	<collection property="EmployeeVOList" resultMap="employeeMap" />
+</resultMap>
+
+
+		<!-- getTotal-->
+		<select id="getTotal" resultType="kr.or.ddit.business.vo.EnterpriceVO">
+				SELECT 
+				        EE.EMP_NO, E.ENT_NO, E.ENT_NAME, E.ENT_TEL, E.ENT_CODE, 
+				        E.BIR_DATE, E.REP_NAME, E.ENT_TYPE, 
+				        E.ENT_CUST, E.ENT_REG_DATE, CM.INPUT_DATETIME,
+				        CM.CANCEL_CONTENT, CM.CONTRACT_STATUS, CM.CONTRACT_NO, 
+				        CM.EMP_NO, CM.CONTRACT_NM,  CM.CONTRACT_TYPE, CM.CONTRACT_PRICE
+				        ,CASE CM.STATE
+				            WHEN '0' THEN '계약완료'
+				            WHEN '1' THEN '진행중'
+				            WHEN '2' THEN '완료'
+				            WHEN '3' THEN '취소'
+				            WHEN '4' THEN '보류'
+				            ELSE '알 수 없음'
+				        END AS STATE
+				    FROM ENTERPRICE E, CONTRACT_MASTER CM, EMPLOYEE EE
+				    WHERE E.ENT_NO = CM.ENT_NO
+			            AND CM.EMP_NO = EE.EMP_NO
+	<!-- 			    	AND EE.EMP_NO = #{empNo} -->
+		</select>
+	
+	
+		<select id="getPagedCustList" parameterType="hashMap" resultType="kr.or.ddit.business.vo.EnterpriceVO">
+			    SELECT 
+			        EE.EMP_NO AS EMPLOYEE_EMP_NO, 
+			        E.ENT_NO AS ENTERPRICE_ENT_NO, 
+			        E.ENT_NAME, 
+			        E.ENT_TEL, 
+			        E.ENT_CODE, 
+			        E.BIR_DATE, 
+			        E.REP_NAME, 
+			        E.ENT_TYPE, 
+			        E.ENT_CUST, 
+			        E.ENT_REG_DATE, 
+			        CM.INPUT_DATETIME,
+			        CM.CANCEL_CONTENT, 
+			        CM.CONTRACT_STATUS, 
+			        CM.CONTRACT_NO, 
+			        CM.EMP_NO AS CONTRACT_EMP_NO, 
+			        CM.CONTRACT_NM,  
+			        CM.CONTRACT_TYPE, 
+			        CM.CONTRACT_PRICE,
+			        CASE CM.STATE
+			            WHEN '0' THEN '계약완료'
+			            WHEN '1' THEN '진행중'
+			            WHEN '2' THEN '완료'
+			            WHEN '3' THEN '취소'
+			            WHEN '4' THEN '보류'
+			            ELSE '알 수 없음'
+			        END AS STATE,
+			        ROW_NUMBER() OVER (ORDER BY CM.INPUT_DATETIME DESC) AS rn
+			    FROM ENTERPRICE E
+			    JOIN CONTRACT_MASTER CM ON E.ENT_NO = CM.ENT_NO
+			    JOIN EMPLOYEE EE ON CM.EMP_NO = EE.EMP_NO
+		</select>
+
+
+	
+		<select id="getTotalCount" parameterType="map" resultType="int">
+		    SELECT COUNT(*)
+		    FROM ENTERPRICE E
+		    JOIN CONTRACT_MASTER CM ON E.ENT_NO = CM.ENT_NO
+		    JOIN EMPLOYEE EE ON CM.EMP_NO = EE.EMP_NO
+		    <where>
+		        <if test="empNo != null">
+		            AND EE.EMP_NO = #{empNo}
+		        </if>
+		    </where>
+		</select>
+
+
+	
+    <select id="custList" resultType="kr.or.ddit.business.vo.EnterpriceVO">
+        SELECT DISTINCT(E.ENT_NAME) ENT_NAME, E.ENT_TYPE,  CM.CONTRACT_NM, CM.INPUT_DATETIME, CM.CONTRACT_PRICE
+     		,    CASE CM.STATE
+            WHEN '0' THEN '계약완료'
+            WHEN '1' THEN '진행중'
+            WHEN '2' THEN '완료'
+            WHEN '3' THEN '취소'
+            WHEN '4' THEN '보류'
+            ELSE '알 수 없음'
+        END AS STATE,
+        	E.ENT_REG_DATE
+        FROM ENTERPRICE E, EMPLOYEE EM, CONTRACT_MASTER CM
+        WHERE E.ENT_NO = CM.ENT_NO
+            AND CM.EMP_NO = EM.EMP_NO
+    </select>
+
+
+    <!-- custList -->
+    <select id="waitCustList" resultType="kr.or.ddit.business.vo.EnterpriceVO">
+        SELECT DISTINCT(T.ENT_NAME) ENT_NAME, T.ENT_TYPE, CM.CONTRACT_NM, CM.INPUT_DATETIME, CM.CONTRACT_PRICE
+                ,    CASE CM.STATE
+                    WHEN '0' THEN '계약완료'
+                    WHEN '1' THEN '진행중'
+                    WHEN '2' THEN '완료'
+                    WHEN '3' THEN '취소'
+                    WHEN '4' THEN '보류'
+                    ELSE '알 수 없음'
+                END AS STATE
+                , T.ENT_REG_DATE
+        FROM CONTRACT_MASTER CM, ENTERPRICE T
+        WHERE CM.ENT_NO = T.ENT_NO
+            AND CM.STATE = '4'
+    </select>
+
+
+    <!-- delCustList -->
+    <select id="delCustList" resultType="kr.or.ddit.business.vo.EnterpriceVO">
+        SELECT DISTINCT
+		    T.ENT_NAME,
+		    T.ENT_TYPE,
+		    COALESCE(CM.CANCEL_CONTENT, '-') AS CANCEL_CONTENT,
+		    T.ENT_REG_DATE,
+		    CM.CONTRACT_NM,
+		    CM.INPUT_DATETIME,
+			CM.CONTRACT_PRICE
+		FROM
+		    CONTRACT_MASTER CM
+		JOIN
+		    ENTERPRICE T ON CM.ENT_NO = T.ENT_NO
+		WHERE
+		    CM.STATE = '3'
+    </select>
+	
+	
+<!-- 		//영업 통계 -->
+<!-- 		public List<CustInfoVO> busStat();  //월별 계약 체결 수 -->
+<!-- 		public List<CustInfoVO> conStat();  //계약 체결률 -->
+<!-- 		public List<CustInfoVO> getContractByCategory(); // 카테고리별 계약 체결 비율 -->
+<!-- 		public List<CustInfoVO> getContractByStatus(); // 계약상태별 계약 체결 비율 -->
+<!-- 		public List<CustInfoVO> getContractByEnterprise(); // 기업별 계약 체결 비율 -->
+		
+		
+	<!-- 		public List<CustInfoVO> busStat();  //월별 계약 체결 수 -->	
+	<select id="busStat" parameterType="kr.or.ddit.vo.CustInfoVO">
+		SELECT 
+		    TO_CHAR(FROM_DATE, 'YYYY-MM') AS MONTH, 
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT_MASTER
+		GROUP BY 
+		    TO_CHAR(FROM_DATE, 'YYYY-MM') 
+        HAVING SUBSTR(TO_CHAR(FROM_DATE, 'YYYY-MM') ,1,4) = '2024'
+		ORDER BY MONTH
+	</select>
+	
+	<!-- 		public List<CustInfoVO> conStat();  //계약 체결률 -->
+	<select id="conStat" parameterType="kr.or.ddit.vo.CustInfoVO">
+		SELECT 
+		    TO_CHAR(FROM_DATE, 'YYYY-MM') AS MONTH, 
+		    COUNT(*) AS TOTAL_CONTRACTS, 
+		    SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_CONTRACTS,
+		    ROUND(SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS CONTRACT_RATE
+		FROM 
+		    CONTRACT_MASTER
+		GROUP BY 
+		    TO_CHAR(FROM_DATE, 'YYYY-MM') 
+		ORDER BY 
+		    MONTH
+	</select>
+	
+<!-- 	카테고리별 계약 체결 비율 -->
+		<!-- 가구
+		IT
+		제과
+		기계
+		환경
+		영업
+		설비 -->
+	<!-- 		public List<CustInfoVO> getContractByCategory(); // 카테고리별 계약 체결 비율 -->
+	<select id="getContractByCategory" parameterType="kr.or.ddit.vo.CustInfoVO">
+		SELECT 
+		    E.ENT_TYPE AS TYPE,
+		    COUNT(*) AS TOTAL_TYPES,
+		    SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_TYPES,
+		    ROUND(SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS CONTRACT_RATE
+		FROM 
+		    CONTRACT_MASTER CM, ENTERPRICE E
+		WHERE 
+		    E.ENT_NO = CM.ENT_NO
+		GROUP BY 
+		    E.ENT_TYPE
+	</select>
+	
+	
+	
+<!-- 		public List<CustInfoVO> getContractByStatus(); // 계약상태별 계약 체결 비율 --> 
+	<select id="getContractByStatus" parameterType="kr.or.ddit.vo.CustInfoVO">
+		SELECT 
+		    CM.STATE AS STATE,
+		    COUNT(*) AS TOTAL_STATES,
+		    SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_STATES,
+		    ROUND(SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS CONTRACT_RATE
+		FROM 
+		    CONTRACT_MASTER CM, ENTERPRICE E
+		WHERE 
+		    CM.ENT_NO = E.ENT_NO
+		GROUP BY 
+		    CM.STATE
+	</select>
+	
+	
+<!-- 	기업별 계약 체결 비율 -->
+	<!-- 		public List<CustInfoVO> getContractByEnterprise(); // 기업별 계약 체결 비율 -->
+	<select id="getContractByEnterprise" parameterType="kr.or.ddit.vo.CustInfoVO">
+		SELECT 
+		    E.ENT_NAME AS ENTER,
+		    COUNT(*) AS TOTAL_ENTERS,
+		    SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_ENTERS,
+		    ROUND(SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS CONTRACT_RATE
+		FROM 
+		    CONTRACT_MASTER CM, ENTERPRICE E
+		WHERE 
+		    E.ENT_NO = CM.ENT_NO
+		GROUP BY 
+		    E.ENT_NAME
+	
+	</select>
+</mapper>

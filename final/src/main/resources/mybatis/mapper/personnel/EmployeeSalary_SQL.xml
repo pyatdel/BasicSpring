@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.personnel.mapper.EmployeeSalaryMapper">
+
+	<sql id="where"> <!-- 반복된 조건문을 뺄 수 있다 -->
+	 <if test="keyword!=null and keyword!=''">
+    	AND(
+    		EMP_NAME LIKE '%' || #{keyword} || '%' OR
+    		EMP_ID LIKE '%' || #{keyword} || '%' OR
+    		DEPT_NAME LIKE '%' || #{keyword} || '%'
+    	)
+    </if>
+	</sql>
+
+
+	<resultMap id="empMap" type="kr.or.ddit.personnel.vo.EmployeeVO" >
+		<result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+		<result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+		<result property="empNo" column="EMP_NO"/>
+		<result property="enabled" column="ENABLED"/>
+		<result property="empId" column="EMP_ID"/>
+		<result property="empPw" column="EMP_PW"/>
+		<result property="empName" column="EMP_NAME"/>
+		<result property="empEmail" column="EMP_EMAIL"/>
+		<result property="empPhone" column="EMP_PHONE"/>
+		<result property="empZip" column="EMP_ZIP"/>
+		<result property="empStreet" column="EMP_STREET"/>
+		<result property="empDetail" column="EMP_DETAIL"/>
+		<result property="empSign" column="EMP_SIGN"/>
+		<result property="empAnnual" column="EMP_ANNUAL"/>
+		<result property="empIn" column="EMP_IN"/>
+		<result property="empOut" column="EMP_OUT"/>
+		<result property="deptNo" column="DEPT_NO"/>
+		<collection property="salaryVOList" resultMap="salaryMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.personnel.vo.EmployeeSalaryVO" id="salaryMap">
+		<result property="foodExpense" column="FOOD_EXPENSE"/>
+		<result property="papago" column="PAPAGO"/>
+		<result property="salaryNo" column="SALARY_NO"/>
+		<result property="salary" column="SALARY"/>
+		<result property="incomeTax" column="INCOME_TAX"/>
+		<result property="healthInsurance" column="HEALTH_INSURANCE"/>
+		<result property="nationalPension" column="NATIONAL_PENSION"/>
+		
+		<result property="salaryIncomeTax" column="salary_income_tax"/>
+		<result property="salaryHealthInsurance" column="salary_health_insurance"/>
+		<result property="salaryNationalPension" column="salary_national_pension"/>
+		<result property="insurance" column="insurance"/>
+		<result property="difference" column="difference"/>
+		<result property="salaryTotal" column="salary_total"/>
+		<result property="year" column="year"/>
+		<result property="month" column="month"/>
+		<result property="afterTax" column="afterTax"/>
+		<result property="addedHours" column="addedHours"/>
+		<result property="totalSalary" column="totalSalary"/>
+		<result property="totalFood" column="totalFood"/>
+		<result property="totalAddedHours" column="totalAddedHours"/>
+		<result property="employeeCount" column="employeeCount"/>
+		
+	</resultMap>
+	
+<!-- 	// 전체 개수
+	public int getTotal(Map<String, Object> map); -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			EMPLOYEE   E
+			    , DEPARTMENT D
+			    , POSITION   P
+			WHERE
+			    E.DEPT_NO = D.DEPT_NO
+			    AND E.POST_NO = P.POST_NO
+			<include refid="where"></include> 
+	</select>
+
+	<!-- //직원 급여 페이지 : 직원 조회  EmployeeListController
+	public List<EmployeeVO> salaryList(Map<String, Object> map);
+	//salaryListPost!->map : {year=2024, month=3}
+	 -->
+	<select id="salaryList" parameterType="hashMap" resultType="kr.or.ddit.personnel.vo.EmployeeSalaryVO">
+		  SELECT
+			    T.RNUM,
+			    T.EMP_NO,
+			    T.EMP_ID,
+			    T.EMP_NAME,
+			    T.RESIDENT_NUMBER1,
+			    T.RESIDENT_NUMBER2,
+			    T.POST_NAME,
+			    T.DEPT_NAME,
+			    T.YEAR,
+			    T.MONTH,
+			    T.AFTER_TAX
+			FROM (
+			   SELECT
+				    ROW_NUMBER() OVER (ORDER BY E.EMP_NO DESC) AS RNUM, 
+				    E.EMP_NO,
+				    E.EMP_ID,
+				    E.EMP_NAME,
+				    E.RESIDENT_NUMBER1,
+				    E.RESIDENT_NUMBER2,
+				    P.POST_NAME,
+				    D.DEPT_NAME,
+				    CASE 
+				        WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN TO_CHAR(S.PAPAGO, 'YYYY') 
+				        ELSE NULL 
+				    END AS YEAR,
+				    CASE 
+				        WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN TO_CHAR(S.PAPAGO, 'MM') 
+				        ELSE NULL 
+				    END AS MONTH,
+				    S.AFTER_TAX
+				FROM EMPLOYEE E
+				LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+				LEFT JOIN POSITION P ON E.POST_NO = P.POST_NO
+				LEFT JOIN SALARY S 
+				    ON E.EMP_NO = S.EMP_NO AND 
+				       (TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month})
+				WHERE E.ENABLED = '1'
+				    <include refid="where"></include>
+			) T
+		WHERE T.RNUM BETWEEN (#{currentPage}* 10)-(10-1) AND (#{currentPage} * 10)
+					
+	</select>
+
+	<!-- 	// 사원번호 클릭 시 옆에 데이터 나오게 하기
+	public int slaryPost(EmployeeVO employeeVO); -->
+	<select id="slaryPost" parameterType="String" resultMap="empMap">
+	SELECT
+		    S.EMP_NO
+		    , EMP_ID
+		    , EMP_NAME
+		    , SALARY
+		    , FOOD_EXPENSE
+		    , INCOME_TAX
+		    , HEALTH_INSURANCE
+		    , NATIONAL_PENSION
+		    , PAPAGO
+		    , SALARY
+		    , FOOD_EXPENSE
+		    , ADDED_HOURS
+		    , EXTRACT(YEAR FROM PAPAGO)                                                                                                     AS
+		    YEAR
+		    , EXTRACT(MONTH FROM PAPAGO)                                                                                                    AS
+		    MONTH
+		    , AFTER_TAX
+		    , ADDED_HOURS
+		    , SALARY * ( INCOME_TAX / 100 )                                                                                                 AS
+		    SALARY_INCOME_TAX
+		    , SALARY * ( HEALTH_INSURANCE / 100 )                                                                                           AS
+		    SALARY_HEALTH_INSURANCE
+		    , SALARY * ( NATIONAL_PENSION / 100 )                                                                                           AS
+		    SALARY_NATIONAL_PENSION
+		    , SALARY * ( HEALTH_INSURANCE / 100 ) + SALARY * ( NATIONAL_PENSION / 100 ) + SALARY * ( INCOME_TAX / 100 )                     AS
+		    INSURANCE
+		    , ( SALARY + FOOD_EXPENSE ) - ( SALARY * HEALTH_INSURANCE / 100 + SALARY * NATIONAL_PENSION / 100 + SALARY * INCOME_TAX / 100 ) AS
+		    DIFFERENCE
+		    , SALARY + FOOD_EXPENSE                                                                                                         AS
+		    SALARY_TOTAL
+		FROM
+		    INSURANCE, EMPLOYEE E
+		    LEFT JOIN SALARY   S ON E.EMP_NO = S.EMP_NO
+			WHERE
+    	E.EMP_ID = #{empId}
+    	<!-- <if test="year != null and year != ''">
+            	AND EXTRACT(YEAR FROM S.PAPAGO) = #{year}
+        </if>
+        <if test="month != null and month != ''">
+            AND EXTRACT(MONTH FROM S.PAPAGO) = #{month}
+        </if> -->
+	</select>
+	
+	
+<!-- 	// 급여 등록
+	public int salaryCreate(EmployeeSalaryVO employeeSalaryVO); -->
+	<insert id="salaryCreate" parameterType="kr.or.ddit.personnel.vo.EmployeeSalaryVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="salaryNo">
+		SELECT NVL(max(SALARY_NO),0)+1 FROM SALARY
+		</selectKey>
+		 INSERT INTO SALARY (
+		        SALARY_NO
+		        , SALARY
+		        , EMP_NO
+		        , FOOD_EXPENSE
+		        , PAPAGO
+		        , AFTER_TAX
+		        , ADDED_HOURS
+		 ) VALUES (
+		 		#{salaryNo}
+		 		,#{salary}
+		 		,(SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID =#{empId})
+		 		,#{foodExpense}
+		 		,#{papago}
+		 		,#{afterTax}
+		 		,#{addedHours}
+	     )
+	</insert>
+	
+	<!-- //예산에서 지출
+	public int modalSalary(Map<String, Object> queryMap) -->
+	<insert id="modalSalary"  parameterType="hashMap">
+		<selectKey resultType="int" order="BEFORE" keyProperty="expNo">
+         	SELECT NVL(max(EXP_NO),0)+1 FROM EXPENSE
+      	</selectKey>
+      	INSERT INTO EXPENSE (
+				    EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE, KAKAO_YN
+				)
+				SELECT 
+				    #{expNo},  
+				    7, 
+				    '인건비',
+				    1,
+				    '인건비',
+				    (SELECT BUDGET_NO 
+				     FROM BUDGET_T 
+				     WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM')),
+				    (SELECT SALARY 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY), 
+				    #{expDate},  
+				    'N'
+				     FROM DUAL          
+				WHERE  
+				(SELECT SALARY 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY) IS NOT NULL
+				AND
+				(SELECT SALARY 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY) != 0              
+			</insert>
+			
+			<insert id="modalSalary2"  parameterType="hashMap">
+				<selectKey resultType="int" order="BEFORE" keyProperty="expNo">
+		         	SELECT NVL(max(EXP_NO),0)+2 FROM EXPENSE
+		      	</selectKey>
+			INSERT INTO EXPENSE (
+				    EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE, KAKAO_YN
+				)
+				SELECT
+				    #{expNo}  
+				    ,8         
+				    ,'추가수당비'
+				    ,1         
+				    ,'추가수당비' 
+				    ,(SELECT BUDGET_NO 
+				     FROM BUDGET_T 
+				     WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM'))
+				    ,(SELECT ADDED_HOURS 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY)
+				    ,#{expDate}  
+				    ,'N'
+				    FROM DUAL          
+				WHERE 
+				(SELECT ADDED_HOURS 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY) IS NOT NULL
+				AND
+				(SELECT ADDED_HOURS 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY) != 0     
+			</insert>
+			
+			<insert id="modalSalary3"  parameterType="hashMap">
+				<selectKey resultType="int" order="BEFORE" keyProperty="expNo">
+		         	SELECT NVL(max(EXP_NO),0)+3 FROM EXPENSE
+		      	</selectKey>
+		      	INSERT INTO EXPENSE (
+				    EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE, KAKAO_YN
+				)
+				SELECT
+				    #{expNo},  
+				    3,
+				    '식비',
+				    1,
+				    '식비',
+				    (SELECT BUDGET_NO 
+				     FROM BUDGET_T 
+				     WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM')),
+				    (SELECT FOOD_EXPENSE 
+				     FROM SALARY 
+				     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+				     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+				     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+				     FETCH FIRST 1 ROWS ONLY), 
+				    #{expDate},  
+				    'N'
+				    FROM DUAL
+				    WHERE
+					    (SELECT FOOD_EXPENSE 
+					     FROM SALARY 
+					     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+					     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+					     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+					     FETCH FIRST 1 ROWS ONLY) IS NOT NULL
+				     AND
+					     (SELECT FOOD_EXPENSE 
+					     FROM SALARY 
+					     WHERE EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+					     AND TO_CHAR(PAPAGO, 'YYYY') = #{year}
+					     AND TO_CHAR(PAPAGO, 'MM') = #{month}
+					     FETCH FIRST 1 ROWS ONLY) != 0          
+      	
+			<!-- INSERT ALL 
+			    INTO EXPENSE (
+			        EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE
+			    ) VALUES (
+			        #{expNo}, 7, '인건비', 1, '총 인건비',
+			        (SELECT BUDGET_NO 
+			            FROM BUDGET_T 
+			            WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM')),
+			        (SELECT SUM(CASE 
+			                      WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} 
+			                      THEN S.SALARY 
+			                      ELSE 0 
+			                    END) AS TOTAL_SALARY
+			         FROM DEPARTMENT D
+			         LEFT JOIN EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+			         LEFT JOIN SALARY S ON E.EMP_NO = S.EMP_NO
+			         WHERE D.DEPT_NO = #{deptNo}),
+			         #{expDate}
+			    )
+			    INTO EXPENSE (
+			        EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE
+			    ) VALUES (
+			        #{expNo}, 3, '식비', 1, '총 식비',
+			        (SELECT BUDGET_NO 
+			            FROM BUDGET_T 
+			            WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM')),
+			        (SELECT SUM(CASE 
+			                      WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} 
+			                      THEN S.FOOD_EXPENSE 
+			                      ELSE 0 
+			                    END) AS TOTAL_FOOD
+			         FROM DEPARTMENT D
+			         LEFT JOIN EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+			         LEFT JOIN SALARY S ON E.EMP_NO = S.EMP_NO
+			         WHERE D.DEPT_NO = #{deptNo}),
+			        #{expDate}
+			    )
+			    INTO EXPENSE (
+			        EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE, EXP_DATE
+			    ) VALUES (
+			        #{expNo}, 8, '추가수당', 1, '총 추가수당',
+			        (SELECT BUDGET_NO 
+			            FROM BUDGET_T 
+			            WHERE BUD_DATE = TO_CHAR(TO_DATE(#{expDate}, 'YYYY-MM-DD'), 'YYYYMM')),
+			        (SELECT SUM(CASE 
+			                      WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} 
+			                      THEN S.ADDED_HOURS 
+			                      ELSE 0 
+			                    END) AS TOTAL_ADDED_HOURS
+			         FROM DEPARTMENT D
+			         LEFT JOIN EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+			         LEFT JOIN SALARY S ON E.EMP_NO = S.EMP_NO
+			         WHERE D.DEPT_NO = #{deptNo}),
+			        #{expDate}
+			    )
+			SELECT *
+			FROM DUAL
+			WHERE EXISTS (
+			    SELECT 1
+			    FROM SALARY S
+			    JOIN EMPLOYEE E ON S.EMP_NO = E.EMP_NO
+			    WHERE E.DEPT_NO = #{deptNo}
+			    AND TO_CHAR(S.PAPAGO, 'YYYY') = #{year}
+			    AND TO_CHAR(S.PAPAGO, 'MM') = #{month}
+			) -->
+	</insert>
+	
+
+	<!-- // 모달 리스트
+	public List<EmployeeSalaryVO> modalList(Map<String, Object> map); -->
+	<select id="modalList" parameterType="hashMap" resultType="kr.or.ddit.personnel.vo.EmployeeSalaryVO">
+			SELECT 
+		          ROW_NUMBER() OVER (ORDER BY E.EMP_NO DESC) AS RNUM,
+		          E.EMP_NO,
+		          E.EMP_ID,
+		          E.EMP_NAME,
+		          P.POST_NAME,
+		          D.DEPT_NAME,
+		          S.SALARY,
+		          S.FOOD_EXPENSE,
+		          S.AFTER_TAX,
+		          S.ADDED_HOURS,
+		          S.PAPAGO
+		      FROM 
+		          EMPLOYEE E
+		      LEFT JOIN 
+		          POSITION P ON E.POST_NO = P.POST_NO
+		      LEFT JOIN 
+		          DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+		      LEFT JOIN 
+		          SALARY S ON E.EMP_NO = S.EMP_NO 
+		          AND TO_CHAR(S.PAPAGO, 'YYYY') = #{year} 
+		          AND TO_CHAR(S.PAPAGO, 'MM') = #{month}
+		      ORDER BY 
+		          E.EMP_NO DESC
+		<!-- 	SELECT
+			    ROW_NUMBER() OVER(
+			        ORDER BY 
+			            CASE 
+			                D.DEPT_NAME 
+			                WHEN '개발부' THEN 1
+			                WHEN '영업부' THEN 2
+			                WHEN '인사부' THEN 3
+			                WHEN '회계부' THEN 4               
+			                ELSE 5 
+			            END
+			    ) AS RNUM,
+			    D.DEPT_NO, 
+			    D.DEPT_NAME, 
+			    COUNT(E.EMP_NO) AS EMPLOYEE_COUNT,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.SALARY 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_SALARY,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.FOOD_EXPENSE 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_FOOD,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.ADDED_HOURS 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_ADDED_HOURS
+			FROM 
+			    DEPARTMENT D
+			LEFT JOIN 
+			    EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+			LEFT JOIN 
+			    SALARY S ON E.EMP_NO = S.EMP_NO
+			GROUP BY 
+			    D.DEPT_NO, D.DEPT_NAME -->
+			
+			<!-- UNION ALL
+			
+			SELECT
+			    NULL AS RNUM,   전체 합계의 경우 ROW_NUMBER를 사용하지 않으므로 NULL
+			    NULL AS DEPT_NO, 
+			    '전체' AS DEPT_NAME,   전체 합계라는 문구 출력
+			    COUNT(E.EMP_NO) AS EMPLOYEE_COUNT,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.SALARY 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_SALARY,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.FOOD_EXPENSE 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_FOOD,
+			    SUM(
+			        CASE 
+			            WHEN TO_CHAR(S.PAPAGO, 'YYYY') = #{year} AND TO_CHAR(S.PAPAGO, 'MM') = #{month} THEN S.ADDED_HOURS 
+			            ELSE 0 
+			        END
+			    ) AS TOTAL_ADDED_HOURS
+			FROM 
+			    DEPARTMENT D
+			LEFT JOIN 
+			    EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+			LEFT JOIN 
+			    SALARY S ON E.EMP_NO = S.EMP_NO -->
+    </select>
+    
+	<!-- //급여 중복 등록 체크
+	public int salaryDupChk(EmployeeSalaryVO employeeSalaryVO); -->
+	<select id="salaryDupChk" parameterType="kr.or.ddit.personnel.vo.EmployeeSalaryVO" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    EMPLOYEE E
+		    LEFT JOIN SALARY   S ON E.EMP_NO = S.EMP_NO
+		WHERE
+		    S.EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+		    AND TO_CHAR(
+		        PAPAGO, 'YYYY'
+		    ) = #{year}
+		    AND TO_CHAR(
+		        PAPAGO, 'MM'
+		    ) = #{month}
+	</select>
+	
+	<!-- //급여 명세서
+	public List<EmployeeSalaryVO> paystubList(Map<String, Object> map); -->
+	<select id="paystubList" parameterType="kr.or.ddit.personnel.vo.EmployeeSalaryVO">
+	SELECT 
+		EMP_NO
+		,EMP_ID
+		, EMP_NAME
+		, DEPT_NAME
+		, POST_NAME
+		, SALARY_NO
+		, SALARY
+		, S.EMP_NO
+		, FOOD_EXPENSE
+		, PAPAGO
+		, AFTER_TAX
+		, ADDED_HOURS 
+	FROM EMPLOYEE E
+		LEFT JOIN SALARY S 
+		ON E.EMP_NO = S.EMP_NO
+		LEFT JOIN POSITION P ON E.POST_NO = P.POST_NO
+		LEFT JOIN DEPARTMENT D ON D.DEPT_NO = E.DEPT_NO
+ 	<!-- WHERE EMP_NO = #{empNo} -->
+	</select>
+	
+	
+</mapper>

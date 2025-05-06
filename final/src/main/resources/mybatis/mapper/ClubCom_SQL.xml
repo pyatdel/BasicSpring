@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.clubCom.mapper.iClubComMapper">
+
+	<!-- 동호회 -->
+	<resultMap type="kr.or.ddit.club.vo.ClubVO" id="clubMap">
+	    <result property="clubNo" column="CLUB_NO"/>
+	    <result property="clubName" column="CLUB_NAME"/>
+	    <result property="clubDesc" column="CLUB_DESC"/>
+	    <result property="clubCreDate" column="CLUB_CRE_DATE"/>
+	    <result property="clubModiDate" column="CLUB_MODI_DATE"/>
+	    <result property="maxMember" column="MAX_MEMBER"/>
+	    <result property="nowMember" column="NOW_MEMBER"/>
+	    <result property="clubState" column="CLUB_STATE"/>
+	    <result property="joinWay" column="JOIN_WAY"/>
+	    <result property="clubOpenState" column="CLUB_OPEN_STATE"/>
+	    <result property="requestDate" column="REQUEST_DATE"/>
+	    <result property="clubCreMem" column="CLUB_CRE_MEM"/>
+	    <result property="clubSec" column="CLUB_SEC"/>
+	    <result property="clubPat" column="CLUB_PAT"/>
+	    <result property="comNo" column="COM_NO"/>
+	
+	    <association property="clubCategoryVO" resultMap="clubCategoryMap"/>
+	
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	
+	    <association property="communityVO" resultMap="communityMap"/>
+	
+	    <collection property="memberList" ofType="kr.or.ddit.club.vo.ClubMemberVO">
+	        <id property="clubMemNo" column="CLUB_MEM_NO"/>
+	        <result property="memState" column="MEM_STATE"/>
+	        <result property="stateMemo" column="STATE_MEMO"/>
+	        <result property="lastAccDate" column="LAST_ACC_DATE"/>
+	        <result property="memCreState" column="MEM_CRE_STATE"/>
+	        <result property="clubNo" column="CLUB_NO"/>
+	        <result property="empNo" column="EMP_NO"/>
+	        <association property="employeeVO" resultMap="employeeMap"/>
+	        <association property="clubRoleVO" resultMap="clubRoleMap"/>
+	    </collection>
+	</resultMap>
+	
+	<!-- 동호회 게시글 -->
+	<resultMap id="clubComMap" type="kr.or.ddit.clubCom.vo.ClubComVO">
+	    <result property="clubComNo" column="CLUB_COM_NO"/>
+	    <result property="clubComTitle" column="CLUB_COM_TITLE"/>
+	    <result property="clubComWriter" column="CLUB_COM_WRITER"/>
+	    <result property="clubComCont" column="CLUB_COM_CONT"/>
+	    <result property="clubComCreDate" column="CLUB_COM_CRE_DATE"/>
+	    <result property="clubComHit" column="CLUB_COM_HIT"/>
+	    <result property="replyCnt" column="REPLY_CNT"/>
+	    
+	    <association property="clubComTypeVO" resultMap="clubComTypeMap"/>
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	    <association property="clubMemberVO" resultMap="clubMemberMap"/>
+	</resultMap>
+	
+	<!-- 직원 -->
+	<resultMap id="employeeMap" type="kr.or.ddit.personnel.vo.EmployeeVO">
+	    <result property="empNo" column="EMP_NO"/>
+	    <result property="enabled" column="ENABLED"/>
+	    <result property="empId" column="EMP_ID"/>
+	    <result property="empPw" column="EMP_PW"/>
+	    <result property="empName" column="EMP_NAME"/>
+	    <result property="empEmail" column="EMP_EMAIL"/>
+	    <result property="empPhone" column="EMP_PHONE"/>
+	    <result property="empZip" column="EMP_ZIP"/>
+	    <result property="empStreet" column="EMP_STREET"/>
+	    <result property="empDetail" column="EMP_DETAIL"/>
+	    <result property="empSign" column="EMP_SIGN"/>
+	    <result property="empAnnual" column="EMP_ANNUAL"/>
+	    <result property="empIn" column="EMP_IN"/>
+	    <result property="empOut" column="EMP_OUT"/>
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+	    <result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+	    <result property="empProfile" column="EMP_PROFILE"/>
+	    
+	    <association property="departmentVO" resultMap="departmentMap"/>
+	    <association property="positionVO" resultMap="positionMap"/>
+	</resultMap>
+	
+	<!-- 게시물 타입 -->
+	<resultMap id="clubComTypeMap" type="kr.or.ddit.clubCom.vo.ClubComTypeVO">
+	    <result property="clubComTypeNo" column="CLUB_COM_TYPE_NO"/>
+	    <result property="clubComTypeName" column="CLUB_COM_TYPE_NAME"/>
+	</resultMap>
+	
+	<!-- 동호회 종류 -->
+	<resultMap id="clubCategoryMap" type="kr.or.ddit.club.vo.ClubCategoryVO">
+	    <result property="clubCateNo" column="CLUB_CATE_NO"/>
+	    <result property="comCateName" column="COM_CATE_NAME"/>
+	</resultMap>
+	
+	<!-- 부서 종류 -->
+	<resultMap id="departmentMap" type="kr.or.ddit.personnel.vo.DepartmentVO">
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="deptName" column="DEPT_NAME"/>
+	</resultMap>
+	
+	<!-- 직책 종류 -->
+	<resultMap id="positionMap" type="kr.or.ddit.personnel.vo.PositionVO">
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="postName" column="POST_NAME"/>
+	    <result property="auth" column="AUTH"/>
+	</resultMap>
+	
+	<!-- 동호회 회원 -->
+	<resultMap id="clubMemberMap" type="kr.or.ddit.club.vo.ClubMemberVO">
+	    <result property="clubMemNo" column="CLUB_MEM_NO"/>
+	    <result property="joinDate" column="JOIN_DATE"/>
+	    <result property="memState" column="MEM_STATE"/>
+	    <result property="stateMemo" column="STATE_MEMO"/>
+	    <result property="lastAccDate" column="LAST_ACC_DATE"/>
+	    <result property="memCreState" column="MEM_CRE_STATE"/>
+	    <result property="clubNo" column="CLUB_NO"/>
+	    <result property="empNo" column="EMP_NO"/>
+	    <association property="employeeVO" resultMap="employeeMap"/>
+	    <association property="clubRoleVO" resultMap="clubRoleMap"/>
+	</resultMap>
+	
+	<!-- 동호회 권한 -->
+	<resultMap id="clubRoleMap" type="kr.or.ddit.club.vo.ClubRoleVO">
+	    <result property="roleNo" column="ROLE_NO"/>
+	    <result property="roleName" column="ROLE_NAME"/>
+	    <result property="roleDesc" column="ROLE_DESC"/>
+	    <result property="roleCreDate" column="ROLE_CRE_DATE"/>
+	    <result property="roleModiDate" column="ROLE_MODI_DATE"/>
+	</resultMap>
+	
+	<select id="clubComListAll" resultMap="clubComTypeMap">
+        SELECT CLUB_COM_TYPE_NO, CLUB_COM_TYPE_NAME
+        FROM CLUB_COM_TYPE
+    </select>
+    
+    <select id="clubMember" parameterType="int" resultMap="clubMemberMap">
+	    SELECT * 
+	    FROM CLUB_MEMBER 
+	    WHERE EMP_NO = #{empNo}
+	    AND CLUB_NO = #{clubNo}
+	</select>
+	
+	<insert id="insertPost" parameterType="kr.or.ddit.clubCom.vo.ClubComVO">
+	    <selectKey resultType="int" order="BEFORE" keyProperty="clubComNo">
+	        SELECT NVL(MAX(CLUB_COM_NO), 0) + 1 FROM CLUB_COM
+	    </selectKey>
+	
+	    INSERT INTO CLUB_COM (
+	        CLUB_COM_NO, 
+	        CLUB_COM_TITLE, 
+	        CLUB_COM_CONT, 
+	        CLUB_COM_WRITER,
+	        CLUB_COM_CRE_DATE, 
+	        CLUB_COM_MODI_DATE, 
+	        CLUB_COM_HIT,
+	        CLUB_NO, 
+	        CLUB_MEM_NO,
+	        CLUB_COM_TYPE_NO,
+	        EMP_NO
+	    ) VALUES (
+	        #{clubComNo},
+	        #{clubComTitle},
+	        #{clubComCont},
+	        #{clubComWriter:VARCHAR},
+	        SYSDATE,
+	        SYSDATE,
+	        0,
+	        #{clubNo},
+	        #{clubMemNo},
+	        #{clubComTypeNo},
+	        #{empNo}
+	    )
+	</insert>
+
+	<!-- 전체 게시물 수 조회 -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+	    SELECT COUNT(*)
+	    FROM CLUB_COM
+	    WHERE CLUB_NO = #{clubNo}
+	    AND CLUB_COM_TYPE_NO = #{clubComTypeNo}
+	    <if test="keyword != null and keyword != ''">
+	        AND (
+	            CLUB_COM_TITLE LIKE '%' || #{keyword} || '%'
+	            OR CLUB_COM_CONT LIKE '%' || #{keyword} || '%'
+	            OR CLUB_COM_WRITER LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	</select>
+	
+	<!-- 전체 목록 -->
+	<select id="list" parameterType="map" resultMap="clubComMap">
+		SELECT b.* FROM (
+		    SELECT a.*, ROW_NUMBER() OVER (ORDER BY rnum) as row_num
+		    FROM (
+		        SELECT 
+		            ROW_NUMBER() OVER (ORDER BY C.CLUB_COM_NO DESC) as rnum,
+		            C.CLUB_COM_NO,
+		            C.CLUB_COM_TITLE,
+		            C.CLUB_COM_WRITER,
+		            C.CLUB_COM_CONT,
+		            C.CLUB_COM_CRE_DATE,
+		            C.CLUB_COM_HIT,
+		            CT.CLUB_COM_TYPE_NAME,
+		            CM.MEM_STATE,
+		            E.EMP_NAME,
+		            E.EMP_NO
+		        FROM CLUB_COM C
+		        LEFT JOIN CLUB_COM_TYPE CT ON C.CLUB_COM_TYPE_NO = CT.CLUB_COM_TYPE_NO
+		        LEFT JOIN CLUB_MEMBER CM ON C.CLUB_MEM_NO = CM.CLUB_MEM_NO
+		        LEFT JOIN EMPLOYEE E ON CM.EMP_NO = E.EMP_NO
+		        WHERE C.CLUB_NO = #{clubNo}
+		        AND C.CLUB_COM_TYPE_NO = #{clubComTypeNo}
+		        <if test="keyword != null and keyword != ''">
+		        AND (
+		            C.CLUB_COM_TITLE LIKE '%' || #{keyword} || '%'
+		            OR C.CLUB_COM_CONT LIKE '%' || #{keyword} || '%'
+		            OR C.CLUB_COM_WRITER LIKE '%' || #{keyword} || '%'
+		        )
+		        </if>
+		    ) a
+		) b
+		WHERE row_num BETWEEN (#{currentPage} - 1) * 15 + 1 AND #{currentPage} * 15
+		</select>
+			
+	
+	
+	
+</mapper>

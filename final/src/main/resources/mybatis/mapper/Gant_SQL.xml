@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.workspace.mapper.GantMapper">
+
+	<!-- 간트차트 생성  -->
+	<insert id="create" parameterType="kr.or.ddit.workspace.vo.GantVO">
+		INSERT INTO GANTT ( TASK_ID, TASK_NAME, START_DATE, END_DATE
+	                , PROGRESS_DATE, DURATION, TASK_RANKING, TASK_EPNS
+	                , EMP_NO
+		) VALUES (#{taskId},#{taskName}
+				 , TO_DATE(#{startDate},'YYYY-MM-DD HH24:MI')
+				 , TO_DATE(#{endDate}, 'YYYY-MM-DD HH24:MI')
+				 ,#{progressDate},#{duration},#{taskRanking},#{taskEpns}
+				 ,4)
+	
+	
+	</insert>
+	<!-- 간트차트 리스트 불러오기  -->
+	<select id="getGantList"  parameterType="hashMap" resultType="kr.or.ddit.workspace.vo.GantVO">
+		    SELECT TASK_ID, TASK_NAME, START_DATE, END_DATE
+		    , PROGRESS_DATE, DURATION, TASK_RANKING, TASK_EPNS
+		    , EMP_NO
+		    FROM 
+		    GANTT
+		   
+	</select>
+	
+	<!-- 간트차트 리스트 삭제 ~  -->
+	<delete id="delete" parameterType="kr.or.ddit.workspace.vo.GantVO">
+		DELETE FROM GANTT
+		WHERE TASK_ID = #{taskId}
+	
+	</delete>
+	
+	<!-- 간트차트 리스트 수정 ~  -->
+ 	<update id="update" parameterType="kr.or.ddit.workspace.vo.GantVO">
+		UPDATE GANTT
+		SET   TASK_NAME = #{taskName}
+			, START_DATE = TO_DATE(#{startDate}, 'YYYY-MM-DD HH24:MI')
+		    , END_DATE = TO_DATE(#{endDate}, 'YYYY-MM-DD HH24:MI')
+		    , PROGRESS_DATE = #{progressDate}
+		    , DURATION = #{duration}
+		    , TASK_RANKING = #{taskRanking}
+		    , TASK_EPNS =#{taskEpns}
+		WHERE
+		     TASK_ID = #{taskId}
+	
+	</update> 
+	
+</mapper>
+

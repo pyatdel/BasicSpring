@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.schedule.mapper.ScheduleMapper">
+
+<select id="getScheduleList" parameterType="hashMap" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT ID, EMP_NO, SCHE_DIV, TITLE, CONTENT
+	,TO_CHAR("START",'YYYY-MM-DD"T"HH24:MI') AS "START"
+	,TO_CHAR("END",'YYYY-MM-DD"T"HH24:MI') AS "END"
+	, ALL_DAY, BACKGROUND_COLOR, TEXT_COLOR
+	FROM 
+	SCHEDULE_T
+	WHERE EMP_NO = #{empNo}
+</select>
+
+<select id="scheduleDetail" parameterType="kr.or.ddit.schedule.vo.ScheduleVO" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT 
+	S.ID
+	, S.EMP_NO
+	, S.SCHE_DIV
+	, S.TITLE
+	, S.CONTENT
+	, TO_CHAR(S."START",'YYYY-MM-DD"T"HH24:MI') AS "START"
+	, TO_CHAR(S."END",'YYYY-MM-DD"T"HH24:MI') AS "END"
+	, S.ALL_DAY
+	, S.BACKGROUND_COLOR
+	, S.TEXT_COLOR
+	, E.EMP_NAME AS EMP_NAME
+	FROM 
+		SCHEDULE_T S
+	LEFT JOIN
+		EMPLOYEE E
+	ON
+		S.EMP_NO = E.EMP_NO
+	WHERE S.ID = #{id}
+</select>
+
+<insert id="createSchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+	<selectKey resultType="int" order="BEFORE" keyProperty="id">
+		SELECT SCHEDULE_SEQ.NEXTVAL FROM DUAL
+	</selectKey>
+	INSERT INTO SCHEDULE_T(ID, EMP_NO, SCHE_DIV, TITLE, CONTENT, "START", "END", ALL_DAY, BACKGROUND_COLOR, TEXT_COLOR)
+	VALUES(
+	#{id}
+	, #{empNo}
+	, #{scheDiv}
+	, #{title}
+	, #{content}
+	, TO_DATE(#{start},'YYYY-MM-DD"T"HH24:MI')
+	, TO_DATE(#{end}, 'YYYY-MM-DD"T"HH24:MI')
+	, #{allDay}
+	, #{backgroundColor}
+	, #{textColor})
+</insert>
+
+<update id="updateSchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+	UPDATE  SCHEDULE_T
+		SET EMP_NO = #{empNo},
+	    SCHE_DIV = (SELECT SCHE_DIV
+	    			FROM SCHEDULE_DETAIL
+	    			WHERE SCHE_DIV = #{scheDiv}
+	    			),
+	    TITLE = #{title},
+	    CONTENT = #{content},
+	    "START" = TO_DATE(#{start},'YYYY-MM-DD"T"HH24:MI'),
+	    "END" = TO_DATE(#{end}, 'YYYY-MM-DD"T"HH24:MI'),
+	    ALL_DAY = #{allDay},
+	    BACKGROUND_COLOR = #{backgroundColor},
+	    TEXT_COLOR= #{textColor}
+	WHERE ID = #{id}
+</update>
+
+<delete id="deleteSchedule" parameterType="kr.or.ddit.schedule.vo.ScheduleVO">
+	DELETE FROM SCHEDULE_T
+	WHERE ID = #{id}
+</delete>
+
+<select id="getDeptScheduleList" parameterType="int" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT E.EMP_NO, E.DEPT_NO, E.POST_NO, E.EMP_NAME, E.EMP_ID, S.ID
+	, S.SCHE_DIV,S.ALL_DAY,S.TITLE,S.CONTENT, S."START", S."END",S.BACKGROUND_COLOR, S.TEXT_COLOR
+    FROM EMPLOYEE E 
+    JOIN SCHEDULE_T S 
+    ON 
+    E.EMP_NO = S.EMP_NO
+    WHERE SCHE_DIV = 1
+    AND DEPT_NO = #{deptNo}
+</select>
+
+<select id="getInComScheduleList" parameterType="int" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT E.EMP_NO, E.DEPT_NO, E.POST_NO, E.EMP_NAME, E.EMP_ID, S.ID
+	, S.SCHE_DIV,S.ALL_DAY,S.TITLE,S.CONTENT, S."START", S."END",S.BACKGROUND_COLOR, S.TEXT_COLOR
+    FROM EMPLOYEE E 
+    JOIN SCHEDULE_T S 
+    ON 
+    E.EMP_NO = S.EMP_NO
+    WHERE SCHE_DIV = 2
+</select>
+
+<select id="getVisitScheduleList" parameterType="int" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT E.EMP_NO, E.DEPT_NO, E.POST_NO, E.EMP_NAME, E.EMP_ID, S.ID
+	, S.SCHE_DIV,S.ALL_DAY,S.TITLE,S.CONTENT, S."START", S."END",S.BACKGROUND_COLOR, S.TEXT_COLOR
+    FROM EMPLOYEE E 
+    JOIN SCHEDULE_T S 
+    ON 
+    E.EMP_NO = S.EMP_NO
+    WHERE SCHE_DIV = 3
+</select>
+
+<select id="getMyScheduleList" parameterType="hashMap" resultType="kr.or.ddit.schedule.vo.ScheduleVO">
+	SELECT E.EMP_NO, E.DEPT_NO, E.POST_NO, E.EMP_NAME, E.EMP_ID, S.ID
+	, S.SCHE_DIV,S.ALL_DAY,S.TITLE,S.CONTENT, S."START", S."END",S.BACKGROUND_COLOR, S.TEXT_COLOR
+    FROM EMPLOYEE E 
+    JOIN SCHEDULE_T S 
+    ON 
+    E.EMP_NO = S.EMP_NO
+    WHERE SCHE_DIV = 4
+    AND E.EMP_NO = #{empNo}
+</select>
+
+
+
+
+
+
+
+
+
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.member.mapper.MemberMapper">
+	<select id="Login" parameterType="kr.or.ddit.member.vo.MemberVO"
+		resultType="kr.or.ddit.member.vo.MemberVO">
+		SELECT EMP_ID, EMP_PW ,ENABLED , EMP_EMAIL, EMP_NAME,
+		DEPT_NO, EMP_ZIP, EMP_NO, EMP_PHONE, EMP_STREET, EMP_DETAIL, POST_NO
+		FROM EMPLOYEE
+		WHERE EMP_ID = #{empId}
+		AND EMP_PW = #{empPw}
+		AND ENABLED =
+		#{enabled}
+
+	</select>
+
+
+	<resultMap type="kr.or.ddit.member.vo.MemberVO" id="memberMap">
+		<result property="residentNumber1" column="RESIDENT_NUMBER1" />
+		<result property="residentNumber2" column="RESIDENT_NUMBER2" />
+		<result property="empProfile" column="EMP_PROFILE" />
+		<result property="empNo" column="EMP_NO" />
+		<result property="enabled" column="ENABLED" />
+		<result property="empId" column="EMP_ID" />
+		<result property="empPw" column="EMP_PW" />
+		<result property="empName" column="EMP_NAME" />
+		<result property="empEmail" column="EMP_EMAIL" />
+		<result property="empPhone" column="EMP_PHONE" />
+		<result property="empZip" column="EMP_ZIP" />
+		<result property="empStreet" column="EMP_STREET" />
+		<result property="empDetail" column="EMP_DETAIL" />
+		<result property="empSign" column="EMP_SIGN" />
+		<result property="empAnnual" column="EMP_ANNUAL" />
+		<result property="empIn" column="EMP_IN" />
+		<result property="empOut" column="EMP_OUT" />
+		<result property="deptNo" column="DEPT_NO" />
+		<result property="postNo" column="POST_NO" />
+		<collection property="authorities" resultMap="positionMap"></collection>
+
+	</resultMap>
+
+	<resultMap type="kr.or.ddit.personnel.vo.PositionVO"
+		id="positionMap">
+		<result property="postNo" column="POST_NO" />
+		<result property="postName" column="POST_NAME" />
+		<result property="auth" column="AUTH" />
+	</resultMap>
+
+	<!-- Read User SQL -->
+	<select id="read" parameterType="kr.or.ddit.member.vo.MemberVO"
+		resultMap="memberMap">
+		SELECT A.EMP_ID, A.EMP_PW ,A.ENABLED , A.EMP_EMAIL,
+		A.EMP_NAME,
+		A.DEPT_NO, A.EMP_ZIP, A.EMP_NO, A.EMP_PHONE, A.EMP_STREET, A.EMP_DETAIL,
+		A.EMP_PROFILE, A.POST_NO, B.POST_NAME, B.AUTH
+		FROM EMPLOYEE A LEFT
+		OUTER JOIN POSITION B ON(A.POST_NO = B.POST_NO)
+		WHERE A.EMP_ID =
+		#{empId}
+	</select>
+	
+	<!-- Read User SQL -->
+	<select id="getMemberByUsername" parameterType="kr.or.ddit.member.vo.MemberVO"
+		resultMap="memberMap">
+		SELECT A.EMP_ID, A.EMP_PW ,A.ENABLED , A.EMP_EMAIL,
+		A.EMP_NAME,
+		A.DEPT_NO, A.EMP_ZIP, A.EMP_NO, A.EMP_PHONE, A.EMP_STREET, A.EMP_DETAIL,
+		A.EMP_PROFILE, A.POST_NO, B.POST_NAME, B.AUTH
+		FROM EMPLOYEE A LEFT
+		OUTER JOIN POSITION B ON(A.POST_NO = B.POST_NO)
+		WHERE A.EMP_ID =
+		#{empId}
+	</select>
+
+
+	<update id="updateMember"
+		parameterType="kr.or.ddit.member.vo.MemberVO">
+		UPDATE EMPLOYEE
+		SET
+		EMP_NAME = #{empName},
+		EMP_EMAIL =
+		#{empEmail},
+		EMP_PHONE = #{empPhone},
+		EMP_STREET = #{empStreet},
+		EMP_DETAIL = #{empDetail},
+		EMP_PROFILE = #{empProfile}
+		WHERE EMP_ID =
+		#{empId}
+	</update>
+
+	<update id="updateProfileImage"
+		parameterType="kr.or.ddit.member.vo.MemberVO">
+		UPDATE EMPLOYEE
+		SET EMP_PROFILE = #{empProfile}
+		WHERE
+		EMP_ID = #{empId}
+	</update>
+
+	<!-- 프로필 이미지 경로 읽기 -->
+	<select id="readProfileImage" parameterType="string"
+		resultType="string">
+		SELECT
+		COALESCE(EMP_PROFILE, '/img/default-profile.jpg') AS
+		EMP_PROFILE
+		FROM EMPLOYEE
+		WHERE EMP_ID = #{empId}
+	</select>
+
+	<select id="getInfo" parameterType="kr.or.ddit.vo.MemberVO"
+		resultType="kr.or.ddit.vo.MemberVO">
+		SELECT
+		EMP_NAME,
+		EMP_PROFILE
+		FROM
+		EMPLOYEE
+	</select>
+
+	<select id="readByEmpNo" parameterType="long"
+		resultType="MemberVO">
+		SELECT *
+		FROM EMPLOYEE
+		WHERE EMP_NO = #{empNo}
+	</select>
+
+</mapper>

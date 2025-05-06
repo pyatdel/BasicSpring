@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.mapper.iBoardMapper">
+
+	<!-- 대댓글 작성 -->
+	<resultMap id="bodReplyMap" type="kr.or.ddit.board.vo.BoardReplyVO">
+	    <result property="bodIdx" column="BOD_IDX"/>
+	    <result property="bodReWriter" column="BOD_RE_WRITER"/>
+	    <result property="bodReDate" column="BOD_RE_DATE"/>
+	    <result property="bodReCont" column="BOD_RE_CONT"/>
+	    <result property="bodReState" column="BOD_RE_STATE"/>
+	    <result property="bodParentIdx" column="BOD_PARENT_IDX"/>
+	    <result property="bodNo" column="BOD_NO"/>
+	    <result property="bodLvl" column="BOD_LVL"/>
+	    <result property="bodParentReWriter" column="BOD_PARENT_RE_WRITER"/>
+	</resultMap>
+	
+	<!-- 직원 -->
+	<resultMap id="employeeMap" type="kr.or.ddit.personnel.vo.EmployeeVO">
+	    <result property="empNo" column="EMP_NO"/>
+	    <result property="enabled" column="ENABLED"/>
+	    <result property="empId" column="EMP_ID"/>
+	    <result property="empPw" column="EMP_PW"/>
+	    <result property="empName" column="EMP_NAME"/>
+	    <result property="empEmail" column="EMP_EMAIL"/>
+	    <result property="empPhone" column="EMP_PHONE"/>
+	    <result property="empZip" column="EMP_ZIP"/>
+	    <result property="empStreet" column="EMP_STREET"/>
+	    <result property="empDetail" column="EMP_DETAIL"/>
+	    <result property="empSign" column="EMP_SIGN"/>
+	    <result property="empAnnual" column="EMP_ANNUAL"/>
+	    <result property="empIn" column="EMP_IN"/>
+	    <result property="empOut" column="EMP_OUT"/>
+	    <result property="deptNo" column="DEPT_NO"/>
+	    <result property="postNo" column="POST_NO"/>
+	    <result property="residentNumber1" column="RESIDENT_NUMBER1"/>
+	    <result property="residentNumber2" column="RESIDENT_NUMBER2"/>
+	    <result property="empProfile" column="EMP_PROFILE"/>
+	    
+	    <association property="departmentVO" resultMap="departmentMap"/>
+	    <association property="positionVO" resultMap="positionMap"/>
+	</resultMap>
+	
+	<!-- 게시글 : 파일그룹 = 1 : 1 -->
+	<resultMap type="kr.or.ddit.board.vo.BoardVO" id="boardMap">
+		<result property="bodNo" column="BOD_NO"/>
+		<result property="bodTitle" column="BOD_TITLE"/>
+		<result property="bodWriter" column="BOD_WRITER"/>
+		<result property="bodCont" column="BOD_CONT"/>
+		<result property="bodCreDate" column="BOD_CRE_DATE"/>
+		<result property="bodHit" column="BOD_HIT"/>
+		<result property="noticeType" column="NOTICE_TYPE"/>
+		<result property="bodRead" column="BOD_READ"/>
+		
+		<association property="fileGroupVO" resultMap="fileGroupMap"></association>
+		
+		<association property="boardTypeVO" resultMap="boardTypeMap"></association>
+	</resultMap>
+	
+	<!-- 파일그룹 : 파일상세 = 1 : N -->
+	<resultMap type="kr.or.ddit.file.vo.FileGroupVO" id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileRegDate" column="FILE_REG_DATE"/>
+		<collection property="fileDetailVOList" resultMap="fileDetailMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.file.vo.FileDetailVO" id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME"/>
+		<result property="fileSaveName" column="FILE_SAVE_NAME"/>
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE"/>
+		<result property="fileSize" column="FILE_SIZE"/>
+		<result property="fileExt" column="FILE_EXT"/>
+		<result property="fileMime" column="FILE_MIME"/>
+		<result property="fileFancysize" column="FILE_FANCYSIZE"/>
+		<result property="fileSaveDate" column="FILE_SAVE_DATE"/>
+		<result property="fileDowncount" column="FILE_DOWNCOUNT"/>
+	</resultMap>
+	
+	<!-- 게시판타입 -->
+	<resultMap id="boardTypeMap" type="kr.or.ddit.board.vo.BoardTypeVO">
+	    <result property="bodTypeNo" column="BOD_TYPE_NO"/>
+	    <result property="bodTypeName" column="BOD_TYPE_NAME"/>
+	</resultMap>
+
+	<sql id="boardSearch">
+		<if test="keyword!=null and keyword!=''">
+		AND    (
+		           BOD_NO   LIKE  '%' || #{keyword} || '%' OR
+		           BOD_TITLE LIKE  '%' || #{keyword} || '%' OR 
+		           BOD_WRITER   LIKE  '%' || #{keyword} || '%' OR
+		           BOD_CONT LIKE  '%' || #{keyword} || '%' OR 
+		           BOD_CRE_DATE  LIKE  '%' || #{keyword} || '%' OR
+		           BOD_HIT  LIKE  '%' || #{keyword} || '%' 
+		    )
+		</if>
+	</sql>
+	
+	<sql id="replySearch">
+	    <if test="keyword!=null and keyword!=''">
+	    AND    (
+	               BOD_RE_WRITER LIKE '%' || #{keyword} || '%' OR
+	               BOD_RE_CONT LIKE '%' || #{keyword} || '%' OR
+	               BOD_RE_DATE LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	</sql>
+
+	<!-- 전체 목록 -->
+	<select id="list" parameterType="map" resultMap="boardMap">
+	SELECT b.* FROM (
+	    SELECT a.*, ROW_NUMBER() OVER (ORDER BY rnum) as row_num
+	    FROM (
+	        SELECT 
+	            ROW_NUMBER() OVER (
+	                ORDER BY 
+	                    CASE 
+	                        WHEN BT.BOD_TYPE_NO = 1 THEN 
+	                            CASE WHEN B.NOTICE_TYPE = 1 THEN 0 ELSE 1 END
+	                        WHEN BT.BOD_TYPE_NO = #{bodType} THEN 2
+	                        ELSE 3 
+	                    END,
+	                    B.BOD_NO DESC
+	            ) as rnum,
+	            B.BOD_NO, B.BOD_TITLE, B.BOD_WRITER, B.BOD_CONT, 
+	            BOD_CRE_DATE, B.BOD_HIT, B.NOTICE_TYPE, 
+	            BT.BOD_TYPE_NO, BT.BOD_TYPE_NAME, B.BOD_READ,
+	            (
+	                SELECT COUNT(*)
+	                FROM BOARD_REPLY BR
+	                WHERE BR.BOD_NO = B.BOD_NO
+	                AND BR.BOD_RE_STATE != '2'
+	            ) as BOD_RE_CNT,
+	            E.DEPT_NO AS DEPT_NO
+	        FROM BOARD B
+	        LEFT OUTER JOIN BOARD_TYPE BT ON(B.BOD_TYPE_NO = BT.BOD_TYPE_NO)
+	        INNER JOIN EMPLOYEE E ON(B.EMP_NO = E.EMP_NO)
+	        WHERE 1=1
+	        <choose>
+	            <when test="bodType == 2">
+	                AND BT.BOD_TYPE_NO = #{bodType}
+	                AND (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = B.EMP_NO) = #{deptNo}
+	            </when>
+	            <when test="bodType != null and bodType != ''">
+	                AND BT.BOD_TYPE_NO = #{bodType}
+	            </when>
+	        </choose>
+	        <include refid="boardSearch"></include>
+	    ) a
+	) b
+	WHERE row_num BETWEEN (#{currentPage} - 1) * 15 + 1 AND #{currentPage} * 15
+	</select>
+	
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+	    SELECT COUNT(*)
+	    FROM BOARD B
+	    LEFT OUTER JOIN BOARD_TYPE BT ON(B.BOD_TYPE_NO = BT.BOD_TYPE_NO)
+	    INNER JOIN EMPLOYEE E ON(B.EMP_NO = E.EMP_NO)
+	    WHERE 1 = 1
+	    <choose>
+	        <when test="bodType == 2">
+	            AND BT.BOD_TYPE_NO = #{bodType}
+	            AND (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = B.EMP_NO) = #{deptNo}
+	        </when>
+	        <when test="bodType != null and bodType != ''">
+	            AND BT.BOD_TYPE_NO = #{bodType}
+	        </when>
+	    </choose>
+	    <include refid="boardSearch"></include>
+	</select>
+
+	<!-- 게시물 상세 -->
+	<select id="detail" parameterType="int" resultMap="boardMap">
+	    SELECT 
+	          B.BOD_NO, B.BOD_TITLE, B.BOD_WRITER, B.BOD_CONT
+	        , B.BOD_CRE_DATE, B.BOD_HIT, B.FILE_GROUP_NO
+	        , B.NOTICE_TYPE, B.EMP_NO 
+	        , FG.FILE_GROUP_NO as FG_FILE_GROUP_NO   
+	        , FG.FILE_REG_DATE, FD.FILE_SN
+	        , FD.FILE_GROUP_NO as FD_FILE_GROUP_NO 
+	        , FD.FILE_ORIGINAL_NAME, FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE
+	        , FD.FILE_SIZE, FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+	        , FD.FILE_SAVE_DATE, FD.FILE_DOWNCOUNT
+	        , BT.BOD_TYPE_NO, BT.BOD_TYPE_NAME
+	        , E.DEPT_NO, D.DEPT_NAME   
+	    FROM BOARD B 
+	    LEFT OUTER JOIN BOARD_TYPE BT ON(B.BOD_TYPE_NO = BT.BOD_TYPE_NO)
+	    LEFT OUTER JOIN FILE_GROUP FG ON(B.FILE_GROUP_NO = FG.FILE_GROUP_NO)
+	    LEFT OUTER JOIN FILE_DETAIL FD ON(FG.FILE_GROUP_NO = FD.FILE_GROUP_NO)
+	    LEFT OUTER JOIN EMPLOYEE E ON(B.EMP_NO = E.EMP_NO)  
+	    LEFT OUTER JOIN DEPARTMENT D ON(E.DEPT_NO = D.DEPT_NO) 
+	    WHERE B.BOD_NO = #{bodNo}
+	</select>
+
+	<!-- 게시물 수정 -->
+	<update id="updatePost" parameterType="kr.or.ddit.board.vo.BoardVO">
+	    UPDATE BOARD
+	    SET    BOD_CONT = #{bodCont},
+	           BOD_MODI_DATE = SYSDATE,
+	           EMP_NO = #{empNo},
+	           BOD_WRITER = #{bodWriter}
+	    WHERE  BOD_NO = #{bodNo}
+	    AND    EMP_NO = #{empNo}  
+	</update>
+	
+	<!-- 조회수 증가 -->
+	<update id="updateHit" parameterType="kr.or.ddit.board.vo.BoardVO">
+	    UPDATE BOARD
+	    SET    BOD_HIT = BOD_HIT + 1
+	    WHERE  BOD_NO = #{bodNo}
+	</update>
+	
+	<!-- 게시물 삭제 -->
+	<delete id="deletePost" parameterType="kr.or.ddit.board.vo.BoardVO">
+	    DELETE FROM BOARD 
+	    WHERE BOD_NO = #{bodNo}
+	    AND (
+	        EMP_NO = #{empNo} 
+	        OR (
+	            SELECT post_no 
+	            FROM employee 
+	            WHERE emp_no = #{empNo}
+	        ) &lt;= 3
+	    )
+	</delete>
+	
+	<!-- 게시판 타입 목록 조회 -->
+	<select id="bodListAll" resultType="kr.or.ddit.board.vo.BoardTypeVO">
+	    SELECT 
+	        BOD_TYPE_NO,
+	        BOD_TYPE_NAME
+	    FROM BOARD_TYPE
+	    ORDER BY BOD_TYPE_NO ASC
+	</select>
+
+	<!-- 게시물 등록 -->
+	<insert id="insertPost" parameterType="kr.or.ddit.board.vo.BoardVO">
+	   <selectKey resultType="int" order="BEFORE" keyProperty="bodNo">
+	       SELECT NVL(MAX(BOD_NO),0)+1 FROM BOARD
+	   </selectKey>
+	   
+	   INSERT INTO BOARD(
+		BOD_NO, BOD_TITLE, BOD_WRITER, BOD_CONT
+		, BOD_CRE_DATE, BOD_HIT, NOTICE_TYPE, EMP_NO
+		<if test="fileGroupVO != null and fileGroupVO.fileGroupNo != null">
+		,FILE_GROUP_NO  
+		</if>
+		<if test="boardTypeVO != null and boardTypeVO.bodTypeNo != null">
+		,BOD_TYPE_NO
+		</if>
+		) VALUES(
+		#{bodNo}, #{bodTitle}, #{bodWriter}, #{bodCont}
+		, SYSDATE, 0, #{noticeType}, #{empNo}
+		<if test="fileGroupVO != null and fileGroupVO.fileGroupNo != null">
+		,#{fileGroupVO.fileGroupNo}
+		</if>
+		<if test="boardTypeVO != null and boardTypeVO.bodTypeNo != null">
+		,#{boardTypeVO.bodTypeNo}
+		</if>
+		)
+	</insert>
+	
+	<!-- postNo 조회  -->
+	<select id="getEmpNo" parameterType="int" resultType="int">
+	    SELECT post_no 
+	    FROM employee 
+	    WHERE emp_no = #{empNo}
+	</select>
+	
+	<!-- 읽음 상태 업데이트 -->
+	<update id="updateRead" parameterType="kr.or.ddit.board.vo.BoardVO">
+	    UPDATE BOARD 
+	    SET BOD_READ = 1 
+	    WHERE BOD_NO = #{bodNo}
+	</update> 
+	
+    <!-- 댓글 등록 -->
+    <insert id="createReplyPost" parameterType="kr.or.ddit.board.vo.BoardReplyVO">
+	    <selectKey resultType="int" order="BEFORE" keyProperty="bodIdx">
+	        SELECT NVL(MAX(BOD_IDX),0) + 1 FROM BOARD_REPLY
+	    </selectKey>
+	
+	    INSERT INTO BOARD_REPLY (
+	        BOD_IDX, BOD_RE_WRITER, BOD_RE_DATE, BOD_RE_CONT,
+	        BOD_RE_STATE, BOD_NO, BOD_LVL,
+	        BOD_PARENT_IDX, BOD_PARENT_RE_WRITER, EMP_NO
+	    ) 
+	    SELECT 
+	        #{bodIdx}, #{bodReWriter}, SYSDATE, #{bodReCont},
+	        '1', #{bodNo}, 
+	        CASE 
+	            WHEN #{bodParentIdx} > 0 THEN 
+	                NVL((SELECT BOD_LVL + 1 FROM BOARD_REPLY WHERE BOD_IDX = #{bodParentIdx}), 1)
+	            ELSE 1 
+	        END as BOD_LVL,
+	        #{bodParentIdx},
+	        CASE 
+	            WHEN #{bodParentIdx} > 0 THEN 
+	                (SELECT BOD_RE_WRITER FROM BOARD_REPLY WHERE BOD_IDX = #{bodParentIdx})
+	            ELSE NULL 
+	        END,
+	        #{empNo}
+	    FROM DUAL
+	    WHERE EXISTS (
+	        SELECT 1 FROM BOARD WHERE BOD_NO = #{bodNo}
+	    )
+	</insert>
+
+	<!-- 댓글 수정 -->
+	<update id="updateReplyPostAjax" parameterType="kr.or.ddit.board.vo.BoardReplyVO">
+	    UPDATE BOARD_REPLY
+	    SET    BOD_RE_CONT = #{bodReCont}
+	    WHERE  BOD_IDX = #{bodIdx}
+	</update>
+	
+	
+	
+	<!-- 댓글 삭제 -->
+	<delete id="deleteReplyPost" parameterType="kr.or.ddit.board.vo.BoardVO">
+		DELETE FROM BOARD_REPLY
+		WHERE  BOD_IDX = #{bodIdx}
+	</delete>
+	
+	<!-- 전체 댓글 삭제 -->
+	<delete id="deleteAllReply" parameterType="kr.or.ddit.board.vo.BoardVO">
+		DELETE FROM BOARD_REPLY
+    	WHERE BOD_NO = #{bodNo}
+	</delete>
+	
+	<!-- 댓글 목록 -->
+	<select id="reList" parameterType="map" resultMap="bodReplyMap">
+	    SELECT * FROM (
+		    SELECT a.*, ROW_NUMBER() OVER(ORDER BY 
+		        CASE WHEN BOD_PARENT_IDX = 0 THEN BOD_IDX ELSE BOD_PARENT_IDX END DESC,
+		        BOD_IDX ASC
+		    ) as rn
+		    FROM (
+		        SELECT 
+		              T.BOD_IDX, T.BOD_NO, T.BOD_RE_WRITER, T.BOD_RE_DATE
+		            , T.BOD_PARENT_IDX, T.BOD_RE_CONT, T.BOD_RE_STATE
+		            , T.BOD_PARENT_RE_WRITER,
+		            LEVEL as BOD_LVL
+		        FROM BOARD_REPLY T
+		        WHERE T.BOD_NO = #{bodNo}
+		        AND T.BOD_RE_STATE != '2'
+		        START WITH T.BOD_PARENT_IDX = 0
+		        CONNECT BY PRIOR T.BOD_IDX = T.BOD_PARENT_IDX
+		    ) a
+		) WHERE rn BETWEEN ((#{currentPage} - 1) * 5) + 1 AND (#{currentPage} * 5)
+			</select>
+			
+			<!-- 댓글 전체 수 조회 -->
+			<select id="getReTotal" parameterType="hashMap" resultType="int">
+			    SELECT COUNT(*) 
+			    FROM BOARD_REPLY
+			    WHERE 1 = 1
+			    AND BOD_NO = #{bodNo}
+			    AND BOD_RE_STATE != '2'
+			    <include refid="replySearch"></include>
+			</select>
+	
+			<!-- 댓글 1건 조회 -->
+			<select id="getBoardReply" parameterType="kr.or.ddit.board.vo.BoardReplyVO" resultType="kr.or.ddit.board.vo.BoardReplyVO">
+			    WITH T AS(
+			        SELECT A.BOD_IDX, A.BOD_NO, A.BOD_RE_WRITER
+			            , A.BOD_RE_DATE, A.BOD_PARENT_IDX
+			            , A.BOD_RE_CONT, A.BOD_RE_STATE
+			        FROM BOARD_REPLY A
+			        WHERE A.BOD_IDX = #{bodIdx}
+			    )
+			    SELECT T.BOD_IDX, T.BOD_NO, T.BOD_RE_WRITER
+			        , T.BOD_RE_DATE, T.BOD_PARENT_IDX
+			        , T.BOD_RE_CONT, T.BOD_RE_STATE
+			        , LEVEL LVL
+			    FROM T
+			    START WITH T.BOD_PARENT_IDX IS NULL
+			    CONNECT BY PRIOR T.BOD_IDX = T.BOD_PARENT_IDX
+	</select>
+	
+	<!-- 신고
+	reportVO{"bodNo": "4","bodIdx": "19","repType": 2,
+	   		"repCont": "ㅁㅁㅁ","repReason": "욕설/비방"}
+	 -->  
+	<insert id="reportReplyPost" parameterType="kr.or.ddit.board.vo.ReportVO">
+	    <selectKey resultType="int" order="BEFORE" keyProperty="repNo">
+	        SELECT REPORT_SEQ.NEXTVAL FROM DUAL
+	    </selectKey>
+	
+	    INSERT INTO REPORT (
+	        REP_NO, BOD_NO, REP_REASON,
+	        REP_STATE, REP_DATE
+	        <if test="bodIdx!=null and bodIdx!=''">
+	        , BOD_IDX
+	        </if>
+	        , REP_TYPE, REP_CONT, REP_WRITER, EMP_NO, REP_RESULT
+	    ) VALUES (
+	        #{repNo}, #{bodNo}, #{repReason},
+	        1, SYSDATE,
+	        <if test="bodIdx!=null and bodIdx!=''">
+	        #{bodIdx},
+	        </if>
+	        #{repType},
+	        NVL(#{repCont}, ''),
+	        #{repWriter},
+	        #{empNo},
+	        SYSDATE
+	    )
+	</insert>
+</mapper>

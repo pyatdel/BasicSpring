@@ -1,0 +1,1289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sign.mapper.SignMapper">
+
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+		AND(
+			AD.DOC_NO LIKE '%' || #{keyword} || '%' OR
+			AD.DOC_TITLE LIKE '%' || #{keyword} || '%' OR
+			E.EMP_NO LIKE '%' || #{keyword} || '%' OR
+			E.EMP_NAME LIKE '%' || #{keyword} || '%' OR
+			P.POST_NAME LIKE '%' || #{keyword} || '%'
+		)		
+		</if>
+	</sql>
+	<!-- signVO : FILE_GROUP = 1 : 1 -->
+	<resultMap type="kr.or.ddit.sign.vo.SignVO" id="signMap">
+		<result property="docNo" column="DOC_NO"/>
+		<result property="docTitle" column="DOC_TITLE"/>
+		<result property="docContent" column="DOC_CONTENT"/>
+		<result property="writeDate" column="WRITE_DATE"/>
+		<result property="empNo" column="EMP_NO"/>
+		<result property="empId" column="EMP_ID"/>
+		<result property="appDocNo" column="APP_DOC_NO"/>
+		<result property="appStatusCode" column="APP_STATUS_CODE"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="appStatusName" column="APP_STATUS_NAME"/>
+		<result property="appDocName" column="APP_DOC_NAME"/>
+		<result property="empName" column="EMP_NAME"/>
+		<result property="postNo" column="POST_NO"/>
+		<result property="postName" column="POST_NAME"/>
+		<result property="deptNo" column="DEPT_NO"/>
+		<result property="deptName" column="DEPT_NAME"/>
+		<result property="rnum" column="RNUM"/>
+		<result property="appListCode" column="APP_LIST_CODE"/>
+		<result property="appNo" column="APP_NO"/>
+		<result property="reappEmpId" column="REAPP_EMP_ID"/>
+		<result property="appOrder" column="APP_ORDER"/>
+		<result property="rejectStatus" column="REJECT_STATUS"/>
+		<result column="FILE_SAVE_LOCATE" property="fileSaveLocate" />
+		<association property="fileGroupVO" resultMap="fileGroupMap"></association>
+		<collection property="signDetailVOList" resultMap="signDetailMap"></collection>
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.sign.vo.SignDetailVO" id="signDetailMap">
+		<result property="appGroupCode" column="APP_GROUP_CODE"/>
+		<result property="appGroupDate" column="APP_GROUP_DATE"/>
+	</resultMap>
+	
+	<!-- FILE_GROUP : FILE_DETAIL = 1 : N -->
+   <resultMap type="kr.or.ddit.file.vo.FileGroupVO" id="fileGroupMap">
+      	<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileRegDate" column="FILE_REG_DATE"/>
+      <collection property="fileDetailVOList" resultMap="fileDetailMap"></collection>
+   </resultMap>
+
+	<resultMap type="kr.or.ddit.file.vo.FileDetailVO" id="fileDetailMap">
+      	<result property="fileSn" column="FILE_SN"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME"/>
+		<result property="fileSaveName" column="FILE_SAVE_NAME"/>
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE"/>
+		<result property="fileSize" column="FILE_SIZE"/>
+		<result property="fileExt" column="FILE_EXT"/>
+		<result property="fileMime" column="FILE_MIME"/>
+		<result property="fileFancysize" column="FILE_FANCYSIZE"/>
+		<result property="fileSaveDate" column="FILE_SAVE_DATE"/>
+		<result property="fileDowncount" column="FILE_DOWNCOUNT"/>
+   </resultMap>
+
+
+
+	
+	
+	<!-- //결재선 이름 가져오기
+	public List<SignVO> getAppListName(); -->
+	<select id="getAppListName" resultType="kr.or.ddit.sign.vo.SignVO">
+		SELECT
+	    	AL.APP_LIST_CODE
+	    	, APP_LIST_NAME
+	        , REAPP_EMP_ID
+	        , APP_ORDER
+	        , APP_GROUP_CODE
+	        , E.EMP_SIGN
+	        , P.POST_NAME
+		FROM
+	        APPROVAL_LIST AL
+	    LEFT JOIN
+	    	APPROVAL_CODE AC
+	    ON AL.APP_LIST_CODE = AC.APP_LIST_CODE 
+	    LEFT JOIN
+	        EMPLOYEE E 
+	    ON E.EMP_NO = AL.REAPP_EMP_ID
+	    LEFT JOIN 
+	        POSITION P
+	    ON E.POST_NO = P.POST_NO
+		WHERE AL.APP_LIST_CODE = 1
+	    AND APP_GROUP_CODE = #{appGroupCode}
+	</select>
+	
+	<!-- // 참조선 가져오기
+	public List<SignVO> getReferenceEmpIds(); -->
+	<select id="getReferenceEmpIds" resultType="kr.or.ddit.sign.vo.SignVO">
+	SELECT
+	    	AL.APP_LIST_CODE
+	    	, APP_LIST_NAME
+	        , REAPP_EMP_ID
+	        , APP_ORDER
+	        , APP_GROUP_CODE
+	        , E.EMP_SIGN
+	        , P.POST_NAME
+		FROM
+	        APPROVAL_LIST AL
+	    LEFT JOIN
+	    	APPROVAL_CODE AC
+	    ON AL.APP_LIST_CODE = AC.APP_LIST_CODE 
+	    LEFT JOIN
+	        EMPLOYEE E 
+	    ON E.EMP_NO = AL.REAPP_EMP_ID
+	    LEFT JOIN 
+	        POSITION P
+	    ON E.POST_NO = P.POST_NO
+		WHERE AL.APP_LIST_CODE = 2
+	    AND APP_GROUP_CODE = #{appGroupCode}
+	</select>
+	
+	<!-- //결재선 사원번호 이름 직급 리스트
+	public List<SignVO> getSignLineList(); -->
+	<select id="getSignLineList" resultType="kr.or.ddit.sign.vo.SignVO">
+			SELECT
+			    E.EMP_ID
+			    , E.EMP_NAME
+			    , P.POST_NAME
+			    , D.DEPT_NO
+			FROM
+			    EMPLOYEE   E
+			    LEFT JOIN POSITION   P ON P.POST_NO = E.POST_NO
+			    LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+			WHERE ENABLED = 1      
+	</select>
+	
+	<!-- //결재선 부서
+	public List<SignVO> getDepartmentVOList(); -->
+	<select id="getDepartmentVOList"  resultType="kr.or.ddit.sign.vo.SignVO">
+	SELECT 
+		DEPT_NO
+		, DEPT_NAME 
+	FROM
+        department
+        
+	</select>
+	
+	<!-- //결재선 해당 부서 직원 불려오기
+	public List<SignVO> signLinePost(Map<String, Object> map) -->
+	<select id="signLinePost" parameterType="java.util.Map" resultMap="signMap">
+			SELECT
+			    E.EMP_ID
+			    ,E.EMP_SIGN
+			    , E.EMP_NAME
+			    , P.POST_NAME
+			    , D.DEPT_NO
+			    , D.DEPT_NAME
+			FROM
+			    EMPLOYEE   E
+			    LEFT JOIN POSITION   P ON P.POST_NO = E.POST_NO
+			    LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+			WHERE ENABLED = 1  
+			AND  DEPT_NAME = #{deptName}	
+			AND(
+			EMP_ID LIKE '%' || #{keyword} || '%' OR
+			EMP_NAME LIKE '%' || #{keyword} || '%' OR
+			POST_NAME LIKE '%' || #{keyword} || '%'
+		)	
+	</select>
+
+<!-- //결재 그룹 등록
+	public int createPost(SignVO signVO); -->
+	<insert id="createGroupPost" parameterType="kr.or.ddit.sign.vo.SignVO" keyColumn="appGroupCode" keyProperty="appGroupCode" useGeneratedKeys="true">
+      <!-- 결재선 INSERT (APP_LIST_CODE = 1) -->
+      <selectKey resultType="int" order="BEFORE" keyProperty="appGroupCode" keyColumn="appGroupCode">
+         SELECT NVL(max(APP_GROUP_CODE),0)+1 FROM APPROVAL_GROUP
+     </selectKey>
+	     INSERT INTO APPROVAL_GROUP (	     		
+			<if test="appGroupCode != null and appGroupCode !='' ">     
+			    APP_GROUP_CODE
+			</if>
+				,APP_GROUP_DATE    
+			)
+			VALUES (
+			<if test="appGroupCode != null and appGroupCode !='' ">     
+			    #{appGroupCode}
+			</if>  
+				,SYSDATE  
+			)
+	   </insert>  
+	   
+	<!-- //결재선 등록
+	public int createPost(SignVO signVO); -->
+	<insert id="createPost" parameterType="kr.or.ddit.sign.vo.SignVO">
+      <!-- 결재선 INSERT (APP_LIST_CODE = 1) -->
+      <selectKey resultType="int" order="BEFORE" keyProperty="appIdx">
+         SELECT NVL(max(APP_IDX),0)+1 FROM APPROVAL_LIST
+     </selectKey>
+	     INSERT INTO APPROVAL_LIST (
+	     		APP_IDX
+			    ,APP_LIST_CODE
+			    ,REAPP_EMP_ID
+			    ,APP_ORDER
+			    ,APP_DATE
+			<if test="appGroupCode != null and appGroupCode !='' ">     
+			    ,APP_GROUP_CODE
+			</if>    
+			)
+			VALUES (
+				#{appIdx}
+			    ,1
+			    ,(SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+			    ,#{appOrder}
+			    ,SYSDATE
+			<if test="appGroupCode != null and appGroupCode !='' ">     
+			    ,#{appGroupCode}
+			</if>    
+			)
+	   </insert>  
+	      
+	  <insert id="createPost2" parameterType="kr.or.ddit.sign.vo.SignVO">      
+	    <!-- 참조선 INSERT (APP_LIST_CODE = 2) -->
+	    <selectKey resultType="int" order="BEFORE" keyProperty="appIdx">
+         SELECT NVL(max(APP_IDX),0)+1 FROM APPROVAL_LIST
+     	</selectKey>
+	      INSERT INTO APPROVAL_LIST (
+			    APP_IDX
+			    ,APP_LIST_CODE
+			    ,REAPP_EMP_ID
+			    ,APP_ORDER
+			    ,APP_DATE
+		   <if test="appGroupCode != null and appGroupCode !='' "> 
+			    ,APP_GROUP_CODE
+		    </if>
+			)
+			VALUES (
+			    #{appIdx}
+			    ,2
+			    ,(SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId})
+			    ,#{appOrder}
+			    ,SYSDATE
+		    <if test="appGroupCode != null and appGroupCode !='' "> 
+			    ,#{appGroupCode}
+		    </if>
+			)
+	</insert>
+	
+	<!-- // 삽입 작업 성공 시, 삽입된 데이터를 조회
+	public List<SignVO> getInsertedApprovalList(String appGroupCode); -->
+	<select id="getInsertedApprovalList" parameterType="Long" resultType="kr.or.ddit.sign.vo.SignVO">
+	SELECT
+	 		AD.DOC_NO
+	    	,AL.APP_LIST_CODE
+	    	, AC.APP_LIST_NAME
+	        , AL.REAPP_EMP_ID
+	        , AL.APP_ORDER
+	        , AL.APP_GROUP_CODE
+	        , E.EMP_SIGN
+            , E.EMP_NAME
+	        , P.POST_NAME		FROM
+	        APPROVAL_LIST AL
+	    LEFT JOIN
+	    	APPROVAL_CODE AC
+	    ON AL.APP_LIST_CODE = AC.APP_LIST_CODE 
+	    LEFT JOIN
+	        EMPLOYEE E 
+	    ON E.EMP_NO = AL.REAPP_EMP_ID
+	    LEFT JOIN 
+	        POSITION P
+	    ON E.POST_NO = P.POST_NO
+        LEFT JOIN
+            APPROVAL_DOCUMENT AD ON AD.APP_GROUP_CODE = AL.APP_GROUP_CODE
+	    WHERE  AL.APP_GROUP_CODE = #{appGroupCode}
+	</select>
+	
+	<!-- // 결재 등록 폼
+	public SignVO create(int empNo); -->
+	<select id="create" parameterType="int" resultType="kr.or.ddit.sign.vo.SignVO">
+     SELECT	   
+	     E.EMP_NO
+	    ,E.EMP_SIGN
+	    , (SELECT MAX(F.FILE_SAVE_LOCATE) FROM FILE_DETAIL F WHERE F.FILE_GROUP_NO = E.EMP_SIGN) FILE_SAVE_LOCATE
+	    , E.EMP_NAME
+	    , D.DEPT_NAME
+	    , P.POST_NAME
+	FROM
+	     EMPLOYEE               E 
+	    JOIN POSITION               P ON P.POST_NO = E.POST_NO
+	    JOIN DEPARTMENT             D ON D.DEPT_NO = E.DEPT_NO	    	    
+   WHERE E.EMP_NO = #{empNo}<!-- 로그인한 직원 정보 불려오기 수정 예정 -->
+	</select>
+	
+	<!-- //결재폼 등록
+	public int createFormPost(SignVO signVO); -->
+	<insert id="createFormPost" parameterType="kr.or.ddit.sign.vo.SignVO">
+	<selectKey resultType="int" order="BEFORE" keyProperty="docNo">
+         SELECT NVL(max(DOC_NO),0)+1 FROM APPROVAL_DOCUMENT
+     </selectKey>
+	INSERT
+	    INTO APPROVAL_DOCUMENT (
+	        DOC_NO
+	        , DOC_TITLE
+	        , DOC_CONTENT
+	        , WRITE_DATE
+	        , EMP_NO
+	        , APP_DOC_NO
+	    <if test="appGroupCode != null and appGroupCode !='' ">    
+	        , APP_GROUP_CODE
+	    </if>    
+	    <if test="fileGroupNo != null and fileGroupNo !='' ">    
+	        , FILE_GROUP_NO
+	    </if>    
+	    )
+	VALUES ( 
+	        #{docNo} 
+	        , #{docTitle}
+	        , #{docContent}
+	        , SYSDATE
+	        , #{empNo} <!-- 기안자 -->
+	        , (SELECT APP_DOC_NO FROM APPROVAL_DOCUMENT_FORM WHERE APP_DOC_NAME =#{appDocName}) <!-- 지출결의서 같은 양식 -->
+	    <if test="appGroupCode != null and appGroupCode !='' ">    
+	        , #{appGroupCode}
+	     </if>   
+	     <if test="fileGroupNo != null and fileGroupNo !='' ">
+	     	,#{fileGroupNo}
+		</if>    
+	        )
+	</insert>
+	
+	<!-- // 결재 종류 가져오기
+	public List<SignVO> getSignVOList(); -->
+	<select id="getSignVOList" resultType="kr.or.ddit.sign.vo.SignVO">
+	SELECT
+    	APP_DOC_NO
+    	, APP_DOC_NAME
+	FROM
+    	APPROVAL_DOCUMENT_FORM
+    WHERE APP_DOC_NO = '2'
+    OR APP_DOC_NO = '3'
+	</select>
+	
+	<!-- // 결재 대기 리스트
+	public List<SignVO> signList(Map<String, Object> map);
+	map.put("reappEmpId", reappEmpId);
+	 -->
+	<select id="signList" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		<!-- SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+		          
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID = #{reappEmpId})
+		    ) U
+		) W
+		WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5)     -->
+		 SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})
+                AND T.APP_TYPE_ID IS NULL
+                AND (T.APP_ORDER = 1
+                OR (T.APP_ORDER > 1 AND FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) = 2))
+		    ) U
+		) W
+		WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5)
+	</select>
+
+
+	<!-- // 결재 대기 전체 행
+	public int getTotal(Map<String, Object> map); -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) 
+			FROM
+			(
+			    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+			         , U.*
+			    FROM  
+			    (
+			        WITH T AS (
+			            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+			                 , A.EMP_NO ORIGINAL_EMP_NO
+			                 , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+			                 , A.APP_DOC_NO, A.FILE_GROUP_NO
+			                 , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+			                 , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+			                 , C.EMP_NO
+			                 , C.APP_TYPE_ID
+			                 , C.APP_STATUS_CODE
+			            FROM APPROVAL_DOCUMENT A 
+			            LEFT OUTER JOIN (
+			                SELECT S.APP_LIST_CODE
+			                     , S.REAPP_EMP_ID
+			                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+			                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+			                FROM APPROVAL_LIST S
+			                JOIN EMPLOYEE U ON S.REAPP_EMP_ID = U.EMP_NO
+			                JOIN DEPARTMENT V ON U.DEPT_NO = V.DEPT_NO
+			                JOIN POSITION P ON U.POST_NO = P.POST_NO
+			            ) B ON A.APP_GROUP_CODE = B.APP_GROUP_CODE
+			            LEFT OUTER JOIN APPROVAL_HIST C ON A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO
+			        ) 
+			        SELECT T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME
+			              , T.APP_DOC_NO, T.FILE_GROUP_NO
+			              , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+			              , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+			              , T.EMP_NO
+			              , T.APP_TYPE_ID, T.APP_STATUS_CODE
+			              , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) AS BEF_EMP_NO
+			              , FN_GET_APP_TYPE_ID(T.DOC_NO, T.REAPP_EMP_ID) AS BEF_APP_TYPE_ID
+			        FROM T
+			       WHERE T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID = #{reappEmpId})
+	                AND T.APP_TYPE_ID IS NULL
+	                AND (T.APP_ORDER = 1
+	                OR (T.APP_ORDER > 1 AND FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) = 2))
+			    ) U
+			) W
+	</select>
+
+	<!-- // 결재 올린거 내용 상세 보기
+	public SignVO detail(SignVO signVO);	 -->
+	<select id="detail" parameterType="kr.or.ddit.sign.vo.SignVO"
+	resultMap="signMap">
+		SELECT
+		     	AD.DOC_NO
+			    , AD.DOC_TITLE
+			    , AD.DOC_CONTENT
+			    , APP_DOC_NAME
+			    , AD.WRITE_DATE
+			    , AD.EMP_NO
+			    , E.EMP_NAME
+			    , E.EMP_ID
+			    , D.DEPT_NAME
+			    , P.POST_NAME
+			    ,(SELECT MAX(F.FILE_SAVE_LOCATE) FROM FILE_DETAIL F WHERE F.FILE_GROUP_NO = E.EMP_SIGN) FILE_SAVE_LOCATE
+			    , FG.FILE_GROUP_NO
+			    , FG.FILE_REG_DATE
+			    , FD.FILE_SN
+			    , FD.FILE_ORIGINAL_NAME
+			    , FD.FILE_SAVE_NAME
+			    , FD.FILE_SAVE_LOCATE
+			    , FD.FILE_SAVE_DATE
+			    , FD.FILE_DOWNCOUNT
+			    , AD.APP_GROUP_CODE
+			    , ADF.APP_DOC_NAME
+			FROM
+			    APPROVAL_DOCUMENT      AD
+			    LEFT JOIN EMPLOYEE               E ON AD.EMP_NO = E.EMP_NO
+			    LEFT JOIN POSITION               P ON P.POST_NO = E.POST_NO
+			    LEFT JOIN DEPARTMENT             D ON D.DEPT_NO = E.DEPT_NO
+			    LEFT JOIN APPROVAL_DOCUMENT_FORM ADF ON AD.APP_DOC_NO = ADF.APP_DOC_NO
+			    LEFT JOIN FILE_GROUP             FG ON AD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+			    LEFT JOIN FILE_DETAIL            FD ON FG.FILE_GROUP_NO = FD.FILE_GROUP_NO
+			WHERE
+				 APP_GROUP_CODE = #{appGroupCode}    
+	    
+	</select>
+	
+	<!-- //반려 사유 가져오기
+	public String retractDetail(SignVO signVO); -->
+	<select id="retractDetail" parameterType="kr.or.ddit.sign.vo.SignVO" resultMap="signMap">
+		SELECT
+		     	AD.DOC_NO
+			    , AD.DOC_TITLE
+			    , AD.DOC_CONTENT
+			    , APP_DOC_NAME
+			    , AD.WRITE_DATE
+			    , AD.EMP_NO
+			    , E.EMP_NAME
+			    , E.EMP_ID
+			    , D.DEPT_NAME
+			    , P.POST_NAME
+			    ,(SELECT MAX(F.FILE_SAVE_LOCATE) FROM FILE_DETAIL F WHERE F.FILE_GROUP_NO = E.EMP_SIGN) FILE_SAVE_LOCATE
+			    , FG.FILE_GROUP_NO
+			    , FG.FILE_REG_DATE
+			    , FD.FILE_SN
+			    , FD.FILE_ORIGINAL_NAME
+			    , FD.FILE_SAVE_NAME
+			    , FD.FILE_SAVE_LOCATE
+			    , FD.FILE_SAVE_DATE
+			    , FD.FILE_DOWNCOUNT
+			    , AD.APP_GROUP_CODE
+			    , ADF.APP_DOC_NAME
+                , AH.REJECT_STATUS
+			FROM
+			    APPROVAL_DOCUMENT      AD
+			    LEFT JOIN EMPLOYEE               E ON AD.EMP_NO = E.EMP_NO
+			    LEFT JOIN POSITION               P ON P.POST_NO = E.POST_NO
+			    LEFT JOIN DEPARTMENT             D ON D.DEPT_NO = E.DEPT_NO
+			    LEFT JOIN APPROVAL_DOCUMENT_FORM ADF ON AD.APP_DOC_NO = ADF.APP_DOC_NO
+                LEFT JOIN APPROVAL_HIST AH ON AH.DOC_NO =AD.DOC_NO
+			    LEFT JOIN FILE_GROUP             FG ON AD.FILE_GROUP_NO = FG.FILE_GROUP_NO
+			    LEFT JOIN FILE_DETAIL            FD ON FG.FILE_GROUP_NO = FD.FILE_GROUP_NO
+			WHERE
+				 APP_GROUP_CODE = #{appGroupCode}   
+            AND APP_STATUS_CODE = 3    
+	</select>
+	
+	
+	<!-- //선택된 결재 라인 보이게
+	public List<SignVO> getAppLineList(); -->
+	<select id="getAppLineList" parameterType="kr.or.ddit.sign.vo.SignVO">
+		SELECT AL.APP_LIST_CODE
+			, AL.REAPP_EMP_ID
+			, (SELECT Y.EMP_ID FROM EMPLOYEE Y WHERE Y.EMP_NO = AL.REAPP_EMP_ID) EMP_ID
+			, AL.APP_ORDER
+			, AL.APP_DATE
+			, AL.APP_GROUP_CODE 
+			, E.EMP_NAME
+			, P.POST_NAME
+			, (SELECT MAX(F.FILE_SAVE_LOCATE) FROM FILE_DETAIL F WHERE F.FILE_GROUP_NO = E.EMP_SIGN) FILE_SAVE_LOCATE
+            , (
+                SELECT W.APP_TYPE_ID FROM APPROVAL_HIST W WHERE W.DOC_NO 
+                = (SELECT V.DOC_NO FROM APPROVAL_DOCUMENT V WHERE V.APP_GROUP_CODE = AL.APP_GROUP_CODE)
+                AND  W.EMP_NO = AL.REAPP_EMP_ID
+            ) APP_TYPE_ID
+		FROM 
+			APPROVAL_LIST AL
+		LEFT JOIN 
+			EMPLOYEE E
+		ON E.EMP_NO = AL.REAPP_EMP_ID
+		LEFT JOIN 
+			POSITION P
+		ON E.POST_NO = P.POST_NO
+		WHERE 
+				AL.APP_GROUP_CODE = #{appGroupCode}
+		AND AL.APP_LIST_CODE = 1
+        ORDER BY AL.APP_ORDER
+	</select>
+	
+	<!-- //선택된 참조 라인 보이게
+	public List<SignVO> getAppLineList2(SignVO signVO); -->
+	<select id="getAppLineList2" parameterType="kr.or.ddit.sign.vo.SignVO">
+		SELECT APP_LIST_CODE
+			, REAPP_EMP_ID
+			, APP_ORDER
+			, APP_DATE
+			, APP_GROUP_CODE 
+			, E.EMP_NAME
+			, P.POST_NAME
+			, E.EMP_SIGN
+		FROM 
+			APPROVAL_LIST AL
+		LEFT JOIN 
+			EMPLOYEE E
+		ON E.EMP_NO = AL.REAPP_EMP_ID
+		LEFT JOIN 
+			POSITION P
+		ON E.POST_NO = P.POST_NO
+		WHERE 
+				APP_GROUP_CODE = #{appGroupCode}
+		AND APP_LIST_CODE = 2		
+	</select>
+	
+	<!-- // 승인 버튼 클릭-> approval_hist 테이블에 insert
+	public int approvalPost(SignVO signVO); 
+	최종 결재자 전까지 2.진행중  / 4.종료
+	FINAL_CHECK_STATUS : 최종 결재자
+	EMP_NO : 결재자 REAPP_EMP_ID
+	2 승인일 때 다음 번호 결재자로 넘어가야함  
+	
+	signVO{docNo=10,appTypeId=2,empId=20241226123}
+	-->
+	<insert id="approvalPost" parameterType="kr.or.ddit.sign.vo.SignVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="appHistNo">
+			SELECT NVL(MAX(APP_HIST_NO),0)+1 FROM APPROVAL_HIST
+		</selectKey>
+	
+		INSERT INTO APPROVAL_HIST(
+			APP_HIST_NO
+			, APP_STATUS_CODE
+			, APP_DATE
+			, FINAL_CHECK_STATUS 
+			, REJECT_STATUS
+			, EMP_NO
+			, DOC_NO
+			, APP_TYPE_ID               
+			)
+			VALUES(
+			 #{appHistNo}
+			, FN_GET_APP_STATUS_CODE(#{docNo},#{empId}) 
+			, SYSDATE
+			, FN_GET_FINAL_CHECK_STATUS(#{docNo},#{empId}) 
+			, ''
+			, (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId}) 
+			, #{docNo}
+			, #{appTypeId}        
+			)
+	</insert>
+	
+	<!-- 
+	empId를 조건으로 하여 그 직원이 결재 완료 시 보여질 도장 이미지를 가져옴
+	public String getFileSaveLocate(String empId)
+	 -->
+	<select id="getFileSaveLocate" parameterType="String" resultType="String">
+		SELECT MAX(F.FILE_SAVE_LOCATE) FILE_SAVE_LOCATE
+		FROM   EMPLOYEE E, FILE_DETAIL F
+		WHERE  F.FILE_GROUP_NO = E.EMP_SIGN
+		AND    E.EMP_ID = #{empId}
+	</select>
+	
+	<!-- //반려버튼(retract) insert로 처리 예정
+	public int retract(SignVO signVO); -->
+	<insert id="retract" parameterType="kr.or.ddit.sign.vo.SignVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="appHistNo">
+			SELECT NVL(MAX(APP_HIST_NO),0)+1 FROM APPROVAL_HIST
+		</selectKey>
+		INSERT INTO APPROVAL_HIST(
+			APP_HIST_NO
+			, APP_STATUS_CODE
+			, APP_DATE
+			, FINAL_CHECK_STATUS 
+			, REJECT_STATUS
+			, EMP_NO
+			, DOC_NO
+			, APP_TYPE_ID               
+			)
+			VALUES(
+			 #{appHistNo}
+			, 3 
+			, SYSDATE
+			, 1 
+			, #{rejectStatus}
+			, (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{empId}) 
+			, #{docNo}
+			, #{appTypeId}        
+			)
+	</insert>
+	
+	<!-- // 결재요청 전체 행 수(결재선 리스트랑 연결해서 db 다시 해야함)
+	public int getRequestTotal(Map<String, Object> map); -->
+	<select id="getRequestTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+			FROM (
+			    SELECT ROW_NUMBER() OVER(ORDER BY T.ORIGINAL_EMP_NO DESC) AS RNUM,
+			           T.DOC_NO, 
+			           T.DOC_TITLE, 
+			           T.DOC_CONTENT, 
+			           T.WRITE_DATE,
+			           T.ORIGINAL_EMP_NO,
+			           T.ORIGINAL_EMP_NAME,
+			           T.APP_DOC_NO, 
+			           T.FILE_GROUP_NO,
+			           T.APP_LIST_CODE, 
+			           T.REAPP_EMP_ID, 
+			           T.APP_ORDER, 
+			           T.APP_DATE, 
+			           T.APP_GROUP_CODE,
+			           T.APP_IDX, 
+			           T.EMP_NAME, 
+			           T.POST_NO, 
+			           T.POST_NAME, 
+			           T.DEPT_NO, 
+			           T.DEPT_NAME,
+			           T.EMP_NO,
+			           T.APP_TYPE_ID,
+			           T.REJECT_STATUS,
+			           T.FINAL_CHECK_STATUS
+			    FROM (
+			        SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE,
+			               A.EMP_NO AS ORIGINAL_EMP_NO,
+			               (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) AS ORIGINAL_EMP_NAME,
+			               A.APP_DOC_NO, A.FILE_GROUP_NO,
+			               B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE,
+			               B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME,
+			               C.EMP_NO,
+			               C.APP_TYPE_ID,
+			               C.REJECT_STATUS,
+			               C.FINAL_CHECK_STATUS
+			        FROM APPROVAL_DOCUMENT A
+			        LEFT JOIN (
+			            SELECT S.APP_LIST_CODE, S.REAPP_EMP_ID, S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX,
+			                   U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+			            FROM APPROVAL_LIST S
+			            JOIN EMPLOYEE U ON S.REAPP_EMP_ID = U.EMP_NO
+			            JOIN DEPARTMENT V ON U.DEPT_NO = V.DEPT_NO
+			            JOIN POSITION P ON U.POST_NO = P.POST_NO
+			        ) B ON A.APP_GROUP_CODE = B.APP_GROUP_CODE
+			        LEFT JOIN APPROVAL_HIST C ON A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO
+			        WHERE C.APP_STATUS_CODE = 2
+			        AND A.EMP_NO = (SELECT EMP_NO FROM EMPLOYEE WHERE EMP_ID = #{reappEmpId})
+			    	) T
+			    ) T_SUB
+	</select>
+
+	<!-- // 결재요청 리스트
+	public List<SignVO> request(Map<String, Object> map); -->
+	<select id="request" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+                          , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE               
+                 T.ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})
+                AND T.APP_ORDER = 1
+                AND T.DOC_NO NOT IN (
+                  SELECT DOC_NO
+                  FROM T
+                  WHERE APP_STATUS_CODE IN (2,3,4)
+                  GROUP BY DOC_NO
+                )
+		    ) U
+		) W
+		WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5)
+	</select>
+	
+	<!-- // 현재 결재자 리스트 가지고 오기 
+	public List<SignVO> statusCode(Map<String, Object> map); -->
+	<!-- <select id="statusCode" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		 SELECT EMP_ID, EMP_NAME, DEPT_NAME, POST_NAME, REAPP_EMP_ID , APP_ORDER, APP_GROUP_CODE
+			FROM APPROVAL_LIST AL
+			LEFT JOIN EMPLOYEE E ON AL.REAPP_EMP_ID = E.EMP_NO
+			LEFT JOIN DEPARTMENT D ON E.DEPT_NO = D.DEPT_NO
+			LEFT JOIN POSITION P ON E.POST_NO = P.POST_NO
+			WHERE AL.APP_LIST_CODE = 1
+			AND APP_ORDER = 
+			(SELECT 
+					 	NVL(MAX(APP_ORDER),0)+1 FROM APPROVAL_HIST AH, APPROVAL_LIST AL
+			           WHERE AL.APP_GROUP_CODE = AH.DOC_NO
+			           AND AL.REAPP_EMP_ID = AH.EMP_NO
+			           AND AH.DOC_NO = #{docNo}
+			           AND AH.APP_STATUS_CODE = 2)
+			AND APP_GROUP_CODE = #{docNo}
+			ORDER BY APP_GROUP_CODE ASC , APP_ORDER ASC
+	</select> -->
+	
+	
+	<!-- //종결함 전체 행 수
+	public int getEndTotal(Map<String, Object> map); -->
+	<select id="getEndTotal" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			APPROVAL_STATUS
+		WHERE 
+			APP_STATUS_CODE = '4'
+	</select>
+
+	<!-- // 종결함 리스트
+	public List<SignVO> end(Map<String, Object> map); -->
+	<select id="end" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+	    
+        SELECT W.*
+			FROM
+			(
+			    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+			         , U.*
+			    FROM  
+			    (
+			        WITH T AS (
+			            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+			                 , A.EMP_NO ORIGINAL_EMP_NO
+			                 , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+			                 , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          	 , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+			                 , A.APP_DOC_NO, A.FILE_GROUP_NO
+			                 , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+			                 , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+			                 , C.EMP_NO
+			                 , C.APP_TYPE_ID
+			                 , C.APP_STATUS_CODE
+			            FROM APPROVAL_DOCUMENT A 
+			            LEFT OUTER JOIN (
+			                SELECT S.APP_LIST_CODE
+			                     , S.REAPP_EMP_ID
+			                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+			                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+			                FROM APPROVAL_LIST S
+			                JOIN EMPLOYEE U ON S.REAPP_EMP_ID = U.EMP_NO
+			                JOIN DEPARTMENT V ON U.DEPT_NO = V.DEPT_NO
+			                JOIN POSITION P ON U.POST_NO = P.POST_NO
+			            ) B ON A.APP_GROUP_CODE = B.APP_GROUP_CODE
+			            LEFT OUTER JOIN APPROVAL_HIST C ON A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO
+			        ) 
+			        SELECT T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+			              , T.APP_DOC_NO, T.FILE_GROUP_NO
+			              , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+			              , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+			              , T.EMP_NO
+			              , T.APP_TYPE_ID, T.APP_STATUS_CODE
+			              , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) AS BEF_EMP_NO
+			              , FN_GET_APP_TYPE_ID(T.DOC_NO, T.REAPP_EMP_ID) AS BEF_APP_TYPE_ID
+			        FROM T
+                    WHERE (T.ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId}) AND T.APP_STATUS_CODE = 4)
+                    OR (T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId}) AND 
+                    EXISTS( SELECT 1
+                            FROM APPROVAL_HIST Q
+                            WHERE Q.DOC_NO = T.DOC_NO AND Q.APP_STATUS_CODE = 4
+                        )) 
+                                    
+			    ) U
+			) W
+		WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5) 
+	</select>
+
+	<!-- //반려함 전체 행 수
+	public int getCollectTotal(Map<String, Object> map); -->
+	<select id="getCollectTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) 
+			FROM
+			(
+			    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+			         , U.*
+			    FROM  
+			    (
+			        WITH T AS (
+			            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+			                 , A.EMP_NO ORIGINAL_EMP_NO
+			                 , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+			                 , A.APP_DOC_NO, A.FILE_GROUP_NO
+			                 , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+			                 , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+			                 , C.EMP_NO
+			                 , C.APP_TYPE_ID
+			                 , C.APP_STATUS_CODE
+			            FROM APPROVAL_DOCUMENT A 
+			            LEFT OUTER JOIN (
+			                SELECT S.APP_LIST_CODE
+			                     , S.REAPP_EMP_ID
+			                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+			                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+			                FROM APPROVAL_LIST S
+			                JOIN EMPLOYEE U ON S.REAPP_EMP_ID = U.EMP_NO
+			                JOIN DEPARTMENT V ON U.DEPT_NO = V.DEPT_NO
+			                JOIN POSITION P ON U.POST_NO = P.POST_NO
+			            ) B ON A.APP_GROUP_CODE = B.APP_GROUP_CODE
+			            LEFT OUTER JOIN APPROVAL_HIST C ON A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO
+			        ) 
+			        SELECT T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME
+			              , T.APP_DOC_NO, T.FILE_GROUP_NO
+			              , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+			              , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+			              , T.EMP_NO
+			              , T.APP_TYPE_ID, T.APP_STATUS_CODE
+			              , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) AS BEF_EMP_NO
+			              , FN_GET_APP_TYPE_ID(T.DOC_NO, T.REAPP_EMP_ID) AS BEF_APP_TYPE_ID
+			        FROM T
+			        WHERE T.ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})
+                	AND T.APP_STATUS_CODE = 3
+			    ) U
+			) W
+	</select>
+
+	<!-- // 반려함 리스트
+	public List<SignVO> collect(Map<String, Object> map); -->
+	<select id="collect" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		         WHERE T.ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})
+                AND T.APP_STATUS_CODE = 3
+		    ) U
+		) W
+		WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5)    
+	</select>
+
+	<!-- //열람/공람 전체 행 수
+	public int getReadingTotal(Map<String, Object> map); -->
+	<select id="getReadingTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) 
+			FROM
+			(
+			    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+			         , U.*
+			    FROM  
+			    (
+			        WITH T AS (
+			            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+			                 , A.EMP_NO ORIGINAL_EMP_NO
+			                 , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+			                 , A.APP_DOC_NO, A.FILE_GROUP_NO
+			                 , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+			                 , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+			                 , C.EMP_NO
+			                 , C.APP_TYPE_ID
+			                 , C.APP_STATUS_CODE
+			            FROM APPROVAL_DOCUMENT A 
+			            LEFT OUTER JOIN (
+			                SELECT S.APP_LIST_CODE
+			                     , S.REAPP_EMP_ID
+			                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+			                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+			                FROM APPROVAL_LIST S
+			                JOIN EMPLOYEE U ON S.REAPP_EMP_ID = U.EMP_NO
+			                JOIN DEPARTMENT V ON U.DEPT_NO = V.DEPT_NO
+			                JOIN POSITION P ON U.POST_NO = P.POST_NO
+			            ) B ON A.APP_GROUP_CODE = B.APP_GROUP_CODE
+			            LEFT OUTER JOIN APPROVAL_HIST C ON A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO
+			        ) 
+			        SELECT T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME
+			              , T.APP_DOC_NO, T.FILE_GROUP_NO
+			              , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+			              , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+			              , T.EMP_NO
+			              , T.APP_TYPE_ID, T.APP_STATUS_CODE
+			              , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) AS BEF_EMP_NO
+			              , FN_GET_APP_TYPE_ID(T.DOC_NO, T.REAPP_EMP_ID) AS BEF_APP_TYPE_ID
+			        FROM T
+			        WHERE T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})              
+			        AND T.APP_LIST_CODE = 2
+			       <!--  AND T.DOC_NO =  (SELECT DOC_NO FROM APPROVAL_HIST WHERE APP_STATUS_CODE = 4) -->
+			    ) U
+			) W
+	</select>
+
+	<!-- // 열람/공람 리스트
+	public List<SignVO> reading(Map<String, Object> map); -->
+	<select id="reading" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		  SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE               
+                 T.REAPP_EMP_ID = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID = #{reappEmpId})             
+                AND T.APP_LIST_CODE = 2
+               <!--  AND T.DOC_NO = (SELECT DOC_NO FROM APPROVAL_HIST WHERE APP_STATUS_CODE = 4) -->
+		    ) U
+		) W
+			WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage}* 5)  
+	</select>
+
+	<!-- //부서 문서함 전체 행수
+	public int getDepartmentTotal(Map<String, Object> map); -->
+	<select id="getDepartmentTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) 
+			FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO                        
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE (ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID = #{reappEmpId})
+                AND APP_STATUS_CODE = 4)
+                OR
+                (T.ORIGINAL_DEPT_NAME = (SELECT Z.DEPT_NAME FROM DEPARTMENT Z
+                   LEFT JOIN EMPLOYEE ET ON Z.DEPT_NO = ET.DEPT_NO
+                   WHERE ET.EMP_ID = #{reappEmpId}) AND APP_STATUS_CODE = 4)              
+		    ) U
+		) W
+	</select>
+
+	<!-- // 부서 문서함 리스트
+	public List<SignVO> department(Map<String, Object> map); -->
+	<select id="department" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		 SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO                        
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+		                  , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE (ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID = #{reappEmpId})
+                AND APP_STATUS_CODE = 4)
+                OR
+                (T.ORIGINAL_DEPT_NAME = (SELECT Z.DEPT_NAME FROM DEPARTMENT Z
+                   LEFT JOIN EMPLOYEE ET ON Z.DEPT_NO = ET.DEPT_NO
+                   WHERE ET.EMP_ID = #{reappEmpId}) AND APP_STATUS_CODE = 4)              
+		    ) U
+		) W
+			WHERE W.RNUM BETWEEN (#{currentPage} * 5)-(5-1) AND (#{currentPage} * 5)    
+	</select>
+
+	<!-- 
+	그 결재문서가 종료됐다면 1
+	public int getFinalCheckStatus(SignVO signVO)
+	 -->
+	<select id="getFinalCheckStatus" parameterType="kr.or.ddit.sign.vo.SignVO" resultType="int">
+		SELECT COUNT(*) FROM APPROVAL_HIST WHERE DOC_NO = #{docNo} AND FINAL_CHECK_STATUS = 1
+	</select>
+	
+	<select id="getEmpInfo" parameterType="String" resultType="map">
+	    SELECT CAST(EMP_NO AS INT)AS empNo, EMP_NAME AS empName
+	    FROM EMPLOYEE
+	    WHERE EMP_ID = #{empId}
+	</select>
+	
+	
+	<!-- //main
+	public List<SignVO> signListMain(Map<String, Object> map); -->
+	<select id="signListMain" parameterType="hashMap" resultType="kr.or.ddit.sign.vo.SignVO">
+		SELECT W.*
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY U.WRITE_DATE DESC) RNUM
+		         , U.*
+		    FROM  
+		    (
+		        WITH T AS(
+		            SELECT A.DOC_NO, A.DOC_TITLE, A.DOC_CONTENT, A.WRITE_DATE
+		                  , A.EMP_NO ORIGINAL_EMP_NO
+		                  , (SELECT Y.EMP_NAME FROM EMPLOYEE Y WHERE Y.EMP_NO = A.EMP_NO) ORIGINAL_EMP_NAME
+                          , (SELECT YD.DEPT_NAME FROM DEPARTMENT YD WHERE YD.DEPT_NO = (SELECT DEPT_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_DEPT_NAME
+                          , (SELECT YP.POST_NAME FROM POSITION YP WHERE YP.POST_NO =(SELECT POST_NO FROM EMPLOYEE WHERE EMP_NO = A.EMP_NO)) ORIGINAL_POST_NAME
+		                  , A.APP_DOC_NO, A.FILE_GROUP_NO
+		                  , B.APP_LIST_CODE, B.REAPP_EMP_ID, B.APP_ORDER, B.APP_DATE, B.APP_GROUP_CODE
+		                  , B.APP_IDX, B.EMP_NAME, B.POST_NO, B.POST_NAME, B.DEPT_NO, B.DEPT_NAME
+		                  , C.EMP_NO
+		                  , C.APP_TYPE_ID
+                          , C.APP_STATUS_CODE
+		            FROM   APPROVAL_DOCUMENT A LEFT OUTER JOIN (
+		                SELECT S.APP_LIST_CODE
+		                     , S.REAPP_EMP_ID
+		                     , S.APP_ORDER, S.APP_DATE, S.APP_GROUP_CODE, S.APP_IDX
+		                     , U.EMP_NAME, U.POST_NO, P.POST_NAME, U.DEPT_NO, V.DEPT_NAME
+		                FROM   APPROVAL_LIST S, EMPLOYEE U, DEPARTMENT V, POSITION P
+		                WHERE  S.REAPP_EMP_ID = U.EMP_NO
+		                AND    U.DEPT_NO = V.DEPT_NO
+		                AND    U.POST_NO = P.POST_NO
+		            ) B ON(A.APP_GROUP_CODE = B.APP_GROUP_CODE)
+		                                        LEFT OUTER JOIN APPROVAL_HIST C ON(A.DOC_NO = C.DOC_NO AND B.REAPP_EMP_ID = C.EMP_NO)
+                 
+		        ) 
+		        SELECT  T.DOC_NO, T.DOC_TITLE, T.DOC_CONTENT, T.WRITE_DATE, T.ORIGINAL_EMP_NO, T.ORIGINAL_EMP_NAME, T.ORIGINAL_POST_NAME, T.ORIGINAL_DEPT_NAME
+		                  , T.APP_DOC_NO, T.FILE_GROUP_NO
+		                  , T.APP_LIST_CODE, T.REAPP_EMP_ID, T.APP_ORDER, T.APP_DATE, T.APP_GROUP_CODE
+		                  , T.APP_IDX, T.EMP_NAME, T.POST_NO, T.POST_NAME, T.DEPT_NO, T.DEPT_NAME
+		                  , T.EMP_NO
+		                  , T.APP_TYPE_ID , T.APP_STATUS_CODE
+		                  , LAG(T.EMP_NO) OVER (ORDER BY T.APP_ORDER) BEF_EMP_NO
+		                  , FN_GET_APP_TYPE_ID(T.DOC_NO,T.REAPP_EMP_ID) BEF_APP_TYPE_ID
+		        FROM T
+		        WHERE               
+                 T.ORIGINAL_EMP_NO = (SELECT Z.EMP_NO FROM EMPLOYEE Z WHERE Z.EMP_ID =  #{reappEmpId})
+                AND T.APP_ORDER = 1
+                AND T.DOC_NO NOT IN (
+                  SELECT DOC_NO
+                  FROM T
+                  WHERE APP_STATUS_CODE IN (2,3,4)
+                  GROUP BY DOC_NO
+                )
+		    ) U
+		) W
+	</select>
+</mapper>

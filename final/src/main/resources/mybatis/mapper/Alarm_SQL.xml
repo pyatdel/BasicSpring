@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.websocketalarm.mapper.AlarmMapper">
+	
+	<insert id="saveAlarm" parameterType="kr.or.ddit.websocketalarm.vo.AlarmVO">
+		INSERT INTO ALARM (
+        ALARM_NO,
+        EMP_NO,
+        ALARM_TYPE,
+        ALARM_MESSAGE,
+        ALARM_STATUS,
+        CREATED_AT,
+        LINK_URL,
+        EMP_NAME
+    )
+    VALUES (
+        ALARM_SEQ.NEXTVAL,  
+        #{empNo},
+        #{alarmType},
+        #{alarmMessage},
+        #{alarmStatus},
+        SYSDATE,
+        #{linkUrl},
+        #{empName}
+    )
+	</insert>
+	
+	
+	<select id="alarmList" parameterType="hashmap" resultType="kr.or.ddit.websocketalarm.vo.AlarmVO">
+		SELECT R.RNUM
+		, R.EMP_NO
+		, R.ALARM_TYPE
+		, R.ALARM_MESSAGE
+		, R.ALARM_STATUS
+		, R.CREATED_AT
+		, R.LINK_URL
+		, R.EMP_NAME
+		FROM(
+		SELECT ROW_NUMBER() OVER (ORDER BY ALARM_NO DESC) RNUM
+			        , AR.ALARM_NO AS ALARM_NO
+			        , AR.ALARM_TYPE AS ALARM_TYPE
+			        , AR.ALARM_MESSAGE AS ALARM_MESSAGE
+			        , AR.ALARM_STATUS AS ALARM_STATUS
+			        , TO_CHAR(AR.CREATED_AT, 'YYYY-MM-DD HH24:MI') AS CREATED_AT
+			        , AR.LINK_URL AS LINK_URL
+			        , AR.EMP_NAME AS EMP_NAME
+			        , E.EMP_NO AS EMP_NO
+			FROM ALARM AR
+			JOIN EMPLOYEE E ON E.EMP_NO = AR.EMP_NO
+			WHERE E.EMP_NO = #{empNo}
+		<include refid="where"/>
+		)R
+		WHERE R.RNUM BETWEEN #{currentPage} * 10 - (10 - 1) AND #{currentPage} *10
+	</select>
+	
+	
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM ALARM AR
+		JOIN EMPLOYEE E ON E.EMP_NO = AR.EMP_NO 
+	    WHERE 1 = 1
+	    AND AR.EMP_NO = #{empNo}
+		<include refid="where"/>
+	</select>
+
+
+<sql id="where">
+	<if test="keyword != null and keyword != ''">
+		AND(
+			ALARM_TYPE LIKE '%' || #{keyword} || '%' OR
+			CREATED_AT LIKE '%' || #{keyword} || '%' OR
+			EMP_NAME LIKE '%' || #{keyword} || '%'
+		)
+	</if>
+</sql>
+
+</mapper>

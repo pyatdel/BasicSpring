@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.business.mapper.BusinessInfoMapper">
+
+	<resultMap id="EnterpriceManageMap" type="kr.or.ddit.business.vo.EnterpriceVO">
+	    <result property="entNo" column="ent_no" />
+	    <result property="entName" column="ent_name" />
+	    <result property="entType" column="ent_type" />
+	    <result property="entRegDate" column="ent_reg_date" />
+	    <result property="busNo" column="bus_no" />
+	    <result property="entCust" column="ent_cust" />
+	    <result property="busAdd" column="bus_add" />
+	    <collection property="ContractMasterVOList" resultMap="ContractMasterMap" />
+	</resultMap>
+
+	
+	
+	<resultMap id="ContractMasterMap" type="kr.or.ddit.business.vo.ContractMasterVO">
+	    <result property="contractNo" column="contract_no" />
+	    <result property="contractNm" column="contract_nm" />
+	    <result property="empNo" column="emp_no" />
+	    <result property="contractStatus" column="contract_status" />
+	    <result property="fromDate" column="from_date" />
+	    <result property="toDate" column="to_date" />
+	    <result property="contractPrice" column="contract_price" />
+	    <result property="entMemo" column="ent_memo" />
+	    <result property="contractType" column="contract_type" />
+	    <result property="state" column="state" />
+	    <result property="approvalDate" column="approval_date" />
+	    <result property="approvalEmp" column="approval_emp" />
+	    <collection property="BusinessMasterVOList" resultMap="BusinessManageMap"></collection>
+	</resultMap>
+
+
+	<resultMap id="BusinessManageMap" type="kr.or.ddit.business.vo.BusinessManageVO">
+		<result property="entNo" column="ENT_NO"/>
+		<result property="contractNo" column="CONTRACT_NO"/>
+		<result property="businessState" column="BUSINESS_STATE"/>
+	</resultMap>
+
+
+
+		<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+			AND (
+			    ENT_NAME LIKE '%' || #{keyword} || '%' OR
+			    CONTRACT_NM LIKE '%' || #{keyword} || '%' OR
+			    CONTRACT_TYPE LIKE '%' || #{keyword} || '%' OR
+			    ENT_TYPE LIKE '%' || #{keyword} || '%' OR
+			    STATE LIKE '%' || #{keyword} || '%' OR
+			    CANCEL_CONTENT LIKE '%' || #{keyword} || '%' OR
+			    ENT_REG_DATE LIKE '%' || #{keyword} || '%'
+			    )
+		</if>
+	</sql>
+
+		<select id="getTotal" parameterType="hashMap" resultType="int">
+		    SELECT COUNT(*)
+			FROM ENTERPRICE E, CONTRACT_MASTER CM
+			WHERE 1 = 1 
+				AND CM.ENT_NO = E.ENT_NO
+<!-- 				AND CM.ENT_NO = #{entNo} -->
+		    <include refid="where" />
+		</select>
+	
+	
+			
+		<select id="list" resultType="kr.or.ddit.vo.CustInfoVO" parameterType="hashMap">
+		    SELECT *
+			FROM (
+			    SELECT 
+			        P.*, 
+			        ROW_NUMBER() OVER (ORDER BY P.CONTRACT_PRICE DESC) AS RNUM
+			    FROM (
+			        SELECT 
+			            E.ENT_NO,
+			            E.ENT_NAME,
+			            SUM(CM.CONTRACT_PRICE) AS CONTRACT_PRICE,
+			            TO_CHAR(COUNT(*) || '건') AS BUSINESS_COUNT,
+			            E.ENT_TYPE,
+			            CASE 
+			                WHEN MAX(BM.BUSINESS_STATE) IS NULL THEN ' - '
+			                WHEN MAX(BM.BUSINESS_STATE) = 1 THEN '보류'
+			                WHEN MAX(BM.BUSINESS_STATE) = 2 THEN '영업완료'
+			                WHEN MAX(BM.BUSINESS_STATE) = 3 THEN '보류'
+			                ELSE ' - '
+			            END AS BUSINESS_STATE,
+			            CASE 
+			                WHEN MAX(BM.BUSINESS_STATE) = 3 THEN NVL(MAX(CM.CANCEL_CONTENT), '-') 
+			                ELSE '-'
+			            END AS CANCEL_CONTENT,
+			            MIN(E.ENT_REG_DATE) AS ENT_REG_DATE
+			        FROM 
+			            BUSINESS_MANAGE BM
+			        JOIN 
+			            ENTERPRICE E ON E.ENT_NO = BM.ENT_NO
+			        JOIN 
+			            CONTRACT_MASTER CM ON BM.CONTRACT_NO = CM.CONTRACT_NO
+			        GROUP BY 
+			            E.ENT_NO, E.ENT_NAME, E.ENT_TYPE
+			    ) P
+			) P
+			WHERE P.RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+
+		</select>
+
+
+	
+<!-- 	<select id="detail" parameterType="int" resultMap="ContractMasterMap"> -->
+<!-- 		    SELECT E.ENT_NAME, CM.CONTRACT_NM, CM.CONTRACT_NO, E.ENT_TYPE, E.ENT_NO, -->
+<!-- 		           CASE -->
+<!-- 		               WHEN CM.CONTRACT_TYPE = 'A' THEN '신규계약' -->
+<!-- 		               WHEN CM.CONTRACT_TYPE = 'B' THEN '연장계약' -->
+<!-- 		               WHEN CM.CONTRACT_TYPE = 'C' THEN '변경계약' -->
+<!-- 		               ELSE '-' -->
+<!-- 		           END AS CONTRACT_TYPE, -->
+<!-- 		           E.ENT_REG_DATE -->
+<!-- 		    FROM ENTERPRICE E -->
+<!-- 		    JOIN CONTRACT_MASTER CM ON CM.ENT_NO = E.ENT_NO -->
+<!-- 		    WHERE CM.ENT_NO = #{entNo} -->
+<!-- 		</select> -->
+		
+		<select id="detail" resultType="kr.or.ddit.vo.CustInfoVO">
+			SELECT *
+			FROM ENTERPRICE
+			WHERE ENT_NO = ${entNo}
+		</select>
+
+	
+	<select id="detailList" parameterType="int" resultMap="ContractMasterMap">
+		    SELECT E.ENT_NAME, CM.CONTRACT_NM, CM.CONTRACT_NO, E.ENT_TYPE, E.ENT_NO,
+		           CASE
+		               WHEN CM.CONTRACT_TYPE = 'A' THEN '신규계약'
+		               WHEN CM.CONTRACT_TYPE = 'B' THEN '연장계약'
+		               WHEN CM.CONTRACT_TYPE = 'C' THEN '변경계약'
+		               ELSE '-'
+		           END AS CONTRACT_TYPE,
+		           E.ENT_REG_DATE
+		    FROM ENTERPRICE E
+		    JOIN CONTRACT_MASTER CM ON CM.ENT_NO = E.ENT_NO
+		    WHERE CM.ENT_NO = #{entNo}
+	</select>
+
+	<update id="updatePost" parameterType="kr.or.ddit.vo.CustInfoVO">
+		    UPDATE
+		        ENTERPRICE
+		    SET 
+		        ENT_NAME = #{entName},
+		        ENT_TEL = #{entTel},
+		        ROAD_ADD = #{roadAdd},
+		        DETAIL_ADD = #{detailAdd},
+		        REP_NAME = #{repName},
+		        ENT_TYPE = #{entType},
+		        ENT_REG_DATE = #{entRegDate},
+		        ENT_CUST = #{entCust}
+		    WHERE 
+		        ENT_NO = #{entNo}
+		</update>
+
+
+	
+
+	
+	
+<!-- 	<delete id="delete" parameterType="String"> -->
+<!-- 		DELETE -->
+<!-- 		FROM CONTRACT_MASTER -->
+<!-- 		WHERE CONTRACT_NO = #{contractNo} -->
+<!-- 	</delete> -->
+	
+<!-- 	<delete id="deleteMyEntNo" parameterType="String"> -->
+<!-- 		DELETE -->
+<!-- 		FROM CONTRACT_MASTER -->
+<!-- 		WHERE CONTRACT_NO = #{contractNo} -->
+<!-- 	</delete> -->
+	
+	<delete id="deletePostAjax" parameterType="kr.or.ddit.vo.CustInfoVO">
+		DELETE
+		FROM ENTERPRICE
+		WHERE ENT_NO = #{entNo}
+	</delete>
+	
+	<insert id="createPost" parameterType="kr.or.ddit.vo.CustInfoVO">
+	    INSERT INTO ENTERPRICE (
+	        ENT_NO, ENT_NAME, ROAD_ADD, DETAIL_ADD, ENT_TYPE, 
+	        ENT_COMMENT, ENT_CUST, ENT_REG_DATE, ENT_TEL, ENT_CODE
+	    )
+	    VALUES (
+	        #{entNo}, #{entName}, #{roadAdd}, 
+	        #{detailAdd}, #{entType}, #{entComment}, #{entCust}, 
+	        #{entRegDate}, #{entTel}, #{entCode}
+	    )
+	</insert>
+		
+	   <select id="idDupChk" parameterType="kr.or.ddit.vo.CustInfoVO" resultType="int">
+	      SELECT COUNT(*) 
+	      FROM ENTERPRICE 
+	      WHERE ENT_NO = #{entNo}
+	   </select>
+	
+
+	
+</mapper>

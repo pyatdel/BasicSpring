@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cash.mapper.CashMapper">
+
+	    <sql id="where">
+	       <if test="keyword!=null and keyword!=''">
+	       AND    (
+	                 SE_REASON   LIKE  '%' || #{keyword} || '%' OR
+	                 ENT_TYPE   LIKE  '%' || #{keyword} || '%' OR
+	                 SE_CODE LIKE  '%' || #{keyword} || '%' OR 
+	                 CONTRACT_NO   LIKE  '%' || #{keyword} || '%' OR
+	                 CONTRACT_NM   LIKE  '%' || #{keyword} || '%' OR
+	                 CONTRACT_PRICE LIKE  '%' || #{keyword} || '%' OR
+	                 FROM_DATE LIKE  '%' || #{keyword} || '%' OR
+	                 TO_DATE LIKE  '%' || #{keyword} || '%' OR
+	                 SE_DATE LIKE  '%' || #{keyword} || '%' OR 
+	                 SE_ISTAXINVOICE  LIKE  '%' || #{keyword} || '%' OR
+	                 BUDGET_NO  LIKE  '%' || #{keyword} || '%' OR
+	                 SE_ALLPRICE  LIKE  '%' || #{keyword} || '%' 
+	           )
+	        </if>
+	    </sql>
+		
+		
+		<select id="list"  parameterType="hashMap" resultType="kr.or.ddit.cash.vo.SaleVO">
+				SELECT T.*,
+    					((#{currentPage} - 1) * 10) + ROW_NUMBER() OVER (ORDER BY T.PAGE_RNUM) AS RNUM
+				FROM (
+				    SELECT 
+				        ROW_NUMBER() OVER (ORDER BY CM.CONTRACT_NO DESC) AS PAGE_RNUM, -- 순번 생성
+				        CM.CONTRACT_NO, 
+				        CM.CONTRACT_NM, 
+				        E.ENT_NAME,
+				        E.ENT_TYPE,
+				        CASE CM.STATE
+				            WHEN '0' THEN '계약완료'
+				            WHEN '1' THEN '진행중'
+				            WHEN '2' THEN '완료'
+				            WHEN '3' THEN '취소'
+				            WHEN '4' THEN '보류'
+				            ELSE '알 수 없음'
+				        END AS STATE,
+				        CM.FROM_DATE, 
+				        CM.TO_DATE, 
+				        CM.CONTRACT_PRICE
+				    FROM CONTRACT_MASTER CM
+				    JOIN ENTERPRICE E ON CM.ENT_NO = E.ENT_NO
+				    <include refid="where"></include>
+				) T
+				WHERE T.PAGE_RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+				ORDER BY T.FROM_DATE ASC
+		</select>
+		
+	
+	    <select id="getTotal" parameterType="hashMap" resultType="int">
+			SELECT COUNT(*)
+			FROM SALE S, CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE S.CONTRACT_NO = CM.CONTRACT_NO
+			    AND E.ENT_NO = CM.ENT_NO
+	       		AND	1 = 1
+	       <include refid="where"></include>
+	    </select>
+
+
+		<select id="cashDetail" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			     WITH RankedData AS (
+				    SELECT ROWNUM AS RNUM, 
+				           CM.CONTRACT_NO,
+				           CM.CONTRACT_NM, 
+				           E.ENT_NAME, 
+				           S.SE_DATE, 
+				           CM.CONTRACT_PRICE, 
+				           E.ENT_TYPE,
+				           S.SE_REASON,
+				           ROW_NUMBER() OVER (PARTITION BY CM.CONTRACT_NM ORDER BY S.SE_DATE ASC) AS RN
+				    FROM SALE S
+				    JOIN CONTRACT_MASTER CM ON S.CONTRACT_NO = CM.CONTRACT_NO
+				    JOIN ENTERPRICE E ON CM.ENT_NO = E.ENT_NO
+				    WHERE CM.STATE = '2'
+<!-- 				    WHERE CM.CONTRACT_NO = #{contractNo} -->
+				)
+				SELECT *
+				FROM (
+				    SELECT  
+				    	   CONTRACT_NO,
+				           CONTRACT_NM, 
+				           ENT_NAME, 
+				           SE_DATE, 
+				           CONTRACT_PRICE, 
+				           SE_REASON
+				           
+				    FROM RankedData
+				    WHERE RN = 1
+				) T
+		</select>
+
+
+		<select id="getTest" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT BUD_DATE AS month,
+			        SUM(BUDGET) AS total_sales
+			FROM BUDGET_T
+			GROUP BY BUD_DATE
+			ORDER BY MONTH
+		</select>
+
+
+		<select id="getExpTotal" parameterType="kr.or.ddit.cash.vo.SaleVO">
+				SELECT COUNT(*)
+				FROM EXPENSE E, BUDGET_CATEGORY BC
+				WHERE E.CATE_NO = BC.BUDGET_CATE_NO
+				<include refid="where"></include>
+		</select>
+
+
+		<!-- List<SaleVO> 타입으로 리턴 -->
+		<select id="expList" parameterType="hashMap" resultType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT ROWNUM AS RNUM,
+			    SUBQUERY.CATE_NO,
+			    SUBQUERY.CATEGORY_NAME,
+			    SUBQUERY.TOTAL_EXPENSE,
+			    SUBQUERY.EXP_DATE,
+			    (SELECT S.BUDGET_NO FROM BUDGET_T S WHERE S.BUD_DATE = TO_CHAR(SUBQUERY.EXP_DATE,'YYYYMM')) BUDGET_NO
+			FROM (
+			    SELECT E.CATE_NO,
+			        BC.BUDGET_CATE_NAME AS CATEGORY_NAME,
+			        SUM(E.EXP_PRICE) AS TOTAL_EXPENSE,
+			        MIN(E.EXP_DATE) AS EXP_DATE
+			    FROM 
+			        EXPENSE E
+			    JOIN 
+			        BUDGET_CATEGORY BC 
+			    ON 
+			        E.CATE_NO = BC.BUDGET_CATE_NO
+			    GROUP BY 
+			        E.CATE_NO, BC.BUDGET_CATE_NAME
+			    ORDER BY 
+			        BC.BUDGET_CATE_NAME
+			) SUBQUERY
+		</select>
+		
+		
+		
+		<select id="expDetailList" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT 
+			    ROWNUM AS RNUM,
+			    CATEGORY_NAME,
+			    EXP_OBJ,  
+			    EXP_QTY,         
+			    EXP_PRICE, 
+			    EXP_DATE,
+			    EXP_NO,
+			    EXP_REASON
+			FROM (
+			    SELECT 
+			        BC.BUDGET_CATE_NAME AS CATEGORY_NAME,
+			        E.EXP_OBJ,               
+			        E.EXP_QTY,               
+			        E.EXP_PRICE,             
+			        E.EXP_DATE,
+			        E.EXP_NO,
+			        E.EXP_REASON
+			    FROM 
+			        EXPENSE E
+			    JOIN 
+			        BUDGET_CATEGORY BC
+			    ON 
+			        E.CATE_NO = BC.BUDGET_CATE_NO
+			        AND BC.BUDGET_CATE_NO = #{budgetCateNo}
+			    ORDER BY 
+			        BC.BUDGET_CATE_NAME, E.EXP_DATE  
+			) SUBQUERY
+		</select>
+		
+		<select id="findDetailsByExpNo" resultType="kr.or.ddit.cash.vo.SaleVO">
+		    SELECT *
+		    FROM sale_details
+		    WHERE exp_no = #{expNo}
+		</select>
+		
+		
+		
+		
+		<!-- 지출 카테고리(budget_cate_no) 분류 -->
+		<select id="budCateList" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT BUDGET_CATE_NO, BUDGET_CATE_NAME
+			FROM BUDGET_CATEGORY
+			ORDER BY BUDGET_CATE_NO
+		</select>
+		
+		
+		
+		<!-- 월별 지출액 그래프 -->
+		<select id="expenseStat" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT 
+			    TO_CHAR(TO_DATE(B.BUD_DATE || '01', 'YYYYMMDD'), 'YYYY-MM') AS EXPENSE_MONTH, -- 연월 형식
+			    SUM(E.EXP_PRICE) AS TOTAL_EXPENSE -- 총 지출액
+			FROM 
+			    EXPENSE E
+			JOIN 
+			    BUDGET_T B
+			ON 
+			    E.BUDGET_NO = B.BUDGET_NO
+			GROUP BY 
+			    B.BUD_DATE
+			ORDER BY 
+			    B.BUD_DATE
+		</select>
+		
+		
+<!-- 		월별 매출 통계 -->
+		<select id="monthSaleStat" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS EXPENSE_MONTH,
+			    SUM(CM.CONTRACT_PRICE) AS TOTAL_EXPENSE
+			FROM CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE CM.ENT_NO = E.ENT_NO
+			GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+			ORDER BY EXPENSE_MONTH
+		</select>
+		
+		<select id="getMonthlySales" parameterType="kr.or.ddit.cash.vo.SaleVO">
+		    SELECT SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS EXPENSE_MONTH,
+		           SUM(CM.CONTRACT_PRICE) AS TOTAL_EXPENSE
+		    FROM CONTRACT_MASTER CM, ENTERPRICE E
+		    WHERE CM.ENT_NO = E.ENT_NO
+		      AND SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,4) = #{year} 
+		    GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+		    ORDER BY EXPENSE_MONTH
+		</select>
+		
+<!-- 		분기별 매출 통계 -->
+		<select id="quaterSaleStat" parameterType="kr.or.ddit.cash.vo.SaleVO">
+					SELECT 
+			    CASE 
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (1, 2, 3) THEN 'Q1'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (4, 5, 6) THEN 'Q2'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (7, 8, 9) THEN 'Q3'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (10, 11, 12) THEN 'Q4'
+			    END AS QUARTER,
+			    TO_CHAR(TO_DATE(SE_DATE, 'YYYY-MM'), 'YYYY') AS YEAR,
+			    NVL(SUM(SE_ALL_PRICE), 0) AS CONTRACT_PRICE,
+			    CM.CONTRACT_NM AS CONTRACT_NM,
+   				 E.ENT_NAME AS ENT_NAME
+			FROM SALE S, CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE S.CONTRACT_NO = CM.CONTRACT_NO	
+				AND E.ENT_NO = CM.ENT_NO
+			GROUP BY 
+			    CASE 
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (1, 2, 3) THEN 'Q1'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (4, 5, 6) THEN 'Q2'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (7, 8, 9) THEN 'Q3'
+			        WHEN EXTRACT(MONTH FROM TO_DATE(SE_DATE, 'YYYY-MM')) IN (10, 11, 12) THEN 'Q4'
+			    END,
+			    TO_CHAR(TO_DATE(SE_DATE, 'YYYY-MM'), 'YYYY'),
+			    CONTRACT_NM,
+			    ENT_NAME
+			ORDER BY YEAR, QUARTER
+		</select>
+		
+<!-- 		기업별 매출 통계 -->
+		<select id="enterSaleStat" resultType="kr.or.ddit.cash.vo.SaleVO">
+<!-- 			    SELECT * -->
+<!-- 			    FROM ( -->
+			        SELECT 
+			            E.ENT_NAME,
+			            SUM(SE_ALL_PRICE) AS TOTAL_PRICE
+			        FROM SALE S
+			        JOIN CONTRACT_MASTER CM ON S.CONTRACT_NO = CM.CONTRACT_NO
+			        JOIN ENTERPRICE E ON CM.ENT_NO = E.ENT_NO
+			        GROUP BY E.ENT_NAME
+			        ORDER BY SUM(SE_ALL_PRICE) DESC
+<!-- 			    )  -->
+<!-- 			    WHERE ROWNUM <![CDATA[ <= ]]> 5 -->
+		</select>
+		
+		<!-- 지출상세내역
+		/cash/budgetList 에서 modal에서 상세목록 보기
+		 -->
+		<select id="budgetDetailList" parameterType="kr.or.ddit.cash.vo.ExpenseVO" resultType="kr.or.ddit.cash.vo.ExpenseVO">
+			SELECT EXP_NO, CATE_NO, EXP_OBJ, EXP_QTY, EXP_REASON, BUDGET_NO, EXP_PRICE
+			     , EXP_DATE
+			FROM   EXPENSE
+			WHERE  CATE_NO = #{cateNo}
+			AND    TO_CHAR(EXP_DATE,'YYYY-MM') = TO_CHAR(#{expDate},'YYYY-MM')
+		</select>
+		
+		<!-- 1. EXPENSE 테이블
+			결제 후에 매출 처리여부 Y/N으로 UPDATE 
+			결제했다면 처리상태 Y로 변경 (기본값 없음)
+		 -->
+		<update id="updateExpenseProcess" parameterType="kr.or.ddit.cash.vo.ExpenseVO">
+		    UPDATE EXPENSE 
+		    SET PROCESS_YN = 'Y'
+		    WHERE EXP_NO = #{expNo}
+		</update>
+		
+		<!-- 2. BUDGET_T 테이블
+			처리여부 Y로 변경된 가격은 예산에서 차감하고 예산 테이블에 저장
+		 -->
+		<update id="updateBudgetAmount" parameterType="kr.or.ddit.cash.vo.ExpenseVO">
+		    UPDATE BUDGET_T 
+		    SET BUDGET = BUDGET - #{totalExpense}
+		    WHERE BUDGET_NO = #{budgetNo}
+		</update>
+		
+		
+		<!-- 월 평균 매출액 -->
+		<select id="monthAvg" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			WITH MonthlyStats AS (
+			    SELECT 
+			        SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS EXPENSE_MONTH,
+			        AVG(CM.CONTRACT_PRICE) AS TOTAL_EXPENSE
+			    FROM CONTRACT_MASTER CM, ENTERPRICE E
+			    WHERE CM.ENT_NO = E.ENT_NO
+			    AND SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) IN (
+			        TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM'),
+			        TO_CHAR(SYSDATE, 'YYYYMM')
+			    )
+			    GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+			)
+			SELECT 
+			    CURRENT_MONTH.EXPENSE_MONTH,
+			    CURRENT_MONTH.TOTAL_EXPENSE,
+			    ROUND(((CURRENT_MONTH.TOTAL_EXPENSE - PREV_MONTH.TOTAL_EXPENSE) / PREV_MONTH.TOTAL_EXPENSE) * 100, 1) AS CHANGE_RATE,
+			    <![CDATA[
+			    CASE 
+			        WHEN CURRENT_MONTH.TOTAL_EXPENSE > PREV_MONTH.TOTAL_EXPENSE THEN 'positive'
+			        WHEN CURRENT_MONTH.TOTAL_EXPENSE < PREV_MONTH.TOTAL_EXPENSE THEN 'negative'
+			        ELSE 'neutral'
+			    END AS TREND
+			    ]]>
+			FROM MonthlyStats CURRENT_MONTH
+			LEFT JOIN MonthlyStats PREV_MONTH
+			    ON CURRENT_MONTH.EXPENSE_MONTH = TO_CHAR(SYSDATE, 'YYYYMM')
+			    AND PREV_MONTH.EXPENSE_MONTH = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM')
+			WHERE CURRENT_MONTH.EXPENSE_MONTH = TO_CHAR(SYSDATE, 'YYYYMM')
+		</select>
+		
+		
+		<!-- 누적 매출액 -->
+		<select id="totalSale" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT SUM(CONTRACT_PRICE) AS CONTRACT_PRICE
+			FROM CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE CM.ENT_NO = E.ENT_NO
+			    AND CM.STATE = '0'
+		</select>
+		
+		
+		<!-- 목표 -->
+		<select id="goalSale" parameterType="kr.or.ddit.cash.vo.SaleVO" resultType="map">
+		    WITH MonthlyStats AS (
+		        SELECT 
+		            SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS EXPENSE_MONTH,
+		            ROUND(SUM(CM.CONTRACT_PRICE),0) AS ACTUAL_SALES,
+		            10000000000 AS TARGET_SALES,
+		            ROUND((SUM(CM.CONTRACT_PRICE) / 10000000000) * 100, 2) AS ACHIEVEMENT_RATE
+		        FROM CONTRACT_MASTER CM, ENTERPRICE E
+		        WHERE CM.ENT_NO = E.ENT_NO
+		            AND SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) IN (
+		                TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM'),
+		                TO_CHAR(SYSDATE, 'YYYYMM')
+		            )
+		        GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+		    )
+		    SELECT 
+		        CURRENT_MONTH.EXPENSE_MONTH,
+		        CURRENT_MONTH.ACTUAL_SALES,
+		        CURRENT_MONTH.TARGET_SALES,
+		        CURRENT_MONTH.ACHIEVEMENT_RATE,
+		        <![CDATA[
+		        CASE 
+		            WHEN CURRENT_MONTH.ACHIEVEMENT_RATE > PREV_MONTH.ACHIEVEMENT_RATE THEN 'positive'
+		            WHEN CURRENT_MONTH.ACHIEVEMENT_RATE < PREV_MONTH.ACHIEVEMENT_RATE THEN 'negative'
+		            ELSE 'neutral'
+		        END AS TREND
+		        ]]>
+		    FROM MonthlyStats CURRENT_MONTH
+		    LEFT JOIN MonthlyStats PREV_MONTH
+		        ON CURRENT_MONTH.EXPENSE_MONTH = TO_CHAR(SYSDATE, 'YYYYMM')
+		        AND PREV_MONTH.EXPENSE_MONTH = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM')
+		    WHERE CURRENT_MONTH.EXPENSE_MONTH = TO_CHAR(SYSDATE, 'YYYYMM')
+		</select>
+		
+		
+		<!-- 계약 체결수 -->
+		<select id="confirmedSale" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT TO_CHAR(FROM_DATE, 'YYYY-MM') AS MONTH,
+			    COUNT(*) AS TOTAL_CONTRACTS,
+			    SUM(CASE WHEN CM.STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_CONTRACTS
+			FROM CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE CM.ENT_NO = E.ENT_NO
+			    AND TO_CHAR(FROM_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+			GROUP BY TO_CHAR(FROM_DATE, 'YYYY-MM')
+		</select>
+		
+		<!-- 계약 체결률 -->
+		<select id="confirmedSalePer" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT 
+			    TO_CHAR(FROM_DATE, 'YYYY-MM') AS MONTH,
+			    COUNT(*) AS TOTAL_CONTRACTS,
+			    SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) AS CONFIRMED_CONTRACTS,
+			    ROUND((SUM(CASE WHEN STATE = '0' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) AS CONFIRMATION_RATE
+			FROM CONTRACT_MASTER
+			WHERE TO_CHAR(FROM_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+			GROUP BY TO_CHAR(FROM_DATE, 'YYYY-MM')
+		</select>
+		
+		<!-- 객단가 -->
+		<select id="entSale" parameterType="kr.or.ddit.cash.vo.SaleVO">
+			SELECT ROUND(AVG(CM.CONTRACT_PRICE),0) AS CONTRACT_PRICE
+			FROM CONTRACT_MASTER CM, ENTERPRICE E
+			WHERE CM.ENT_NO = E.ENT_NO
+		</select>
+		
+		<!-- 필터링된 총 매출 -->
+	    <select id="getFilteredTotalSale" parameterType="map" resultType="map">
+	        SELECT SUM(CONTRACT_PRICE) AS CONTRACT_PRICE
+	        FROM CONTRACT_MASTER CM, ENTERPRICE E
+	        WHERE CM.ENT_NO = E.ENT_NO
+	        AND CM.STATE = '0'
+	        <if test="entName != null and entName != ''">
+	            AND E.ENT_NAME = #{entName}
+	        </if>
+	        <if test="startDate != null and startDate != ''">
+	            AND CM.TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND CM.TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	    </select>
+	
+	    <!-- 필터링된 월 평균 매출 -->
+	    <select id="getFilteredMonthAvg" parameterType="map" resultType="map">
+	        SELECT SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS EXPENSE_MONTH,
+	            AVG(CM.CONTRACT_PRICE) AS TOTAL_EXPENSE
+	        FROM CONTRACT_MASTER CM, ENTERPRICE E
+	        WHERE CM.ENT_NO = E.ENT_NO
+	        <if test="entName != null and entName != ''">
+	            AND E.ENT_NAME = #{entName}
+	        </if>
+	        <if test="startDate != null and startDate != ''">
+	            AND CM.TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND CM.TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	        GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+	    </select>
+	
+	    <!-- 필터링된 월별 라벨 -->
+	    <select id="getFilteredMonthLabels" parameterType="map" resultType="string">
+	        SELECT DISTINCT SUBSTR(TO_CHAR(TO_DATE,'YYYYMMDD'),1,6) AS MONTH
+	        FROM CONTRACT_MASTER
+	        WHERE 1=1
+	        <if test="startDate != null and startDate != ''">
+	            AND TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	        ORDER BY MONTH
+	    </select>
+	
+	    <!-- 필터링된 매출 데이터 -->
+	    <select id="getFilteredSalesData" parameterType="map" resultType="map">
+	        SELECT SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6) AS MONTH,
+	               SUM(CM.CONTRACT_PRICE) AS SALES_AMOUNT
+	        FROM CONTRACT_MASTER CM, ENTERPRICE E
+	        WHERE CM.ENT_NO = E.ENT_NO
+	        <if test="entName != null and entName != ''">
+	            AND E.ENT_NAME = #{entName}
+	        </if>
+	        <if test="startDate != null and startDate != ''">
+	            AND CM.TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND CM.TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	        GROUP BY SUBSTR(TO_CHAR(CM.TO_DATE,'YYYYMMDD'),1,6)
+	        ORDER BY MONTH
+	    </select>
+	
+	    <!-- 필터링된 기업별 매출 라벨 -->
+	    <select id="getFilteredEnterSaleLabels" parameterType="map" resultType="string">
+	        SELECT DISTINCT E.ENT_NAME
+	        FROM CONTRACT_MASTER CM, ENTERPRICE E
+	        WHERE CM.ENT_NO = E.ENT_NO
+	        <if test="startDate != null and startDate != ''">
+	            AND CM.TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND CM.TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	    </select>
+	
+	    <!-- 필터링된 기업별 매출 통계 -->
+	    <select id="getFilteredEnterSaleStat" parameterType="map" resultType="map">
+	        SELECT E.ENT_NAME, SUM(CM.CONTRACT_PRICE) AS TOTAL_PRICE
+	        FROM CONTRACT_MASTER CM, ENTERPRICE E
+	        WHERE CM.ENT_NO = E.ENT_NO
+	        <if test="startDate != null and startDate != ''">
+	            AND CM.TO_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND CM.TO_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	        GROUP BY E.ENT_NAME
+	        ORDER BY TOTAL_PRICE DESC
+	    </select>
+
+
+</mapper>

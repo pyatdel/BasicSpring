@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.business.mapper.BusinessActMapper">
+
+		<sql id="where">
+<!-- 			영업유형, 주제, 작성일, 담당자(직원), 고객사명 -->
+			<if test="keyword!=null and keyword!=''">
+				AND (
+				    BUS_TYPE LIKE '%' || #{keyword} || '%' OR
+				    CONTENT LIKE '%' || #{keyword} || '%' OR
+				    BUS_DATE LIKE '%' || #{keyword} || '%' OR
+				    EMP_NAME LIKE '%' || #{keyword} || '%' OR
+				    ENT_NAME LIKE '%' || #{keyword} || '%' 
+				    )
+			</if>
+		</sql>
+
+		
+		<select id="getTotal" parameterType="hashMap" resultType="int">
+			SELECT COUNT(*)
+			FROM SCHEDULE_T S, BUSINESS B, EMPLOYEE EE, ENTERPRICE E
+			WHERE 1 = 1
+			     AND S.SCHE_DIV = B.SCHE_DIV
+			     AND EE.EMP_NO = B.EMP_NO
+			     AND E.ENT_NO = B.ENT_NO
+			<include refid="where" />
+		</select>
+			
+			
+			
+		<select id="list" resultType="kr.or.ddit.business.vo.BusinessActVO" parameterType="hashMap">
+		    SELECT 
+			    ROW_NUMBER() OVER (ORDER BY MAX(B.BUS_DATE) DESC) AS RNUM, 
+			    MAX(B.BUS_NO) AS BUS_NO, 
+			    S.SCHE_DIV, 
+			    MAX(B.BUS_TYPE) AS BUS_TYPE, 
+			    MAX(B.INOUT) AS INOUT, 
+			    MAX(E.ENT_NO) AS ENT_NO, 
+			    COALESCE(E.ENT_NAME, '-') AS ENT_NAME,  
+			    MAX(B.CONTENT) AS CONTENT, 
+			    MAX(EE.EMP_NO) AS EMP_NO, 
+			    MAX(EE.EMP_NAME) AS EMP_NAME, 
+			    MAX(B.PERCENT) AS PERCENT, 
+			    MAX(TO_CHAR(B.BUS_DATE,'YYYY-MM-DD')) AS BUS_DATE  
+			FROM SCHEDULE_T S
+			LEFT JOIN BUSINESS B ON S.SCHE_DIV = B.SCHE_DIV
+			LEFT JOIN EMPLOYEE EE ON EE.EMP_NO = B.EMP_NO
+			LEFT JOIN ENTERPRICE E ON E.ENT_NO = B.ENT_NO
+			WHERE EE.EMP_NO = 11 OR B.EMP_NO IS NULL
+			GROUP BY S.SCHE_DIV, E.ENT_NAME, B.CONTENT
+			ORDER BY BUS_DATE DESC
+		</select>								
+
+		
+		<select id="listAll" parameterType="kr.or.ddit.business.vo.BusinessActVO">
+			SELECT BUS_NO, BUS_TYPE
+			FROM BUSINESS
+			ORDER BY BUS_NO
+		</select>
+
+
+		
+		<insert id="createPost" parameterType="kr.or.ddit.business.vo.BusinessActVO">
+		    <selectKey resultType="kr.or.ddit.business.vo.BusinessActVO" order="BEFORE" keyProperty="busNo,id">
+		        SELECT 
+		            BUSINESS_SEQ.NEXTVAL AS busNo,
+		            SCHEDULE_SEQ.NEXTVAL AS id
+		        FROM DUAL
+		    </selectKey>
+		
+		    INSERT ALL
+		    INTO BUSINESS (
+		        BUS_NO, BUS_TYPE, CONTENT, INOUT, INNER_VALUE, OUTTER_VALUE, 
+		        SCHE_DIV, EMP_NO, PERCENT, ENT_NO, BUS_DATE
+		    ) VALUES (
+		        #{busNo}, #{busType}, #{content}, #{inout}, #{innerValue}, #{outterValue},
+		        #{scheDiv}, #{empNo}, #{percent}, (SELECT ENT_NO FROM ENTERPRICE WHERE ENT_NAME = #{entName}), TO_DATE(#{busDate}, 'YYYY-MM-DD"T"HH24:MI')
+		    )
+		
+		    INTO SCHEDULE_T (
+		        ID, EMP_NO, SCHE_DIV, TITLE, CONTENT, 
+		        "START", "END", ALL_DAY, BACKGROUND_COLOR, TEXT_COLOR
+		    ) VALUES (
+		        #{id}, #{empNo}, #{scheDiv}, #{title}, #{content},
+		        TO_DATE(#{start}, 'YYYY-MM-DD"T"HH24:MI'), TO_DATE(#{end}, 'YYYY-MM-DD"T"HH24:MI'), #{allDay}, '#f26878', '#000000'
+		    )
+		
+		    SELECT * FROM DUAL
+		</insert>	
+
+
+			
+			
+			
+			
+		<!-- //거래처 전체 리스트
+		public List<BusinessActVO> getAllEntites();
+		 -->
+		<select id="getAllEntites" parameterType="kr.or.ddit.business.vo.BusinessActVO" resultType="kr.or.ddit.business.vo.BusinessActVO">
+		    SELECT ENT_NAME
+		    FROM ENTERPRICE
+		</select>
+
+		
+
+</mapper>

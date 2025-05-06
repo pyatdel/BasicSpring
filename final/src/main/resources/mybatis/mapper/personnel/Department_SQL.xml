@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.personnel.mapper.DepartmentMapper">
+
+	<!--public List<DepartmentVO> getDepartmentList();  -->
+	<select id="getDepartmentList"
+		resultType="kr.or.ddit.personnel.vo.DepartmentVO">
+		SELECT
+		    ROW_NUMBER() OVER(
+		        ORDER BY 
+		            CASE 
+		                D.DEPT_NAME 
+		                WHEN '개발부' THEN 1
+		                WHEN '영업부' THEN 2
+		                WHEN '인사부' THEN 3
+		                WHEN '회계부' THEN 4		               
+		                ELSE 5 
+		            END
+		    ) AS RNUM,
+		    D.DEPT_NO, 
+		    D.DEPT_NAME, 
+		    COUNT(E.EMP_NO) AS EMPLOYEE_COUNT
+		FROM 
+		    DEPARTMENT D
+		LEFT JOIN 
+		    EMPLOYEE E 
+		ON 
+		    D.DEPT_NO = E.DEPT_NO
+	    AND E.ENABLED = 1
+		GROUP BY 
+		    D.DEPT_NO, D.DEPT_NAME
+		ORDER BY 
+		    CASE 
+		        D.DEPT_NAME 
+		        WHEN '개발부' THEN 1
+		        WHEN '영업부' THEN 2
+		        WHEN '인사부' THEN 3
+		        WHEN '회계부' THEN 4		  
+		        ELSE 5 
+		    END
+	</select>
+	
+	<!-- 부서명 가져오기 -->
+	<select id="getDeptName" parameterType="int" resultType="kr.or.ddit.personnel.vo.DepartmentVO">
+	    SELECT
+	        D.DEPT_NO,
+	        D.DEPT_NAME,
+	        COUNT(E.EMP_NO) AS EMPLOYEE_COUNT
+	    FROM
+	        DEPARTMENT D
+	        LEFT JOIN EMPLOYEE E ON D.DEPT_NO = E.DEPT_NO
+	    WHERE 
+	        D.DEPT_NO = #{deptNo}
+	    GROUP BY
+	        D.DEPT_NO, D.DEPT_NAME
+	</select>
+	
+
+</mapper>

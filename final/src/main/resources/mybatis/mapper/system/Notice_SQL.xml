@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.system.mapper.NoticeMapper">
+
+	<sql id="where"> <!-- 반복된 조건문을 뺄 수 있다 -->
+		 <if test="keyword!=null and keyword!=''">
+	    	AND(
+	    		BOD_TITLE LIKE '%' || #{keyword} || '%' OR
+	    		BOD_WRITER LIKE '%' || #{keyword} || '%'
+	    	)
+	    	</if>
+	</sql>
+
+	<!-- // 공지사항 전체 개수
+	public int getTotal(Map<String, Object> map); -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+	SELECT
+	    COUNT(*)
+	FROM
+	    BOARD
+	WHERE
+	    BOD_TYPE_NO = '1'
+	    <include refid="where"></include>
+	</select>
+
+	<!-- // 공지사항 리스트 가져오기
+	public List<NoticeVO> noticeList(Map<String, Object> map); -->
+	<select id="noticeList" parameterType="hashMap" resultType="kr.or.ddit.system.vo.NoticeVO">
+	SELECT
+	    T.RNUM
+	    , T.BOD_NO
+	    , T.BOD_TITLE
+	    , T.BOD_WRITER
+	    , T.BOD_CRE_DATE
+	    , T.NOTICE_TYPE
+	FROM
+	    (
+	        SELECT
+	            ROW_NUMBER()
+	            OVER(
+	                ORDER BY
+	                    BOD_NO DESC
+	            ) RNUM
+	            , BOD_NO
+	            , BOD_TITLE
+	            , BOD_WRITER
+	            , BOD_CRE_DATE
+	            , NOTICE_TYPE
+	        FROM
+	            BOARD
+	        WHERE
+	            BOD_TYPE_NO = '1'
+	     <include refid="where"></include>        
+	    ) T
+	WHERE
+	    T.RNUM BETWEEN ( #{currentPage} * 10 ) - ( 10 - 1 ) AND ( #{currentPage} * 10 )
+			    
+	</select>
+
+
+	<!-- // QnA 전체 개수
+	public int getQnaTotal(Map<String, Object> map); -->
+	<select id="getQnaTotal" parameterType="hashMap" resultType="int">
+	SELECT
+	    COUNT(*)
+	FROM
+	    BOARD
+	WHERE
+	    BOD_TYPE_NO = '3'
+	    <include refid="where"></include>
+	</select>
+	
+	<!-- // QnA 리스트 가져오기
+	public List<NoticeVO> QnAList(Map<String, Object> map); -->
+	<select id="QnAList" parameterType="hashMap" resultType="kr.or.ddit.system.vo.NoticeVO">
+	SELECT
+	    T.RNUM
+	    , T.BOD_NO
+	    , T.BOD_TITLE
+	    , T.BOD_WRITER
+	    , T.BOD_CRE_DATE
+	    , T.NOTICE_TYPE
+	    , T.BOD_HIT
+	FROM
+	    (
+	        SELECT
+	            ROW_NUMBER()
+	            OVER(
+	                ORDER BY
+	                    BOD_NO DESC
+	            ) RNUM
+	            , BOD_NO
+	            , BOD_TITLE
+	            , BOD_WRITER
+	            , BOD_CRE_DATE
+	            , NOTICE_TYPE
+	            , BOD_HIT
+	        FROM
+	            BOARD
+	        WHERE
+	            BOD_TYPE_NO = '3'
+	    <include refid="where"></include>         
+	    ) T
+	WHERE
+	    T.RNUM BETWEEN ( #{currentPage} * 10 ) - ( 10 - 1 ) AND ( #{currentPage} * 10 )
+		
+	</select>
+</mapper>

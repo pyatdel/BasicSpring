@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.contract.mapper.ContractMapper">
+
+	<select id="getEnpList" parameterType="kr.or.ddit.vo.EnterpriceVO">
+		SELECT ENT_NO, ENT_NAME, BUS_NO, BIR_DATE
+			, ROAD_ADD, REP_NAME,ENT_TYPE, ENT_COMMENT
+			, ENT_CUST, ENT_REG_DATE
+		FROM ENTERPRICE
+	</select>
+
+
+</mapper>
