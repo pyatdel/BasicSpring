@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.UsersMapper">
+	
+	<!-- 
+	email로 사용자 정보를 가져옴
+	public UsersVO findByEmail(String email)
+	 -->
+	<select id="findByEmail" parameterType="String" resultType="kr.or.ddit.vo.UsersVO">
+		SELECT ID, EMAIL, PASSWORD, CREATED_AT, UPDATED_AT
+		FROM   USERS
+		WHERE  EMAIL = #{email}
+	</select>
+	
+	<!-- 
+	MemberVO(memId=u001, memName=성원태2, memPw=java, memEnable=false
+	, memRegdate=null,fileGroupNo=0, uploadFiles=파일객체들
+		
+	public int save(MemberVO memberVO)
+	 -->
+	<insert id="save" parameterType="MemberVO">
+		INSERT INTO TB_MEMBERS(MEM_ID, MEM_NAME, MEM_PW, MEM_ENABLE, MEM_REGDATE
+			<if test="fileGroupNo!=null and fileGroupNo!=''">
+			, FILE_GROUP_NO
+			</if>
+			)
+		VALUES(#{memId}, #{memName}, #{memPw}, '1', SYSDATE
+			<if test="fileGroupNo!=null and fileGroupNo!=''">
+			, #{fileGroupNo}
+			</if>
+		)
+	</insert>
+	
+	<!--권한등록
+	public int saveAuths(MemberVO memberVO) 
+	
+	MemberVO(memId=u001, memName=성원태2, memPw=java, memEnable=false
+	, memRegdate=null,fileGroupNo=0, uploadFiles=파일객체들
+	 -->
+	<insert id="saveAuths" parameterType="MemberVO">
+		INSERT INTO TB_AUTHS(MEM_ID, AUTH_NAME)
+		VALUES(#{memId},'ROLE_USER')
+	</insert>
+</mapper>
+
+
+

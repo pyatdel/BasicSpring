@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.MemberMapper">
+	<resultMap type="kr.or.ddit.vo.MemberVO" id="memberMap">
+		<id     column="mem_id"      property="memId" />
+		<result column="mem_id"      property="memId" />
+		<result column="mem_pw"      property="memPw" />
+		<result column="mem_name"    property="memName" />
+		<result column="mem_regdate" property="memRegdate" />
+		<result column="file_group_no" property="fileGroupNo" />
+		<result column="FILE_SAVE_LOCATE" property="fileSaveLocate" />
+		<collection property="authList" resultMap="authMap" />
+	</resultMap>
+	
+	<resultMap type="kr.or.ddit.vo.AuthVO" id="authMap">
+		<result column="mem_id"    property="memId" />
+		<result column="auth_name" property="authName" />
+	</resultMap>
+	
+	<insert id="insertMember" parameterType="kr.or.ddit.vo.MemberVO">
+	   insert into tb_members(mem_id,mem_name,mem_pw) 
+	   values(#{memId},#{memName},#{memPw})
+	</insert>
+	
+	<insert id="insertAuth" parameterType="kr.or.ddit.vo.AuthVO">
+		insert into tb_auths(mem_id, auth_name) values(#{memId},#{authName})
+	</insert>
+	
+	<select id="read" parameterType="string" resultMap="memberMap">
+		select m.mem_id, m.mem_pw, m.mem_name, m.mem_enable, m.mem_regdate
+			 , m.file_group_no
+		     , (
+		        SELECT T.FILE_SAVE_LOCATE
+		        FROM   FILE_DETAIL T
+		        WHERE  T.FILE_SN = (
+		            SELECT MIN(U.FILE_SN)
+		            FROM   FILE_DETAIL U
+		            WHERE  U.FILE_GROUP_NO = T.FILE_GROUP_NO
+		        )
+		        AND    T.FILE_GROUP_NO = m.file_group_no
+		     ) FILE_SAVE_LOCATE
+			 , a.auth_name
+		from   tb_members m, tb_auths a 
+		where  m.mem_id= #{memId} 
+		and    m.mem_id= a.mem_id
+	</select>
+	
+	<!-- map : {currentPage=1, keyword=길동} -->
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+		AND    (
+		           MEM_ID   LIKE  '%' || #{keyword} || '%' OR
+		           MEM_NAME LIKE  '%' || #{keyword} || '%' OR 
+		           MEM_HP   LIKE  '%' || #{keyword} || '%' OR
+		           MEM_MAIL LIKE  '%' || #{keyword} || '%' OR 
+		           MEM_JOB  LIKE  '%' || #{keyword} || '%' 
+		    )
+		</if>
+	</sql>
+	
+	<!-- 회원 목록 
+	map : {currentPage=1, keyword=길동}
+	-->
+	<select id="list" parameterType="hashMap" resultType="kr.or.ddit.vo.MemberVO">
+		SELECT T.RNUM, T.MEM_ID, T.MEM_PASS, T.MEM_NAME, T.MEM_REGNO1, T.MEM_REGNO2
+		    , T.MEM_BIR, T.MEM_BIR_STR, T.MEM_ZIP, T.MEM_ADD1, T.MEM_ADD2, T.MEM_HOMETEL
+		    , T.MEM_COMTEL, T.MEM_HP, T.MEM_MAIL, T.MEM_JOB, T.MEM_LIKE
+		    , T.MEM_MEMORIAL, T.MEM_MEMORIALDAY, T.MEM_MILEAGE, T.MEM_DELETE
+		FROM
+		(
+		    SELECT ROW_NUMBER() OVER(ORDER BY MEM_NAME) RNUM
+		         , MEM_ID, MEM_PASS, MEM_NAME, MEM_REGNO1, MEM_REGNO2
+		         , MEM_BIR, TO_CHAR(MEM_BIR,'YYYY-MM-DD') MEM_BIR_STR
+		         , MEM_ZIP, MEM_ADD1, MEM_ADD2, MEM_HOMETEL
+		         , MEM_COMTEL, MEM_HP, MEM_MAIL, MEM_JOB, MEM_LIKE
+		         , MEM_MEMORIAL, MEM_MEMORIALDAY, MEM_MILEAGE, MEM_DELETE
+		    FROM   MEMBER
+		    WHERE  1 = 1
+		    <include refid="where"></include>
+		) T
+		WHERE T.RNUM BETWEEN (#{currentPage} * 10) - (10 - 1) AND (#{currentPage} * 10)
+	</select>
+	
+	<!-- 행의 수
+	map : {currentPage=1, keyword=길동}
+	public int getTotal(Map<String, Object> map) -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE 1 = 1
+		<include refid="where"></include>
+	</select>
+	
+	<!-- MEMBER : FILE_GROUP = 1 : 1 -->
+	<resultMap type="kr.or.ddit.vo.MemberVO" id="memberMap2">
+		<result property="memId" column="MEM_ID"/>
+		<result property="memPass" column="MEM_PASS"/>
+		<result property="memName" column="MEM_NAME"/>
+		<result property="memRegno1" column="MEM_REGNO1"/>
+		<result property="memRegno2" column="MEM_REGNO2"/>
+		<result property="memBir" column="MEM_BIR"/>
+		<result property="memZip" column="MEM_ZIP"/>
+		<result property="memAdd1" column="MEM_ADD1"/>
+		<result property="memAdd2" column="MEM_ADD2"/>
+		<result property="memHometel" column="MEM_HOMETEL"/>
+		<result property="memComtel" column="MEM_COMTEL"/>
+		<result property="memHp" column="MEM_HP"/>
+		<result property="memMail" column="MEM_MAIL"/>
+		<result property="memJob" column="MEM_JOB"/>
+		<result property="memLike" column="MEM_LIKE"/>
+		<result property="memMemorial" column="MEM_MEMORIAL"/>
+		<result property="memMemorialday" column="MEM_MEMORIALDAY"/>
+		<result property="memMileage" column="MEM_MILEAGE"/>
+		<result property="memDelete" column="MEM_DELETE"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<association property="fileGroupVO" resultMap="fileGroupMap"></association>
+	</resultMap>
+	
+	<!-- FILE_GROUP : FILE_DETAIL = 1 : N -->
+	<resultMap type="kr.or.ddit.vo.FileGroupVO" id="fileGroupMap">
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileRegdate" column="FILE_REGDATE"/>
+		<collection property="fileDetailVOList" resultMap="fileDetailMap"></collection>
+	</resultMap>
+		
+	<resultMap type="kr.or.ddit.vo.FileDetailVO" id="fileDetailMap">
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileGroupNo" column="FILE_GROUP_NO"/>
+		<result property="fileOriginalName" column="FILE_ORIGINAL_NAME"/>
+		<result property="fileSaveName" column="FILE_SAVE_NAME"/>
+		<result property="fileSaveLocate" column="FILE_SAVE_LOCATE"/>
+		<result property="fileSize" column="FILE_SIZE"/>
+		<result property="fileExt" column="FILE_EXT"/>
+		<result property="fileMime" column="FILE_MIME"/>
+		<result property="fileFancysize" column="FILE_FANCYSIZE"/>
+		<result property="fileSaveDate" column="FILE_SAVE_DATE"/>
+		<result property="fileDowncount" column="FILE_DOWNCOUNT"/>
+	</resultMap>
+	
+	<!-- 회원 상세
+	public MemberVO detail(String memId) -->
+	<select id="detail" parameterType="String" resultMap="memberMap2">
+		SELECT M.MEM_ID, M.MEM_PASS, M.MEM_NAME, M.MEM_REGNO1, M.MEM_REGNO2
+		     , M.MEM_BIR, M.MEM_ZIP, M.MEM_ADD1, M.MEM_ADD2, M.MEM_HOMETEL
+		     , M.MEM_COMTEL, M.MEM_HP, M.MEM_MAIL, M.MEM_JOB, M.MEM_LIKE
+		     , M.MEM_MEMORIAL, M.MEM_MEMORIALDAY, M.MEM_MILEAGE, M.MEM_DELETE
+		     , M.FILE_GROUP_NO
+		     , FG.FILE_REGDATE
+		     , FD.FILE_SN, FD.FILE_ORIGINAL_NAME
+		     , FD.FILE_SAVE_NAME, FD.FILE_SAVE_LOCATE, FD.FILE_SIZE
+		     , FD.FILE_EXT, FD.FILE_MIME, FD.FILE_FANCYSIZE
+		     , FD.FILE_SAVE_DATE, FD.FILE_DOWNCOUNT
+		FROM   MEMBER M LEFT OUTER JOIN FILE_GROUP FG ON(M.FILE_GROUP_NO  = FG.FILE_GROUP_NO)
+		                LEFT OUTER JOIN FILE_DETAIL FD ON(FG.FILE_GROUP_NO = FD.FILE_GROUP_NO)
+		WHERE  M.MEM_ID = #{memId}
+	</select>
+	
+	<!--회원 수정
+	public int updatePost(MemberVO memberVO)
+	
+	MemberVO(memId=t001, memPass=0506, memName=성원태2, 
+		memRegno1=null, memRegno2=null, memBir=null, memZip=306-702, 
+		memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호, 
+		memHometel=null, memComtel=null, memHp=null, memMail=null, 
+		memJob=null, memLike=null, memMemorial=null, memMemorialday=null, 
+		memMileage=0, memDelete=null, rnum=0)
+	 -->
+	<update id="updatePost" parameterType="kr.or.ddit.vo.MemberVO">
+		UPDATE MEMBER
+		SET    MEM_PASS = #{memPass}
+		     , MEM_NAME = #{memName}
+		     , MEM_ZIP = #{memZip}
+		     , MEM_ADD1 = #{memAdd1}
+		     , MEM_ADD2 = #{memAdd2}
+		WHERE  MEM_ID = #{memId}
+	</update>
+	
+	<!-- 회원 등록 실행
+	public int createPost(MemberVO memberVO)
+	 
+	memberVO{memId=t001, memPass=0506, memName=성원태2,
+	 			memZip=306-702, 
+				memAdd1=대전광역시 중구 유천동, memAdd2=한사랑아파트 302동 504호,
+				memBir=2024-11-27}
+				
+				memBir=2024-11-27,fileGroupNo=20241129001}
+				
+	fileGroupNo의 값이 있을 때만 INSERT에 들어감
+	-->
+	<insert id="createPost" parameterType="kr.or.ddit.vo.MemberVO">
+		INSERT INTO MEMBER(MEM_ID, MEM_PASS, MEM_NAME, MEM_BIR, MEM_ZIP
+			 , MEM_ADD1, MEM_ADD2
+			 <if test="fileGroupNo!=null and fileGroupNo!=''">
+			 , FILE_GROUP_NO
+			 </if>
+			 )
+		VALUES(#{memId},#{memPass},#{memName},#{memBir},#{memZip}
+			 , #{memAdd1},#{memAdd2}
+			 <if test="fileGroupNo!=null and fileGroupNo!=''">
+			 , #{fileGroupNo}
+			 </if>
+			 )
+	</insert>
+	
+	<!-- 회원 가입 시 중복체크
+	public int idDupChk(MemberVO memberVO) 
+	memberVO{memId=a001,memName=null,memBir=null..}
+	-->
+	<select id="idDupChk" parameterType="kr.or.ddit.vo.MemberVO"
+		resultType="int">
+		SELECT COUNT(*) FROM MEMBER WHERE MEM_ID = #{memId}
+	</select>
+	
+	<!-- 회원 삭제
+	memberVO{memId=a001,memName=null..}
+	
+	public int deletePostAjax(MemberVO memberVO) -->
+	<delete id="deletePostAjax" parameterType="kr.or.ddit.vo.MemberVO">
+		DELETE FROM MEMBER WHERE MEM_ID = #{memId}
+	</delete>
+	
+	<!-- 댓글 등록
+	public int createReplyPost(MemberReplyVO memberReplyVO)
+	
+	MemberReplyVO(idx=0, memId=u001, userId=null, replyRegdate=null
+		, parentIdx=6(대댓글) 또는 0(최초 댓글)
+		, replyContent=댓글입니다, replyStatus=null)
+	 -->
+	<insert id="createReplyPost" parameterType="kr.or.ddit.vo.MemberReplyVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="idx">
+			SELECT NVL(MAX(IDX),0) + 1 FROM MEMBER_REPLY
+		</selectKey>
+	
+		INSERT INTO MEMBER_REPLY(IDX, MEM_ID, USER_ID, REPLY_REGDATE
+		<if test="parentIdx!=null and parentIdx!=''">
+		, PARENT_IDX
+		</if>
+        , REPLY_CONTENT)
+		VALUES(#{idx},#{memId},'a001',SYSDATE
+		<if test="parentIdx!=null and parentIdx!=''">
+		, #{parentIdx}
+		</if>
+		, #{replyContent})
+	</insert>
+	
+	<!-- 댓글 목록 
+	parameterType="String"
+	parameterType="hashMap"
+	parameterType="kr.or.ddit.vo.MemberVO"
+	
+	memberVO{memId=a001}
+	-->
+	<select id="selectReply" parameterType="kr.or.ddit.vo.MemberVO"
+		resultType="kr.or.ddit.vo.MemberReplyVO">
+		WITH T AS(
+		    SELECT A.IDX, A.MEM_ID
+		         , A.USER_ID
+		         , (SELECT E.MEM_NAME FROM MEMBER E WHERE E.MEM_ID = A.USER_ID) MEM_NAME
+		         , (
+		            SELECT B.FILE_SAVE_LOCATE 
+		            FROM   FILE_DETAIL B
+		            WHERE  B.FILE_GROUP_NO = (SELECT C.FILE_GROUP_NO FROM MEMBER C WHERE C.MEM_ID = A.USER_ID)
+		            AND    B.FILE_SN = 1
+		         ) FILE_SAVE_LOCATE
+		         , A.REPLY_REGDATE, A.PARENT_IDX
+		         , A.REPLY_CONTENT, A.REPLY_STATUS
+		    FROM   MEMBER_REPLY A
+		    WHERE  A.MEM_ID = #{memId}
+		    AND    A.REPLY_STATUS != 0
+		) 
+		SELECT T.IDX, T.MEM_ID, T.USER_ID, T.MEM_NAME, T.FILE_SAVE_LOCATE
+		     , T.REPLY_REGDATE, T.PARENT_IDX, T.REPLY_CONTENT, T.REPLY_STATUS
+		     , LEVEL LVL
+		FROM   T
+		START WITH T.PARENT_IDX IS NULL
+		CONNECT BY PRIOR T.IDX = T.PARENT_IDX
+		ORDER SIBLINGS BY T.IDX
+	</select>
+	
+	<!-- 
+	update 실행. memberReplyVO{idx=9,..,replyContent=네네"...}
+	public int updateReplyPostAjax(MemberReplyVO memberReplyVO)
+	 -->
+	<update id="updateReplyPostAjax" parameterType="kr.or.ddit.vo.MemberReplyVO">
+		UPDATE MEMBER_REPLY
+		SET    REPLY_CONTENT = #{replyContent}
+		WHERE  IDX = #{idx}
+	</update>
+	
+	<!-- 댓글 1건 가져오기
+	memberReplyVO{idx=9,..,replyContent=네네"...}
+	 -->
+	<select id="getMemberReply" parameterType="kr.or.ddit.vo.MemberReplyVO"
+		resultType="kr.or.ddit.vo.MemberReplyVO">
+		SELECT IDX, MEM_ID, USER_ID, REPLY_REGDATE, PARENT_IDX
+		     , REPLY_CONTENT, REPLY_STATUS
+		FROM   MEMBER_REPLY
+		WHERE  IDX = #{idx}
+	</select>
+	
+	<!-- 
+	MEMBER_REPLY 테이블의 REPLY_STATUS 컬럼의 값을 0으로 update
+	public int updatePostAjax(MemberReplyVO memberReplyVO)
+	
+	memberReplyVO : MemberReplyVO(idx=8, memId=null..
+	 -->
+	<update id="updatePostAjax" parameterType="kr.or.ddit.vo.MemberReplyVO">
+		UPDATE MEMBER_REPLY
+		SET    REPLY_STATUS = '0'
+		WHERE  IDX = #{idx}
+	</update>
+</mapper>

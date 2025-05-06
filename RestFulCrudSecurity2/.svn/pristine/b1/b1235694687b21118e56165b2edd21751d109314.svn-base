@@ -1,0 +1,13 @@
+package kr.or.ddit.mapper;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import kr.or.ddit.vo.AuthVO;
+import kr.or.ddit.vo.MemberVO;
+
+@Mapper
+public interface MemberMapper {
+	public int insertMember (MemberVO memberVO);
+	public int insertAuth (AuthVO authVO);
+	public MemberVO read (String memId);
+}

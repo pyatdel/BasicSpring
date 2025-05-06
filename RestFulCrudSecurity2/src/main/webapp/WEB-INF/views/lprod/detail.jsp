@@ -1,0 +1,330 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<!-- 
+../ : views폴더(부모)
+ -->
+<!-- ///// header 시작 ///// -->
+<jsp:include page="../include/header.jsp"></jsp:include>
+<!-- ///// header 끝 ///// -->
+
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+
+<!-- Main content -->
+<section class="content">
+	<div class="container-fluid">
+		<!-- ///// content 시작 ///// -->
+		<h1>상품 분류 등록</h1>
+		<!-- mav.addObject("title", "도서생성"); -->
+		<h5>${title}</h5>
+		<!-- 
+		요청URI : /lprod//lprod/createPost
+		요청파라미터 : {lprodGu=P701, lprodNm=도서류}
+		요청방식 : post
+		-->
+		<div class="row">
+		<div class="col-md-12">
+		<form id="frm" action="/lprod/createPost" method="post">
+			<!-- 폼데이터 -->
+			<input type="text" class="form-control" name="lprodId"
+				value="${lprodVO.lprodId}" />
+			<p>
+				상품분류코드 : <input type="text" class="form-control" name="lprodGu"
+					value="${lprodVO.lprodGu}" required placeholder="상품분류코드" readonly />
+			</p>
+			<p>
+				상품분류명 : <input type="text" class="form-control" name="lprodNm"
+					value="${lprodVO.lprodNm}" required placeholder="상품분류명" readonly />
+			</p>
+
+			<!-- 일반모드 시작 -->
+			<span id="spn1" class="justify-between">
+				<p style="float: left;">
+					<button type="button" id="edit" class="btn btn-primary btn-user"
+						style="float: left;">수정</button>
+					&nbsp;
+					<button type="button" id="delete" class="btn btn-primary btn-user">삭제</button>
+				</p>
+				<p style="float: right;">
+					<a
+						href="/lprod/list?currentPage=${param.currentPage}&keyword=${param.keyword}"
+						class="btn btn-success btn-user"> 목록 </a>
+				</p>
+			</span>
+			<!-- 일반모드 끝 -->
+			<!-- 수정모드 시작 -->
+			<span id="spn2" class="justify-between" style="display: none;">
+				<span style="float: left;">
+					<button type="submit" class="btn btn-primary btn-user">확인
+					</button>
+			</span> <span style="float: right;"> <a
+					href="/lprod/detail?lprodId=${param.lprodId}"
+					class="btn btn-success btn-user"> 취소 </a>
+			</span>
+			</span>
+			<!-- 수정모드 끝 -->
+		</form>
+		</div>
+		</div>
+		
+		<!-- 
+		요청UIRI : /lprod/createProdsPost
+		요청파라미터 : request{prodVOList[0].prodId=P109000001,prodVOList[0].prodName=개똥이제과,
+      						prodVOList[0].prodLgu=P109,prodVOList[0].prodBuyer=P10901...}
+		요청방식 : POST
+		 -->
+		<form id="frmProd" name="frmProd" action="/lprod/createProdsPost" method="post">
+		<input type="text" name="lprodId" value="${lprodVO.lprodId}" />
+		<input type="text" name="lprodGu" value="${lprodVO.lprodGu}" />
+		<div class="row">
+	      <div class="col-md-12 justify-content-between">
+	         <div class="float-left">
+	            <div class='card-tools'>
+	               <button type='button' id="btnPlus" class='btn btn-tool' data-card-widget='collapse' title='ttlPlus'>
+	               <i class='fas fa-plus'></i></button>
+	               <button type='button' id="btnMinus" class='btn btn-tool' data-card-widget='collapse' title='ttlMinus'>
+	               <i class='fas fa-minus'></i></button>
+	            </div>
+	         </div>
+	         <div class="float-right">
+	            <button type="submit" class="btn btn-warning">상품 다중 등록</button>
+	         </div>
+	      </div>
+	   </div>
+		<!-- ///// 상품 등록 영역 시작 ///// -->
+		<div class="row divProd">
+			<div class="col-md-12">
+				<!-- model.addAttribute("map", guMap); -->
+				<!-- guMap{
+						{buyerList=[{BUYER_ID=P20101, BUYER_NAME=대현}, {BUYER_ID=P20102, BUYER_NAME=마르죠}], maxProdId=P201000022}
+					}
+				 -->
+				<p>${guMap}</p>
+				<div class="card card-primary">
+					<div class="card-header">
+						<h3 class="card-title">상품등록</h3>
+					</div>
+					<!-- /.card-header -->
+					<!-- form start -->
+						<div class="card-body">
+							<div class="form-group">
+								<label for="prodId">상품 코드</label> 
+								<input type="text" class="form-control" 
+									id="prodId" name="prodVOList[0].prodId"
+									value="${guMap.maxProdId}" placeholder="상품 코드" 
+									required readonly />
+							</div>
+							<div class="form-group">
+								<label for="prodName">상품 명</label> 
+								<input type="text" class="form-control" 
+									id="prodName" name="prodVOList[0].prodName" placeholder="상품명" 
+									required />
+							</div>
+							<div class="form-group">
+								<label for="prodLgu">상품 분류 코드</label>
+								 <input type="text" class="form-control" 
+									id="prodLgu" name="prodVOList[0].prodLgu" 
+									value="${lprodVO.lprodGu}" placeholder="상품 분류 코드" 
+									required readonly />
+							</div>
+							<div class="form-group">
+								<label for="prodBuyer">거래처 코드</label>
+								<select class="form-control" id="prodBuyer" name="prodVOList[0].prodBuyer" >
+									<c:forEach var="map" items="${guMap.buyerList}" varStatus="stat">
+										<option value="${map.BUYER_ID}">${map.BUYER_NAME}</option>
+									</c:forEach>
+								</select>	
+							</div>
+							<div class="form-group">
+								<label for="prodSale">판매가</label> 
+								<input type="number" class="form-control" 
+									id="prodSale" name="prodVOList[0].prodSale" placeholder="판매가" 
+									required />
+							</div>
+							<div class="form-group">
+								<label for="prodOutline">설명</label>
+								<!-- CKEditor5가 그려짐 -->
+								<div id="prodOutline0"></div> 
+								<textarea rows="3" cols="50"
+				                       id="prodOutlineT0" name="prodVOList[0].prodOutline" placeholder="상품 설명"
+				                       required>
+		                        </textarea>
+
+							</div>
+						</div>
+						<!-- /.card-body -->
+				</div>
+			</div>
+		</div>
+		<!-- ///// 상품 등록 영역 끝 ///// -->
+		</form>
+
+		<!-- ///// content 끝 ///// -->
+	</div>
+	<!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+
+<script type="text/javascript">
+// CKEditor5 그리기
+// <div id="prodOutline0"..>
+// window.editor를 통해 CKEditor5 객체에 접근하겠다는 뜻 => window.editor 이게 제일 중요!!!
+ClassicEditor.create(document.querySelector('#prodOutline0'),{ckfinder:{uploadUrl:'/image/upload'}})
+			 .then(editor=>{window.editor=editor;})
+			 .catch(err=>{console.error(err.stack);});
+</script>
+
+<script type="text/javascript">
+	// $ is not defined : 
+	// document 내의 모든 요소들이 로딩된 후에 실행
+	$(function() {
+		//CKEditor 값 복제
+		   $(".ck-blurred").keydown(function(){
+		      console.log("str : " + window.editor.getData());
+		      // ckeditor(window.editor) -> textarea
+		      $("#prodOutlineT0").val(window.editor.getData());
+		   });
+		   
+		   $(".ck-blurred").on("focusout",function(){
+			  // ckeditor(window.editor) -> textarea
+		      $("#prodOutlineT0").val(window.editor.getData());
+		   });
+		
+		// + 클릭
+		$("#btnPlus").on("click", function(){
+			let	lprodGu = "${lprodVO.lprodGu}";		
+			// P201
+			console.log("lprodGu : " + lprodGu);
+			
+			let data = {
+				"lprodGu":lprodGu	
+			};
+			
+			// data{"lprodGu":P201}
+			console.log("data : " , data);
+			
+			// 아작나써유 피씨다타써
+			$.ajax({
+				url:"/lprod/getGuMapAjax",
+				contentType:"application/json;charset=UTF-8",
+				data:JSON.stringify(data),
+				type:"POST",
+				dataType:"json",
+				success:function(result){
+					/* result
+					{
+					 "buyerList": [
+							{"BUYER_ID": 'P20101', "BUYER_NAME": '대현'}
+							{"BUYER_ID": 'P20102', "BUYER_NAME": '마르죠'}
+							], 
+					 "maxProdId" : "P201000022"
+					}
+					*/
+					console.log("result : ", result);
+					
+					// 1. 클래스 속성의 값이 divProd인 요소들의 개수를 구함
+					let divProdLength = $(".divProd").length;	// 지역변수이기 때문에 minus에 있는 변수와는 다름
+					console.log("divProdLength : " + divProdLength);
+					
+					
+					// 2. LprodVO의 prodVOList 프로퍼티의 index 값을 처리
+					// ex) prodVOList[1] -> prodVOList[2] -> prodVOList[3]...
+					let str = "<div class='row divProd'><div class='col-md-12'><div class='card card-primary'><div class='card-header'>";
+						str += "<h3 class='card-title'>상품등록</h3></div><div class='card-body'><div class='form-group'>";
+						str += "<label for='prodId'>상품 코드</label>";
+						str += "<input type='text' class='form-control' value='"+result.maxProdId+"' id='prodId"+divProdLength+"' name='prodVOList["+divProdLength+"].prodId' placeholder='상품 코드' required readonly /></div>";
+						str += "<div class='form-group'><label for='prodName'>상품명</label>";
+						str += "<input type='text' class='form-control' id='prodName"+divProdLength+"' name='prodVOList["+divProdLength+"].prodName' placeholder='상품명' required /></div>";
+						str += "<div class='form-group'><label for='prodLgu'>상품 분류 코드</label>";
+						str += "<input type='text' class='form-control' value='"+lprodGu+"' id='prodLgu"+divProdLength+"' name='prodVOList["+divProdLength+"].prodLgu' placeholder='상품 분류 코드' required readonly /></div>";
+						str += "<div class='form-group'><label for='prodBuyer'>거래처 코드</label>";
+						// str += "<input type='text' class='form-control' id='prodBuyer"+divProdLength+"' name='prodVOList["+divProdLength+"].prodBuyer' placeholder='거래처 코드' required /></div>";
+						// select로 가져오기
+						str += "<select class='form-control' id='prodBuyer"+divProdLength+"' name='prodVOList["+divProdLength+"].prodBuyer'>";
+						
+						$.each(result.buyerList,function(idx,map){
+							str += "<option value='"+map.BUYER_ID+"'>"+map.BUYER_NAME+"</option>";
+						});
+						
+						str += "</select>";
+						str += "<div class='form-group'><label for='prodSale'>판매가</label>";
+						str += "<input type='number' class='form-control' id='prodSale"+divProdLength+"' name='prodVOList["+divProdLength+"].prodSale' placeholder='판매가' required /></div>";
+						str += "<div class='form-group'><label for='prodOutline'>설명</label>";
+						str += "<div id='prodOutline"+divProdLength+"'></div>";
+						str += "<textarea rows='3' cols='50' id='prodOutlineT"+divProdLength+"' name='prodVOList["+divProdLength+"].prodOutline' placeholder='상품 설명' required></textarea>";
+						str += "</div></div></div></div></div>";
+					           
+						// <form id="frmProd"..></form> 부모의 마지막 자식 요소로 추가
+						$("#frmProd").append(str);
+						
+						// CKEditor 처리 
+						ClassicEditor.create(document.querySelector('#prodOutline'+divProdLength),{ckfinder:{uploadUrl:'/image/upload'}})
+									 .then(editor=>{window.editor=editor;})
+									 .catch(err=>{console.error(err.stack);});
+				}
+			});
+		});
+		
+		// - 클릭
+		$("#btnMinus").on("click", function(){
+			// +/- 버튼까지 사라지는 것 막기
+			// 1. 클래스 속성의 값이 divProd인 요소들의 개수를 구함
+			let divProdLength = $(".divProd").length;	// 지역변수이기 때문에 plus에 있는 변수와는 다름
+			console.log("divProdLength : ", divProdLength);
+			
+			// 2. 그 개수가 1보다 커야 마지막 자식 요소를 remove()함
+			if(divProdLength>1){
+				// <form id="frmProd"..></form> 부모
+				// 부모요소	   의 자식들   의 마지막   을 지워라
+	  			$("#frmProd").children().last().remove();
+			}
+		});
+		
+		// 수정버튼 클릭 -> 수정모드로 전환
+		$("#edit").on("click", function() {
+			// 수정영역 가려짐
+			$("#spn1").css("display", "none");
+			// 일반영역 보임
+			$("#spn2").css("display", "block");
+
+			// 1) 입력란 활성화(class="form-control") readonly 속성 제거
+			$(".form-control").removeAttr("readonly");
+
+			// 2) <form id="frm" select하여 오브젝트를 가져옴. 
+			// action 속성의 값을 /lprod/updatePost로 변경
+			$("#frm").attr("action", "/lprod/updatePost");
+
+			// 3) 확인 버튼 클릭 시 submit 되어 update 처리 후 
+			// /lprod/detail?lprodId=10 로 redirect
+		});
+
+		// 삭제버튼 클릭 -> 삭제처리 
+		$("#delete").on("click", function() {
+			// 1) <form id="frm" select하여 오브젝트를 가져옴. 
+			// action 속성의 값을 /lprod/deletePost로 변경 	
+			$("#frm").attr("action", "/lprod/deletePost");
+
+			let result = confirm("삭제하시겠습니까?");
+			console.log("result : " + result);
+			// result 확인
+			if (result > 0) {
+				// true : 1, false : 0
+				//submit 처리
+				$("#frm").submit();
+
+				// LprodController의 deletePost 메소드에서 
+				// 삭제처리 완료 후 /lprod/list로 redirect 함
+			} else {
+				alert("삭제가 취소되었습니다");
+			}
+		});
+	});
+</script>
+
+<!-- ///// footer 시작 ///// -->
+<jsp:include page="../include/footer.jsp"></jsp:include>
+<!-- ///// footer 끝 ///// -->
+
+
