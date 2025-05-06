@@ -23,8 +23,7 @@ import kr.or.ddit.security.CustomAccessDeniedHandler;
 import kr.or.ddit.service.impl.UserDetailServiceImpl;
 
 /* OAuth2
- 클라이언트 ID : 452537051610-9nc5bqf71g667humeo4ofhmggfl3p43s.apps.googleusercontent.com
- 클라이언트 보안 비밀번호 : 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
+/* OAuth2 설정은 application.properties 또는 환경 변수를 참조하세요 */
  */
 @Configuration
 @EnableWebSecurity(debug = false) // 스프링 시큐리티 필터가 스프링 필터체인에 등록이 됨.
